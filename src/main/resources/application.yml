@@ -74,6 +74,10 @@ spring:
       chat: openai
       embedding: openai
       image: openai
+    vectorstore:
+      s3:
+        vector-bucket-name: ${SKATETRICKS_VECTORSTORE_BUCKET:thonbecker-vectors}
+        index-name: ${SKATETRICKS_VECTORSTORE_INDEX:skatetricks-tricks}
 
   # Task Execution (for WebSocket async operations)
   task:

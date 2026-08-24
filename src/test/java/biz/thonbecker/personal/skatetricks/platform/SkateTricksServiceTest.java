@@ -44,7 +44,7 @@ class SkateTricksServiceTest {
         };
 
         SkateTricksService service = new SkateTricksService(
-                fallbackAnalyzer(), repositoryStub(), noOpPublisher(), transcoder, null, null, observability());
+                fallbackAnalyzer(), repositoryStub(), noOpPublisher(), transcoder, null, observability());
 
         byte[] result = service.convertVideo(input, "clip.mov");
 
@@ -74,7 +74,7 @@ class SkateTricksServiceTest {
         };
 
         SkateTricksService service = new SkateTricksService(
-                analyzer, repositoryStub(), noOpPublisher(), passthroughTranscoder(), null, null, observability());
+                analyzer, repositoryStub(), noOpPublisher(), passthroughTranscoder(), null, observability());
 
         TrickAnalysisResult result = service.analyzeConvertedVideo("session-1", video);
 
@@ -122,8 +122,8 @@ class SkateTricksServiceTest {
             }
         };
 
-        SkateTricksService service = new SkateTricksService(
-                analyzer, repositoryStub(), noOpPublisher(), transcoder, null, null, observability());
+        SkateTricksService service =
+                new SkateTricksService(analyzer, repositoryStub(), noOpPublisher(), transcoder, null, observability());
 
         TrickAnalysisResult result = service.analyzeConvertedVideo("session-2", "skatetricks/output/test/video.mp4");
 

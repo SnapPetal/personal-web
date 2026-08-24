@@ -8,16 +8,13 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.AdvisorParams;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.content.Media;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
-import software.amazon.awssdk.services.s3vectors.S3VectorsClient;
-import software.amazon.awssdk.services.s3vectors.model.VectorData;
 
 @Component
 @Slf4j
@@ -26,31 +23,22 @@ class OpenAiTrickAnalyzer implements TrickAnalyzer {
     private final ChatClient chatClient;
     private final PoseEstimationService poseEstimationService;
     private final VideoFrameExtractor videoFrameExtractor;
-    private final S3VectorsClient s3VectorsClient;
-    private final EmbeddingService embeddingService;
+    private final VectorStore vectorStore;
     private final SkatetricksObservability observability;
     private final TrickKnowledgeService trickKnowledgeService;
 
-    @Value("${skatetricks.vectorstore.bucket:}")
-    private String vectorBucket;
-
-    @Value("${skatetricks.vectorstore.index:}")
-    private String vectorIndex;
-
     @Autowired(required = false)
     OpenAiTrickAnalyzer(
-            ChatModel chatModel,
+            @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
             PoseEstimationService poseEstimationService,
             VideoFrameExtractor videoFrameExtractor,
-            @org.springframework.lang.Nullable S3VectorsClient s3VectorsClient,
-            @org.springframework.lang.Nullable EmbeddingService embeddingService,
+            @org.springframework.lang.Nullable VectorStore vectorStore,
             SkatetricksObservability observability,
             TrickKnowledgeService trickKnowledgeService) {
-        this.chatClient = chatModel != null ? ChatClient.create(chatModel) : null;
+        this.chatClient = chatClientBuilder != null ? chatClientBuilder.build() : null;
         this.poseEstimationService = poseEstimationService;
         this.videoFrameExtractor = videoFrameExtractor;
-        this.s3VectorsClient = s3VectorsClient;
-        this.embeddingService = embeddingService;
+        this.vectorStore = vectorStore;
         this.observability = observability;
         this.trickKnowledgeService = trickKnowledgeService;
     }
@@ -190,38 +178,31 @@ class OpenAiTrickAnalyzer implements TrickAnalyzer {
             final String systemPrompt, final String userPrompt, final Media... media) throws Exception {
         return chatClient
                 .prompt()
-                .advisors(AdvisorParams.ENABLE_NATIVE_STRUCTURED_OUTPUT)
                 .system(systemPrompt)
                 .user(u -> u.text(userPrompt).media(media))
                 .call()
-                .entity(TrickAnalysisResponseSchema.class);
+                .entity(TrickAnalysisResponseSchema.class, spec -> spec.useProviderStructuredOutput()
+                        .validateSchema());
     }
 
     private String fetchSimilarExamples(final String poseText) {
-        if (Objects.isNull(s3VectorsClient) || Objects.isNull(embeddingService) || poseText.isBlank()) {
+        if (Objects.isNull(vectorStore) || poseText.isBlank()) {
             return "";
         }
         try {
-            final var queryEmbedding = embeddingService.embed(poseText);
-            final var response = s3VectorsClient.queryVectors(r -> r.vectorBucketName(vectorBucket)
-                    .indexName(vectorIndex)
-                    .queryVector(VectorData.fromFloat32(queryEmbedding))
-                    .topK(3)
-                    .returnMetadata(true)
-                    .returnDistance(false));
-
-            if (response.vectors().isEmpty()) {
+            final var matches = vectorStore.similaritySearch(
+                    SearchRequest.builder().query(poseText).topK(3).build());
+            if (matches.isEmpty()) {
                 return "";
             }
 
             final var sb = new StringBuilder("\nSIMILAR VERIFIED PAST ATTEMPTS (use as reference examples):\n");
-            response.vectors().forEach(match -> {
-                final var meta = match.metadata().asMap();
-                final var trickName = meta.get("trickName").asString();
-                final var confidence = meta.get("confidence").asNumber().intValue();
-                final var formScore = meta.get("formScore").asNumber().intValue();
-                final var feedback =
-                        meta.containsKey("feedback") ? meta.get("feedback").asString() : "";
+            matches.forEach(match -> {
+                final var metadata = match.getMetadata();
+                final var trickName = String.valueOf(metadata.get("trickName"));
+                final var confidence = ((Number) metadata.get("confidence")).intValue();
+                final var formScore = ((Number) metadata.get("formScore")).intValue();
+                final var feedback = Objects.toString(metadata.get("feedback"), "");
                 sb.append("- ")
                         .append(trickName)
                         .append(" (verified confidence: ")

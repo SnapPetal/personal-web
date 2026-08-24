@@ -15,14 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.core.document.Document;
-import software.amazon.awssdk.services.s3vectors.S3VectorsClient;
-import software.amazon.awssdk.services.s3vectors.model.PutInputVector;
-import software.amazon.awssdk.services.s3vectors.model.VectorData;
 
 @Service
 @Slf4j
@@ -32,15 +30,8 @@ public class SkateTricksService {
     private final TrickAttemptRepository trickAttemptRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final VideoTranscoder videoTranscoder;
-    private final S3VectorsClient s3VectorsClient;
-    private final EmbeddingService embeddingService;
+    private final VectorStore vectorStore;
     private final SkatetricksObservability observability;
-
-    @Value("${skatetricks.vectorstore.bucket:}")
-    private String vectorBucket;
-
-    @Value("${skatetricks.vectorstore.index:}")
-    private String vectorIndex;
 
     @Value("${skatetricks.vectorstore.enabled:true}")
     private boolean vectorStoreEnabled;
@@ -50,15 +41,13 @@ public class SkateTricksService {
             TrickAttemptRepository trickAttemptRepository,
             ApplicationEventPublisher eventPublisher,
             VideoTranscoder videoTranscoder,
-            @org.springframework.lang.Nullable S3VectorsClient s3VectorsClient,
-            @org.springframework.lang.Nullable EmbeddingService embeddingService,
+            @org.springframework.lang.Nullable VectorStore vectorStore,
             SkatetricksObservability observability) {
         this.trickAnalyzer = trickAnalyzer;
         this.trickAttemptRepository = trickAttemptRepository;
         this.eventPublisher = eventPublisher;
         this.videoTranscoder = videoTranscoder;
-        this.s3VectorsClient = s3VectorsClient;
-        this.embeddingService = embeddingService;
+        this.vectorStore = vectorStore;
         this.observability = observability;
     }
 
@@ -185,7 +174,7 @@ public class SkateTricksService {
 
     private void writeToVectorStore(final TrickAttemptEntity entity) {
         final var scope = observability.start("service.write_vector_store");
-        if (!vectorStoreEnabled || Objects.isNull(s3VectorsClient) || Objects.isNull(embeddingService)) {
+        if (!vectorStoreEnabled || Objects.isNull(vectorStore)) {
             log.info("event=vector_store_skipped attemptId={} reason=disabled", entity.getId());
             observability.incrementStage("vector_store_write", "skipped", "reason", "disabled");
             observability.success(scope, "reason", "disabled");
@@ -208,41 +197,25 @@ public class SkateTricksService {
                     ? entity.getVerifiedTrickName()
                     : entity.getTrickName();
 
-            log.info(
-                    "event=vector_store_write_started attemptId={} trick={} bucket={} index={}",
-                    entity.getId(),
-                    acceptedTrick,
-                    vectorBucket,
-                    vectorIndex);
+            log.info("event=vector_store_write_started attemptId={} trick={}", entity.getId(), acceptedTrick);
 
-            log.debug("Embedding text (length={})", textToEmbed.length());
-            final var embedding = embeddingService.embed(textToEmbed);
-            log.debug("Generated embedding with {} dimensions", embedding.size());
-
-            final var metadata = Document.fromMap(Map.of(
-                    "trickName", Document.fromString(acceptedTrick),
-                    "confidence", Document.fromNumber(entity.getConfidence()),
-                    "formScore", Document.fromNumber(entity.getFormScore()),
-                    "attemptId", Document.fromNumber(entity.getId()),
-                    "feedback",
-                            Document.fromString(Objects.nonNull(entity.getFeedback()) ? entity.getFeedback() : "")));
+            final var metadata = Map.<String, Object>of(
+                    "trickName", acceptedTrick,
+                    "confidence", entity.getConfidence(),
+                    "formScore", entity.getFormScore(),
+                    "attemptId", entity.getId(),
+                    "feedback", Objects.nonNull(entity.getFeedback()) ? entity.getFeedback() : "");
 
             final var vectorKey = "attempt-" + entity.getId();
             log.info("event=vector_store_put_vectors attemptId={} key={}", entity.getId(), vectorKey);
 
-            s3VectorsClient.putVectors(r -> r.vectorBucketName(vectorBucket)
-                    .indexName(vectorIndex)
-                    .vectors(List.of(PutInputVector.builder()
-                            .key(vectorKey)
-                            .data(VectorData.fromFloat32(embedding))
-                            .metadata(metadata)
-                            .build())));
+            vectorStore.add(List.of(new Document(vectorKey, textToEmbed, metadata)));
 
             log.info(
                     "event=vector_store_write_completed attemptId={} trick={} index={}",
                     entity.getId(),
                     acceptedTrick,
-                    vectorIndex);
+                    "s3");
             observability.incrementStage("vector_store_write", "success");
             observability.success(scope, "trick", acceptedTrick);
         } catch (Exception e) {

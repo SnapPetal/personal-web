@@ -7,9 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.AdvisorParams;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,9 +27,9 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
 
     @Autowired(required = false)
     public FinancialPeaceQuestionGenerator(
-            ChatModel chatModel,
+            @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
             @Value("${trivia.ai.model:${PERSONAL_OPENAI_TRIVIA_MODEL:gpt-4o-mini}}") String model) {
-        this.chatClient = chatModel != null ? ChatClient.create(chatModel) : null;
+        this.chatClient = chatClientBuilder != null ? chatClientBuilder.build() : null;
         this.model = model;
     }
 
@@ -46,7 +44,6 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
 
             final var responses = chatClient
                     .prompt()
-                    .advisors(AdvisorParams.ENABLE_NATIVE_STRUCTURED_OUTPUT)
                     .options(OpenAiChatOptions.builder().model(model).maxTokens(2048))
                     .user(u -> u.text("""
                             You are a financial literacy expert specializing in Dave Ramsey's Financial Peace principles.
@@ -76,7 +73,8 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
                             - HARD: Detailed scenarios and edge cases
                             """).param("count", String.valueOf(count)).param("difficulty", difficulty.name()))
                     .call()
-                    .entity(QuestionBatch.class)
+                    .entity(QuestionBatch.class, spec -> spec.useProviderStructuredOutput()
+                            .validateSchema())
                     .questions();
 
             final var questions = responses.stream()

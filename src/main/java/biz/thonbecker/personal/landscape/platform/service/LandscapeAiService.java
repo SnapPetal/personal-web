@@ -8,7 +8,6 @@ import biz.thonbecker.personal.landscape.api.SeasonalAnalysis;
 import biz.thonbecker.personal.landscape.api.WaterRequirement;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.AdvisorParams;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.content.Media;
 import org.springframework.retry.annotation.Backoff;
@@ -61,7 +60,6 @@ public class LandscapeAiService {
 
             final var recommendations = chatClient
                     .prompt()
-                    .advisors(AdvisorParams.ENABLE_NATIVE_STRUCTURED_OUTPUT)
                     .user(u -> u.text("""
                             You are an expert landscape designer and horticulturist. Analyze this landscape image
                             and recommend 5-8 suitable plants based on the visible conditions. Return the plants
@@ -92,7 +90,8 @@ public class LandscapeAiService {
                             .param("description", description)
                             .media(imageMedia))
                     .call()
-                    .entity(PlantRecommendationBatch.class)
+                    .entity(PlantRecommendationBatch.class, spec -> spec.useProviderStructuredOutput()
+                            .validateSchema())
                     .recommendations();
 
             log.info("Successfully generated {} plant recommendations", recommendations.size());
@@ -167,7 +166,6 @@ public class LandscapeAiService {
 
         final var analysis = chatClient
                 .prompt()
-                .advisors(AdvisorParams.ENABLE_NATIVE_STRUCTURED_OUTPUT)
                 .user(u -> u.text("""
                         You are an expert landscape designer. Look at this landscape image. The following plants \
                         have been placed in this yard:
@@ -186,7 +184,8 @@ public class LandscapeAiService {
                         .param("zone", zone.name())
                         .media(imageMedia))
                 .call()
-                .entity(SeasonalTextAnalysis.class);
+                .entity(SeasonalTextAnalysis.class, spec -> spec.useProviderStructuredOutput()
+                        .validateSchema());
 
         return new SeasonalAnalysis(
                 toSeasonalDescription(analysis.spring()),
