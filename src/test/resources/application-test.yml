@@ -9,6 +9,12 @@ spring:
       chat: none
       embedding: none
       image: none
+    vectorstore:
+      type: none
+
+skatetricks:
+  vectorstore:
+    enabled: false
 
 PERSONAL_AWS_ACCESS_KEY_ID: test
 PERSONAL_AWS_SECRET_ACCESS_KEY: test
