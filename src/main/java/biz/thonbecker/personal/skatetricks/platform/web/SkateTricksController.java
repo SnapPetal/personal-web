@@ -1,7 +1,6 @@
 package biz.thonbecker.personal.skatetricks.platform.web;
 
 import biz.thonbecker.personal.skatetricks.api.TrickAnalysisResult;
-import biz.thonbecker.personal.skatetricks.platform.RemoteVideoImportService;
 import biz.thonbecker.personal.skatetricks.platform.SkateTricksService;
 import biz.thonbecker.personal.skatetricks.platform.SkateTricksUploadService;
 import biz.thonbecker.personal.skatetricks.platform.SkatetricksObservability;
@@ -38,7 +37,6 @@ class SkateTricksController {
 
     private final SkateTricksService skateTricksService;
     private final SkateTricksUploadService uploadService;
-    private final RemoteVideoImportService remoteVideoImportService;
     private final SimpMessagingTemplate messagingTemplate;
     private final SkatetricksObservability observability;
 
@@ -69,12 +67,10 @@ class SkateTricksController {
     SkateTricksController(
             SkateTricksService skateTricksService,
             SkateTricksUploadService uploadService,
-            RemoteVideoImportService remoteVideoImportService,
             SimpMessagingTemplate messagingTemplate,
             SkatetricksObservability observability) {
         this.skateTricksService = skateTricksService;
         this.uploadService = uploadService;
-        this.remoteVideoImportService = remoteVideoImportService;
         this.messagingTemplate = messagingTemplate;
         this.observability = observability;
     }
@@ -100,25 +96,6 @@ class SkateTricksController {
 
         return ResponseEntity.ok(
                 new UploadUrlResponse(videoId, upload.inputKey(), upload.uploadUrl(), upload.contentType()));
-    }
-
-    @PostMapping("/skatetricks/import-url")
-    public ResponseEntity<ConvertResponse> importVideoUrl(@RequestBody ImportUrlRequest request) {
-        if (request == null || isBlank(request.sessionId()) || isBlank(request.videoUrl())) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        String videoId = UUID.randomUUID().toString();
-        conversionStatuses.put(videoId, new ConversionStatus("pending", 0, null, null, null, null));
-
-        try {
-            conversionExecutor.submit(() -> processRemoteVideoImport(videoId, request.sessionId(), request.videoUrl()));
-        } catch (RejectedExecutionException e) {
-            conversionStatuses.remove(videoId);
-            return ResponseEntity.status(429).build();
-        }
-
-        return ResponseEntity.accepted().body(new ConvertResponse(videoId, 0, "pending"));
     }
 
     @PostMapping("/skatetricks/convert")
@@ -193,62 +170,6 @@ class SkateTricksController {
             scheduleConversionStatusCleanup(videoId);
             observability.incrementStage("upload_conversion", "failure");
             observability.failure(scope, e, "source", "upload");
-        }
-    }
-
-    private void processRemoteVideoImport(String videoId, String sessionId, String sourceUrl) {
-        final var scope = observability.start("controller.remote_import_conversion");
-        try {
-            updateConversionStatus(videoId, sessionId, "converting", 5, null, null, null);
-            var downloadedVideo = remoteVideoImportService.downloadVideo(sourceUrl, maxUploadSize.toBytes());
-            observability.recordPayloadSize("remote_source_video", downloadedVideo.bytes().length, "source", "remote");
-
-            updateConversionStatus(
-                    videoId, sessionId, "converting", 35, (long) downloadedVideo.bytes().length, null, null);
-            log.info(
-                    "event=remote_import_transcode_started videoId={} sessionId={} host={} filename={} contentType={} size={}",
-                    videoId,
-                    sessionId,
-                    URI.create(sourceUrl).getHost(),
-                    downloadedVideo.filename(),
-                    downloadedVideo.contentType(),
-                    downloadedVideo.bytes().length);
-            var transcodedVideo =
-                    skateTricksService.transcodeVideo(downloadedVideo.bytes(), downloadedVideo.filename());
-
-            convertedVideos.put(videoId, transcodedVideo.mp4Data());
-            cleanupExecutor.schedule(
-                    () -> {
-                        convertedVideos.remove(videoId);
-                        conversionStatuses.remove(videoId);
-                        log.debug("Cleaned up imported video: {}", videoId);
-                    },
-                    STATUS_TTL_MINUTES,
-                    TimeUnit.MINUTES);
-
-            updateConversionStatus(
-                    videoId,
-                    sessionId,
-                    "complete",
-                    100,
-                    (long) transcodedVideo.mp4Data().length,
-                    transcodedVideo.videoUrl(),
-                    transcodedVideo.outputKey());
-            observability.incrementStage("remote_import_conversion", "success");
-            observability.success(scope, "source", "remote");
-        } catch (Exception e) {
-            log.error(
-                    "event=remote_import_transcode_failed videoId={} sessionId={} sourceUrl={}",
-                    videoId,
-                    sessionId,
-                    sourceUrl,
-                    e);
-            String error = buildConversionErrorMessage(e);
-            conversionStatuses.put(videoId, new ConversionStatus("error", 0, null, error, null, null));
-            updateConversionStatus(videoId, sessionId, "error", 0, null, null, null, error);
-            scheduleConversionStatusCleanup(videoId);
-            observability.incrementStage("remote_import_conversion", "failure");
-            observability.failure(scope, e, "source", "remote");
         }
     }
 
@@ -437,17 +358,14 @@ class SkateTricksController {
 
     private static String buildConversionErrorMessage(Exception e) {
         Throwable root = rootCause(e);
-        if (root instanceof RemoteVideoImportService.RemoteVideoImportException remoteImportException) {
-            return remoteImportException.getMessage();
-        }
         String message = root.getMessage();
         if (message != null && message.contains("MediaConvert")) {
-            return "Video transcoding failed while converting the imported clip.";
+            return "Video transcoding failed while converting the uploaded clip.";
         }
         if (message != null && message.contains("Video conversion failed:")) {
             return "Video conversion failed while preparing the clip for analysis.";
         }
-        return "Video import failed. Check that the source URL is public and points to a supported video.";
+        return "Video upload failed while preparing the clip for analysis.";
     }
 
     private static Throwable rootCause(Throwable throwable) {
@@ -491,8 +409,6 @@ class SkateTricksController {
     }
 
     record UploadUrlRequest(String filename, String contentType, Long size) {}
-
-    record ImportUrlRequest(String sessionId, String videoUrl) {}
 
     record UploadUrlResponse(String videoId, String inputKey, String uploadUrl, String contentType) {}
 

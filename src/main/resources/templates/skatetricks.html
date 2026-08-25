@@ -67,24 +67,10 @@
                                 <div class="mb-3">
                                     <input type="file" class="form-control" accept="video/*" @change="handleVideoUpload($event)">
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Remote Video URL</label>
-                                    <div class="input-group">
-                                        <input type="url"
-                                               class="form-control"
-                                               placeholder="https://..."
-                                               x-model="importVideoUrl">
-                                        <button class="btn btn-outline-primary"
-                                                :disabled="importUrlLoading || !importVideoUrl"
-                                                @click="importVideoFromUrl()">
-                                            <i class="bi bi-link-45deg"></i> Import URL
-                                        </button>
-                                    </div>
-                                </div>
                                 <div id="plyrContainer" class="mb-3" style="display: none;">
                                     <video id="uploadedVideo" controls playsinline class="w-100 rounded"></video>
                                 </div>
-                                <p class="text-muted small mb-2 mt-2">Upload any video format (MOV, MP4, etc) or import a remote video URL. Default max 500MB. Videos convert to MP4, publish to the CDN, and then analyze. Public Instagram, Facebook, and YouTube page URLs now attempt provider-specific resolution, but private or protected videos can still fail.</p>
+                                <p class="text-muted small mb-2 mt-2">Upload your skate video in any supported format (MOV, MP4, etc.). Default max 500MB. Videos convert to MP4, publish to the CDN, and then analyze.</p>
                                 <button class="btn btn-success"
                                         :disabled="analyzeUploadDisabled"
                                         @click="analyzeUpload()">

@@ -66,7 +66,7 @@ The local `design-system` Maven module packages the shared CSS and JavaScript as
 
 For Skatetricks transcoding, set `SKATETRICKS_MEDIACONVERT_ROLE_ARN` from the HomeWeb CDK `MediaConvertRoleArn` output. Do not set `SKATETRICKS_MEDIACONVERT_ENDPOINT`; the app discovers the correct account-specific endpoint automatically via `DescribeEndpoints`.
 
-Skatetricks remote import supports direct downloadable video URLs and now attempts provider-specific resolution for public Instagram, Facebook, and YouTube page URLs before transcoding. Private, auth-gated, or stream-protected videos can still fail.
+Skatetricks accepts user-uploaded video files, converts them to MP4, publishes them to the CDN, and analyzes the uploaded video.
 
 Skatetricks video analysis extracts duration-aware sequential frames from uploaded/imported MP4s before calling OpenAI vision. Tune `SKATETRICKS_ANALYSIS_MAX_FRAMES` if production needs more or fewer images per analysis; the default is `24`.
 

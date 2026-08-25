@@ -33,7 +33,6 @@ function skatetricksApp() {
     capturing: false,
     captureBtnLabel: "Capture & Analyze",
     analyzeUploadDisabled: true,
-    importUrlLoading: false,
     result: null,
     resultError: null,
     resultLoading: false,
@@ -56,7 +55,6 @@ function skatetricksApp() {
     currentInputKey: null,
     currentOutputKey: null,
     currentVideoUrl: null,
-    importVideoUrl: "",
     plyrPlayer: null,
 
     // ── Lifecycle ──────────────────────────────────────────────────
@@ -345,58 +343,6 @@ function skatetricksApp() {
       } catch (e) {
         self.frameCounterText = "Upload failed: " + e.message;
         self.analyzeUploadDisabled = true;
-      }
-    },
-
-    async importVideoFromUrl() {
-      var self = this;
-      if (!self.importVideoUrl || !self.importVideoUrl.trim()) return;
-
-      self.currentVideoId = null;
-      self.currentInputKey = null;
-      self.currentOutputKey = null;
-      self.currentVideoUrl = null;
-      self.analyzeUploadDisabled = true;
-      self.importUrlLoading = true;
-      self.frameCounterText = "Importing remote video...";
-
-      var plyrContainer = document.getElementById("plyrContainer");
-      plyrContainer.style.display = "none";
-
-      if (self.plyrPlayer) {
-        self.plyrPlayer.destroy();
-        self.plyrPlayer = null;
-      }
-
-      try {
-        var response = await fetch("/skatetricks/import-url", {
-          method: "POST",
-          headers: Object.assign(
-            { "Content-Type": "application/json" },
-            self.getHeaders()
-          ),
-          body: JSON.stringify({
-            sessionId: self.sessionId,
-            videoUrl: self.importVideoUrl.trim(),
-          }),
-        });
-
-        if (!response.ok) {
-          var errorText = "Failed to import URL: " + response.status;
-          throw new Error(errorText);
-        }
-
-        var result = await response.json();
-        self.currentVideoId = result.videoId;
-        self.frameCounterText = "Remote import queued. Starting conversion...";
-        setTimeout(function () {
-          self.pollConversionStatus(self.currentVideoId);
-        }, 2000);
-      } catch (e) {
-        self.frameCounterText = "URL import failed: " + e.message;
-        self.analyzeUploadDisabled = true;
-      } finally {
-        self.importUrlLoading = false;
       }
     },
 
