@@ -59,7 +59,8 @@ The production host already runs host-managed nginx in the `nextcloud-aws` repos
 
 - `thonbecker.biz` and `www.thonbecker.biz` serve the files from `static-site/` at `/var/www/thonbecker-static`.
 - `booking.thonbecker.biz` proxies only booking and shared asset paths to `127.0.0.1:3003`.
-- `app.thonbecker.biz` proxies the complete Spring Boot application to `127.0.0.1:3003`.
+- `app.thonbecker.biz` redirects `/` to `https://thonbecker.biz` and proxies the complete Spring
+  Boot application (including WebSockets) for all other paths.
 
 The private Cloudflare OS booking integration uses `https://app.thonbecker.biz` as its upstream. Do not point `BOOKING_ADMIN_BASE_URL` at `booking.thonbecker.biz`; that hostname is reserved for the public booking experience. The Worker forwards the Cloudflare Access JWT in `Authorization: Bearer` form to Spring.
 
