@@ -166,6 +166,29 @@
     </div>
 </div>
 
+<!-- HTMX 4 multi-target response for player creation -->
+<th:block th:fragment="playerUpdate">
+    <hx-partial hx-target="#main-alerts" hx-swap="innerHTML">
+        <div th:replace="~{foosball-fragments :: alert}"></div>
+    </hx-partial>
+    <hx-partial th:if="${success}" hx-target="#player-table-container" hx-swap="innerMorph">
+        <div th:replace="~{foosball-players :: playerTable}"></div>
+    </hx-partial>
+</th:block>
+
+<!-- HTMX 4 multi-target response for game creation -->
+<th:block th:fragment="gameUpdate">
+    <hx-partial hx-target="#main-alerts" hx-swap="innerHTML">
+        <div th:replace="~{foosball-fragments :: alert}"></div>
+    </hx-partial>
+    <hx-partial th:if="${success}" hx-target="#playerStatsList" hx-swap="innerMorph">
+        <div th:replace="~{foosball-fragments :: playerStatsList}"></div>
+    </hx-partial>
+    <hx-partial th:if="${success}" hx-target="#gamesList" hx-swap="innerMorph">
+        <div th:replace="~{foosball-fragments :: gamesList}"></div>
+    </hx-partial>
+</th:block>
+
 <!-- Last Game Teams Fragment -->
 <div th:fragment="lastGameTeams">
     <script type="text/javascript" th:inline="javascript">

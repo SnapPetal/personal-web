@@ -20,10 +20,7 @@
     <link th:href="@{/css/foosball.css}" rel="stylesheet">
     
     <!-- JS dependencies -->
-    <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
-    <script th:src="@{/webjars/htmx.org/dist/ext/hx-browser-indicator.min.js}"></script>
-    <script th:src="@{/webjars/personal-design-system/1.0.0/js/htmx-extensions.js}"></script>
-    <script th:src="@{/webjars/personal-design-system/1.0.0/js/csrf-utils.js}"></script>
+    <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <script th:src="@{/js/foosball.js}"></script>
 </head>
@@ -181,10 +178,11 @@
                     <form id="addPlayerForm"
                           hx-post="/foosball/htmx/players"
                           hx-target="#main-alerts"
-                          hx-swap="outerHTML"
+                          hx-swap="none"
                           hx-indicator="#addPlayerForm"
-                          hx-disabled-elt="find button, #addPlayerModal button"
+                          hx-disable="find button, #addPlayerModal button"
                           hx-encoding="application/x-www-form-urlencoded"
+                          hx-status:422="swap:none"
                           hx-on::after:request="
                               if(ctx.response?.ok) {
                                   if(!ctx.text.includes('alert-danger')) {
@@ -221,10 +219,11 @@
                     <form id="addGameForm"
                           hx-post="/foosball/htmx/games"
                           hx-target="#main-alerts"
-                          hx-swap="innerHTML"
+                          hx-swap="none"
                           hx-indicator="#addGameForm"
-                          hx-disabled-elt="find button, #addGameModal button"
+                          hx-disable="find button, #addGameModal button"
                           hx-encoding="application/x-www-form-urlencoded"
+                          hx-status:422="swap:none"
                           hx-on::after:request="
                               if(ctx.response?.ok) {
                                   if(ctx.text.includes('alert-success')) {

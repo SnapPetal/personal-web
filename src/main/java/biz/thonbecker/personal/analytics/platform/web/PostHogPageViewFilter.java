@@ -72,7 +72,9 @@ class PostHogPageViewFilter extends OncePerRequestFilter {
             return false;
         }
 
-        if (nonNull(request.getHeader("HX-Request"))) {
+        final var htmxPartialRequest = nonNull(request.getHeader("HX-Request"))
+                || "partial".equalsIgnoreCase(request.getHeader("HX-Request-Type"));
+        if (htmxPartialRequest) {
             return false;
         }
 

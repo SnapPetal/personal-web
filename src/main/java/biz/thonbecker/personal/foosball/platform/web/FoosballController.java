@@ -151,13 +151,15 @@ public class FoosballController {
     }
 
     @PostMapping("/htmx/players")
-    public String createPlayerHtmx(@RequestParam String name, Model model, HttpServletResponse response) {
+    public String createPlayerHtmx(
+            @RequestParam String name, Model model, HttpServletResponse response) {
         try {
             if (name != null && !name.trim().isEmpty()) {
                 Player player = new Player(name.trim());
                 foosballService.createPlayer(player);
                 model.addAttribute("success", "Player '" + name.trim() + "' added successfully!");
-                response.setHeader("HX-Trigger", "{\"playerUpdate\":null,\"refresh-players\":null}");
+                model.addAttribute("players", foosballService.getAllPlayers());
+                response.setHeader("HX-Trigger", "playerUpdate");
             } else {
                 model.addAttribute("error", "Please provide a player name.");
             }
@@ -165,7 +167,7 @@ public class FoosballController {
             model.addAttribute("error", "Failed to add player. Please try again.");
         }
 
-        return "foosball-fragments :: alert";
+        return "foosball-fragments :: playerUpdate";
     }
 
     @PostMapping("/htmx/games")
@@ -175,8 +177,7 @@ public class FoosballController {
             @RequestParam String blackTeamPlayer1,
             @RequestParam String blackTeamPlayer2,
             @RequestParam String winner,
-            Model model,
-            HttpServletResponse response) {
+            Model model) {
 
         try {
             // Validation
@@ -220,7 +221,8 @@ public class FoosballController {
             Game createdGame = foosballService.createGame(game);
             if (createdGame != null) {
                 model.addAttribute("success", "Game recorded successfully!");
-                response.setHeader("HX-Trigger", "playerStatsUpdated");
+                model.addAttribute("playerStats", foosballService.getPlayerStats());
+                model.addAttribute("games", foosballService.getRecentGames());
             } else {
                 model.addAttribute("error", "Failed to record game. Server returned an empty response.");
             }
@@ -237,6 +239,6 @@ public class FoosballController {
             model.addAttribute("error", errorMessage);
         }
 
-        return "foosball-fragments :: alert";
+        return "foosball-fragments :: gameUpdate";
     }
 }

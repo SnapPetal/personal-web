@@ -114,7 +114,8 @@
                             <form method="post"
                                   th:attr="hx-post=@{'/booking/confirmation/' + ${booking.confirmationCode()} + '/cancel'}"
                                   hx-confirm="Are you sure you want to cancel this booking?"
-                                  hx-disabled-elt="find button"
+                                  hx-disable="find button"
+                                  hx-status:4xx="swap:none"
                                   hx-indicator="this">
                                 <button type="submit" class="btn btn-danger">
                                     <i class="bi bi-x-circle"></i> Cancel This Booking
