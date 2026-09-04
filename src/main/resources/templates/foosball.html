@@ -26,7 +26,7 @@
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <script th:src="@{/js/foosball.js}"></script>
 </head>
-<body class="foosball-page" hx-ext="loading-states, form-validation, error-handling">
+<body class="foosball-page">
     <!-- Simple Header with Back Button -->
     <div class="foosball-header py-3 border-bottom bg-light">
         <div class="container">
@@ -184,9 +184,9 @@
                           hx-indicator="#addPlayerForm"
                           hx-disabled-elt="find button, #addPlayerModal button"
                           hx-encoding="application/x-www-form-urlencoded"
-                          data-hx-on--after-request="
-                              if(event.detail.successful) {
-                                  if(!event.detail.xhr.responseText.includes('alert-danger')) {
+                          hx-on::after:request="
+                              if(ctx.response?.ok) {
+                                  if(!ctx.text.includes('alert-danger')) {
                                       this.reset();
                                       bootstrap.Modal.getInstance(document.getElementById('addPlayerModal')).hide();
                                   }
@@ -224,9 +224,9 @@
                           hx-indicator="#addGameForm"
                           hx-disabled-elt="find button, #addGameModal button"
                           hx-encoding="application/x-www-form-urlencoded"
-                          data-hx-on--after-request="
-                              if(event.detail.successful) {
-                                  if(event.detail.xhr.responseText.includes('alert-success')) {
+                          hx-on::after:request="
+                              if(ctx.response?.ok) {
+                                  if(ctx.text.includes('alert-success')) {
                                       this.reset();
                                       bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
                                   }

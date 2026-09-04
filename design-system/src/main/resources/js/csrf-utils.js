@@ -21,11 +21,11 @@ function getCsrfHeader() {
   return metaHeader || "X-XSRF-TOKEN";
 }
 
-document.addEventListener("htmx:configRequest", (event) => {
+document.addEventListener("htmx:config:request", (event) => {
   const token = getCsrfToken();
   const header = getCsrfHeader();
   if (token) {
-    event.detail.headers[header] = token;
+    event.detail.ctx.request.headers[header] = token;
   }
 });
 

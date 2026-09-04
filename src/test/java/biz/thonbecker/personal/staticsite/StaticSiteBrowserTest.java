@@ -132,7 +132,7 @@ class StaticSiteBrowserTest {
     private static Page newPage(final int width, final int height) {
         final var page = browser.newPage(new Browser.NewPageOptions().setViewportSize(width, height));
         page.route(
-                "https://unpkg.com/htmx.org@2.0.10",
+                "https://unpkg.com/htmx.org@4.0.0",
                 route -> route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
                         .setStatus(200)
                         .setContentType("application/javascript")

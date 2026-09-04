@@ -25,7 +25,7 @@
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/csrf-utils.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
 </head>
-<body class="foosball-page" hx-ext="loading-states, form-validation, error-handling">
+<body class="foosball-page">
     <div th:replace="~{foosball-fragments :: subpageHeader('Foosball Players', 'bi bi-people', 'Back to Foosball Stats')}"></div>
 
     <!-- Main Content -->
@@ -89,9 +89,9 @@
                           hx-indicator="#addPlayerForm"
                           hx-disabled-elt="find button, #addPlayerModal button"
                           hx-encoding="application/x-www-form-urlencoded"
-                          data-hx-on--after-request="
-                              if(event.detail.successful) {
-                                  if(!event.detail.xhr.responseText.includes('alert-danger')) {
+                          hx-on::after:request="
+                              if(ctx.response?.ok) {
+                                  if(!ctx.text.includes('alert-danger')) {
                                       this.reset();
                                       bootstrap.Modal.getInstance(document.getElementById('addPlayerModal')).hide();
                                   }

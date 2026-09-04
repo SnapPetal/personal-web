@@ -12,9 +12,12 @@ document.addEventListener("alpine:init", () => {
       }
 
       // Listen for HTMX response from joke button
-      document.addEventListener("htmx:afterRequest", (evt) => {
-        if (evt.detail.successful && evt.detail.elt === this.$refs.jokeBtn) {
-          this.handleResponse(evt.detail.xhr.response);
+      document.addEventListener("htmx:after:request", (evt) => {
+        if (
+          evt.detail.ctx.response?.ok &&
+          evt.detail.ctx.source === this.$refs.jokeBtn
+        ) {
+          this.handleResponse(evt.detail.ctx.text);
         }
       });
 

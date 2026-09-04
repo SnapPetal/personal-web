@@ -1,22 +1,18 @@
-htmx.defineExtension("loading-states", {
-  onEvent(name, event) {
-    if (name === "htmx:beforeRequest") {
-      const target = event.detail.elt;
-      if (target.tagName === "FORM" || target.tagName === "BUTTON") {
-        target.classList.add("processing");
-      }
+htmx.registerExtension("loading-states", {
+  htmx_before_request(elt) {
+    if (elt.tagName === "FORM" || elt.tagName === "BUTTON") {
+      elt.classList.add("processing");
     }
-    if (name === "htmx:afterRequest") {
-      const target = event.detail.elt;
-      if (target.tagName === "FORM" || target.tagName === "BUTTON") {
-        target.classList.remove("processing");
-        if (target.tagName === "FORM" && event.detail.successful) {
-          const modal = target.closest(".modal");
-          if (modal) {
-            const modalInstance = bootstrap.Modal.getInstance(modal);
-            if (modalInstance) {
-              modalInstance.hide();
-            }
+  },
+  htmx_after_request(elt, detail) {
+    if (elt.tagName === "FORM" || elt.tagName === "BUTTON") {
+      elt.classList.remove("processing");
+      if (elt.tagName === "FORM" && detail.ctx.response?.ok) {
+        const modal = elt.closest(".modal");
+        if (modal) {
+          const modalInstance = bootstrap.Modal.getInstance(modal);
+          if (modalInstance) {
+            modalInstance.hide();
           }
         }
       }
@@ -24,45 +20,46 @@ htmx.defineExtension("loading-states", {
   },
 });
 
-htmx.defineExtension("form-validation", {
-  onEvent(name, event) {
-    if (name === "htmx:beforeRequest" && event.detail.elt.tagName === "FORM") {
-      const form = event.detail.elt;
-      if (!form.checkValidity()) {
-        event.preventDefault();
-        Array.from(form.elements).forEach((input) => {
-          if (!input.validity.valid) {
-            input.classList.add("is-invalid");
-          }
-        });
-        return false;
-      }
+htmx.registerExtension("form-validation", {
+  htmx_before_request(elt) {
+    if (elt.tagName === "FORM" && !elt.checkValidity()) {
+      Array.from(elt.elements).forEach((input) => {
+        if (!input.validity.valid) {
+          input.classList.add("is-invalid");
+        }
+      });
+      return false;
     }
-    if (name === "htmx:afterRequest" && event.detail.elt.tagName === "FORM") {
-      const form = event.detail.elt;
-      Array.from(form.elements).forEach((input) => {
+  },
+  htmx_after_request(elt) {
+    if (elt.tagName === "FORM") {
+      Array.from(elt.elements).forEach((input) => {
         input.classList.remove("is-invalid");
       });
     }
   },
 });
 
-htmx.defineExtension("error-handling", {
-  onEvent(name, event) {
-    if (name === "htmx:sendError" || name === "htmx:responseError") {
-      const target = event.detail.elt;
-      target.classList.add("htmx-error");
-      setTimeout(() => {
-        target.classList.remove("htmx-error");
-      }, 500);
-    }
+function markHtmxError(elt) {
+  elt.classList.add("htmx-error");
+  setTimeout(() => {
+    elt.classList.remove("htmx-error");
+  }, 500);
+}
+
+htmx.registerExtension("error-handling", {
+  htmx_error(elt) {
+    markHtmxError(elt);
+  },
+  htmx_response_error(elt) {
+    markHtmxError(elt);
   },
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.body.addEventListener("htmx:responseError", (event) => {
-    const status = event.detail.xhr?.status ?? "unknown";
-    const path = event.detail.pathInfo?.requestPath ?? "unknown";
+  document.body.addEventListener("htmx:response:error", (event) => {
+    const status = event.detail.ctx?.response?.status ?? "unknown";
+    const path = event.detail.ctx?.request?.action ?? "unknown";
     console.error(`HTMX request failed with status ${status}`, path);
     if (window.posthog) {
       window.posthog.capture("htmx_request_error", {
@@ -73,8 +70,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  document.body.addEventListener("htmx:sendError", (event) => {
-    console.error("HTMX request could not be sent", event.detail.error);
+  document.body.addEventListener("htmx:error", (event) => {
+    console.error("HTMX request could not be sent", event.detail.ctx?.error);
     if (window.posthog) {
       window.posthog.capture("htmx_request_error", {
         error_type: "send_error",
