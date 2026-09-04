@@ -62,13 +62,23 @@ htmx.defineExtension("error-handling", {
 document.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("htmx:responseError", (event) => {
     const status = event.detail.xhr?.status ?? "unknown";
-    console.error(
-      `HTMX request failed with status ${status}`,
-      event.detail.pathInfo?.requestPath
-    );
+    const path = event.detail.pathInfo?.requestPath ?? "unknown";
+    console.error(`HTMX request failed with status ${status}`, path);
+    if (window.posthog) {
+      window.posthog.capture("htmx_request_error", {
+        error_type: "response_error",
+        status_code: status,
+        request_path: path,
+      });
+    }
   });
 
   document.body.addEventListener("htmx:sendError", (event) => {
     console.error("HTMX request could not be sent", event.detail.error);
+    if (window.posthog) {
+      window.posthog.capture("htmx_request_error", {
+        error_type: "send_error",
+      });
+    }
   });
 });

@@ -32,6 +32,11 @@ document.addEventListener("alpine:init", () => {
         this.isDark ? "dark" : "light"
       );
       saveThemePreference(this.isDark ? "enabled" : "disabled");
+      if (window.posthog) {
+        window.posthog.capture("theme_toggled", {
+          theme: this.isDark ? "dark" : "light",
+        });
+      }
     },
 
     get iconClass() {

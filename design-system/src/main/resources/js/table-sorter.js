@@ -36,6 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       header.classList.toggle("sort-asc", ascending);
       header.classList.toggle("sort-desc", !ascending);
+      if (window.posthog) {
+        window.posthog.capture("table_sorted", {
+          column: header.innerText || header.textContent,
+          direction: ascending ? "asc" : "desc",
+        });
+      }
     });
   });
 });
