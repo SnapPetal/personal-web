@@ -1,6 +1,7 @@
 (() => {
   const projectToken = window.PERSONAL_POSTHOG_PROJECT_TOKEN;
   if (!projectToken) return;
+  const apiHost = window.PERSONAL_POSTHOG_API_HOST || "https://e.thonbecker.biz";
 
   const posthog = (window.posthog = window.posthog || []);
   posthog._i = posthog._i || [];
@@ -10,12 +11,13 @@
   const script = document.createElement("script");
   script.async = true;
   script.crossOrigin = "anonymous";
-  script.src = "https://us-assets.i.posthog.com/static/array.js";
+  script.src = `${apiHost}/static/array.js`;
   script.onload = () => {
     if (!window.posthog || typeof window.posthog.init !== "function") return;
 
     window.posthog.init(projectToken, {
-      api_host: "https://us.i.posthog.com",
+      api_host: apiHost,
+      ui_host: "https://us.posthog.com",
       defaults: "2026-05-30",
       capture_pageview: true,
       capture_pageleave: true,

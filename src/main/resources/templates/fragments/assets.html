@@ -5,7 +5,8 @@
         <script th:if="${@postHogProperties.browserConfigured}" th:inline="javascript">
             window.personalPostHogConfig = {
                 projectToken: /*[[${@postHogProperties.projectToken}]]*/ '',
-                apiHost: /*[[${@postHogProperties.apiHost}]]*/ 'https://us.i.posthog.com'
+                apiHost: /*[[${@postHogProperties.apiHost}]]*/ 'https://e.thonbecker.biz',
+                uiHost: 'https://us.posthog.com'
             };
         </script>
         <script th:if="${@postHogProperties.browserConfigured}" defer th:src="@{/js/posthog.js}"></script>

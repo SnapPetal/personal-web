@@ -20,9 +20,7 @@
         (p = t.createElement("script")).type = "text/javascript";
         p.crossOrigin = "anonymous";
         p.async = !0;
-        p.src =
-          s.api_host.replace(".i.posthog.com", "-assets.i.posthog.com") +
-          "/static/array.js";
+        p.src = `${s.api_host}/static/array.js`;
         (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r);
         const u = e;
         for (
@@ -53,6 +51,7 @@
 
   posthog.init(config.projectToken, {
     api_host: config.apiHost,
+    ui_host: config.uiHost,
     defaults: "2026-05-30",
     capture_pageview: true,
     capture_pageleave: true,

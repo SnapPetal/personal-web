@@ -19,6 +19,6 @@ public class PostHogTemplateProperties {
     }
 
     public String getApiHost() {
-        return properties.apiHost();
+        return properties.browserApiHost();
     }
 }
