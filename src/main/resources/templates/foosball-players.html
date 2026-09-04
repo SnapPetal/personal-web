@@ -21,11 +21,12 @@
 
     <!-- JS dependencies -->
     <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+    <script th:src="@{/webjars/htmx.org/dist/ext/hx-browser-indicator.min.js}"></script>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/htmx-extensions.js}"></script>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/csrf-utils.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
 </head>
-<body class="foosball-page">
+<body class="foosball-page" hx-browser-indicator:inherited="true">
     <div th:replace="~{foosball-fragments :: subpageHeader('Foosball Players', 'bi bi-people', 'Back to Foosball Stats')}"></div>
 
     <!-- Main Content -->

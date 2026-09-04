@@ -21,11 +21,12 @@
 
     <!-- JS dependencies -->
     <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+    <script th:src="@{/webjars/htmx.org/dist/ext/hx-browser-indicator.min.js}"></script>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/htmx-extensions.js}"></script>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/csrf-utils.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
 </head>
-<body class="foosball-page">
+<body class="foosball-page" hx-browser-indicator:inherited="true">
     <!-- Header -->
     <div class="foosball-header py-3 border-bottom bg-light">
         <div class="container">
@@ -62,7 +63,7 @@
                          hx-get="/foosball/tournaments/fragments/list"
                          hx-trigger="load"
                          hx-indicator="#tournaments-list"
-                         hx-swap="innerHTML">
+                         hx-swap="innerMorph">
                         <div class="text-center py-5">
                             <div class="spinner-border text-primary" role="status">
                                 <span class="visually-hidden">Loading...</span>

@@ -21,12 +21,13 @@
     
     <!-- JS dependencies -->
     <script th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+    <script th:src="@{/webjars/htmx.org/dist/ext/hx-browser-indicator.min.js}"></script>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/htmx-extensions.js}"></script>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/csrf-utils.js}"></script>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <script th:src="@{/js/foosball.js}"></script>
 </head>
-<body class="foosball-page">
+<body class="foosball-page" hx-browser-indicator:inherited="true">
     <!-- Simple Header with Back Button -->
     <div class="foosball-header py-3 border-bottom bg-light">
         <div class="container">
@@ -155,7 +156,7 @@
                                     hx-get="/foosball/fragments/player-stats"
                                     hx-trigger="playerUpdate, playerStatsUpdated from:body"
                                     hx-target="this"
-                                    hx-swap="innerHTML transition:true"
+                                    hx-swap="innerMorph transition:true"
                                     hx-indicator="#stats-loading">
                                     <!-- Initial content will be loaded via HTMX -->
                                     <div th:replace="~{foosball-fragments :: playerStatsList}"></div>
