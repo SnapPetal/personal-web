@@ -54,7 +54,11 @@
                                 </button>
                             </div>
                         </form>
-                        <div class="alert alert-secondary mt-3 mb-0" role="status" x-show="reply || error" x-cloak>
+                        <div class="alert alert-info mt-3 mb-0 d-flex align-items-center gap-2" role="status" x-show="loading" x-cloak>
+                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span>Checking available meeting times…</span>
+                        </div>
+                        <div class="alert alert-secondary mt-3 mb-0" role="status" x-show="!loading && (reply || error)" x-cloak>
                             <span x-show="reply" x-text="reply"></span>
                             <span x-show="error" x-text="error"></span>
                         </div>
@@ -164,6 +168,7 @@
 
 <script>
     function publicChat() {
+        const REQUEST_TIMEOUT_MS = 20000;
         return {
             message: '',
             reply: '',
@@ -176,6 +181,10 @@
                 this.loading = true;
                 this.reply = '';
                 this.error = '';
+                const startedAt = Date.now();
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+                let outcome = 'success';
                 try {
                     const response = await fetch('https://chat.thonbecker.biz/chat', {
                         method: 'POST',
@@ -184,16 +193,32 @@
                             message,
                             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Chicago',
                         }),
+                        signal: controller.signal,
                     });
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error || 'The chat is temporarily unavailable.');
                     this.reply = data.message;
                     this.message = '';
                 } catch (error) {
-                    this.error = error.message || 'The chat is temporarily unavailable.';
+                    if (error.name === 'AbortError') {
+                        outcome = 'timeout';
+                        this.error = 'This is taking longer than expected. Please pick a meeting time from the cards below.';
+                    } else {
+                        outcome = 'error';
+                        this.error = error.message || 'The chat is temporarily unavailable.';
+                    }
                 } finally {
+                    clearTimeout(timeout);
                     this.loading = false;
+                    this.reportOutcome(outcome, Date.now() - startedAt);
                 }
+            },
+
+            reportOutcome(outcome, durationMs) {
+                window.personalPostHog?.capture('booking_chat_message', {
+                    outcome,
+                    duration_ms: durationMs,
+                });
             },
         };
     }
