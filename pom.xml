@@ -400,6 +400,8 @@
             <excludes>
               <exclude>**/target/**/*.md</exclude>
               <exclude>**/node_modules/**/*.md</exclude>
+              <exclude>.claude/**/*.md</exclude>
+              <exclude>posthog-self-driving-report.md</exclude>
             </excludes>
             <flexmark/>
           </markdown>
