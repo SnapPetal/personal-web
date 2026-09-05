@@ -26,6 +26,7 @@ class HtmxTemplateTest {
         assertTrue(allTemplates.contains("hx-sync=\"this:abort\""));
         assertTrue(allTemplates.contains("hx-get=\"/booking/types/0/slots\""));
         assertFalse(allTemplates.contains("/booking/slots"));
+        assertTrue(allTemplates.contains("/booking/types/${this.selectedBookingTypeId}/slots"));
         assertTrue(
                 allTemplates.contains("<th:block th:if=\"${error != null and (slots == null or slots.isEmpty())}\">"));
         assertFalse(allTemplates.contains("hx-boost:inherited=\"true\""));

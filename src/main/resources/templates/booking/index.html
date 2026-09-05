@@ -219,6 +219,10 @@
             selectBookingType(button) {
                 this.selectedBookingTypeId = button.getAttribute('data-type-id');
                 this.selectedBookingTypeName = button.getAttribute('data-type-name');
+                this.$refs.bookingDate.setAttribute(
+                    'hx-get',
+                    `/booking/types/${this.selectedBookingTypeId}/slots`,
+                );
                 this.showBookingForm = true;
                 this.$nextTick(() => {
                     this.$refs.bookingForm.scrollIntoView({ behavior: 'smooth' });
