@@ -24,6 +24,7 @@ class HtmxTemplateTest {
         assertTrue(allTemplates.contains("<hx-partial"));
         assertTrue(allTemplates.contains("hx-status:422"));
         assertTrue(allTemplates.contains("hx-sync=\"this:abort\""));
+        assertFalse(allTemplates.contains("hx-boost:inherited=\"true\""));
     }
 
     @Test
