@@ -97,18 +97,15 @@
                             <!-- Date Selection -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Select Date</label>
-                                <input type="hidden" id="bookingTypeId" name="bookingTypeId"
-                                       x-model="selectedBookingTypeId">
                                 <input type="date" class="form-control" x-ref="bookingDate"
                                        id="bookingDate" name="date"
                                        x-model="bookingDate"
                                        th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
                                        @change="loadAvailableSlots()"
-                                       hx-get="/booking/slots"
+                                       hx-get="/booking/types/0/slots"
                                        hx-trigger="change"
                                        hx-target="#timeSlots"
                                        hx-swap="innerHTML"
-                                       hx-include="#bookingTypeId"
                                        hx-sync="this:abort"
                                        hx-indicator="#timeSlots"
                                        hx-status:4xx="swap:innerHTML target:#timeSlots"
@@ -222,6 +219,10 @@
             selectBookingType(button) {
                 this.selectedBookingTypeId = button.getAttribute('data-type-id');
                 this.selectedBookingTypeName = button.getAttribute('data-type-name');
+                this.$refs.bookingDate.setAttribute(
+                    'hx-get',
+                    `/booking/types/${this.selectedBookingTypeId}/slots`,
+                );
                 this.showBookingForm = true;
                 this.$nextTick(() => {
                     this.$refs.bookingForm.scrollIntoView({ behavior: 'smooth' });
