@@ -5,6 +5,7 @@ import biz.thonbecker.personal.booking.api.BookingAvailabilityViewedEvent;
 import biz.thonbecker.personal.booking.api.BookingStartedEvent;
 import biz.thonbecker.personal.booking.api.BookingSubmittedEvent;
 import biz.thonbecker.personal.booking.api.BookingType;
+import biz.thonbecker.personal.booking.domain.exceptions.BookingTypeNotFoundException;
 import biz.thonbecker.personal.booking.platform.BookingService;
 import biz.thonbecker.personal.booking.platform.web.model.CreateBookingRequest;
 import biz.thonbecker.personal.booking.platform.web.model.PublicAvailabilityResponse;
@@ -68,9 +69,9 @@ public class BookingController {
      * @param model Spring MVC model
      * @return Thymeleaf fragment with time slots
      */
-    @GetMapping("/types/{bookingTypeId}/slots")
+    @GetMapping("/slots")
     public String getAvailableSlots(
-            @PathVariable final Long bookingTypeId,
+            @RequestParam final Long bookingTypeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date,
             final Model model,
             final HttpServletResponse response) {
@@ -90,7 +91,7 @@ public class BookingController {
             model.addAttribute("slots", slots);
             model.addAttribute("bookingTypeId", bookingTypeId);
             model.addAttribute("date", date);
-            model.addAttribute("retryUrl", "/booking/types/" + bookingTypeId + "/slots?date=" + date);
+            model.addAttribute("retryUrl", "/booking/slots?bookingTypeId=" + bookingTypeId + "&date=" + date);
             try {
                 eventPublisher.publishEvent(
                         new BookingAvailabilityViewedEvent("booking-anonymous", bookingTypeId, slots.size()));
@@ -98,10 +99,15 @@ public class BookingController {
                 log.warn("Failed to record booking availability analytics: {}", e.getMessage(), e);
             }
             log.info("Found {} available slots", slots.size());
+        } catch (final BookingTypeNotFoundException e) {
+            // Client error, not a transient failure: omit retryUrl so no "Try again" button repeats it.
+            log.warn("Rejected availability request for unknown booking type {}", bookingTypeId);
+            model.addAttribute("error", "That meeting type is no longer available. Please choose another.");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         } catch (final Exception e) {
             log.error("Failed to fetch available slots: {}", e.getMessage(), e);
             model.addAttribute("error", "Failed to load available time slots. Please try again.");
-            model.addAttribute("retryUrl", "/booking/types/" + bookingTypeId + "/slots?date=" + date);
+            model.addAttribute("retryUrl", "/booking/slots?bookingTypeId=" + bookingTypeId + "&date=" + date);
             response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         }
 
