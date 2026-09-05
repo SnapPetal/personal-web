@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="error(message, retryUrl, target)"
+     class="alert alert-danger d-flex align-items-center justify-content-between gap-3"
+     role="alert">
+    <span>
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span th:text="${message}">Something went wrong. Please try again.</span>
+    </span>
+    <button th:if="${retryUrl != null}"
+            type="button"
+            class="btn btn-sm btn-outline-danger"
+            th:attr="hx-get=${retryUrl},hx-target=${target}"
+            hx-swap="innerHTML">
+        Try again
+    </button>
+</div>
+</body>
+</html>

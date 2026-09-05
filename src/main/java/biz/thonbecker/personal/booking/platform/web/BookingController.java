@@ -72,7 +72,37 @@ public class BookingController {
     public String getAvailableSlots(
             @PathVariable final Long bookingTypeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date,
-            final Model model) {
+            final Model model,
+            final HttpServletResponse response) {
+
+        return renderAvailableSlots(bookingTypeId, date, model, response);
+    }
+
+    /**
+     * Get available slots using query parameters so the date picker can issue a declarative
+     * HTMX request.
+     *
+     * @param bookingTypeId Booking type identifier
+     * @param date Date to check availability
+     * @param model Spring MVC model
+     * @param response HTTP response
+     * @return Thymeleaf fragment with time slots
+     */
+    @GetMapping("/slots")
+    public String getAvailableSlotsQuery(
+            @RequestParam final Long bookingTypeId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date,
+            final Model model,
+            final HttpServletResponse response) {
+
+        return renderAvailableSlots(bookingTypeId, date, model, response);
+    }
+
+    private String renderAvailableSlots(
+            final Long bookingTypeId,
+            final LocalDate date,
+            final Model model,
+            final HttpServletResponse response) {
 
         try {
             log.debug("Fetching available slots for type {} on {}", bookingTypeId, date);
@@ -82,10 +112,13 @@ public class BookingController {
             model.addAttribute("slots", slots);
             model.addAttribute("bookingTypeId", bookingTypeId);
             model.addAttribute("date", date);
+            model.addAttribute("retryUrl", "/booking/slots?bookingTypeId=" + bookingTypeId + "&date=" + date);
             log.info("Found {} available slots", slots.size());
         } catch (final Exception e) {
             log.error("Failed to fetch available slots: {}", e.getMessage(), e);
             model.addAttribute("error", "Failed to load available time slots. Please try again.");
+            model.addAttribute("retryUrl", "/booking/slots?bookingTypeId=" + bookingTypeId + "&date=" + date);
+            response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         }
 
         return "booking/fragments :: time-slots";

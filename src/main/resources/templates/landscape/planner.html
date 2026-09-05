@@ -105,7 +105,9 @@
                     <div class="card-body">
                         <form id="plantSearchForm" hx-get="/landscape/plants/search"
                               hx-target="#searchResults" hx-swap="innerHTML" hx-trigger="submit"
-                              hx-status:4xx="swap:none" hx-status:5xx="swap:none">
+                              hx-sync="this:abort" hx-indicator="#searchResults"
+                              hx-status:4xx="swap:innerHTML target:#searchResults"
+                              hx-status:5xx="swap:innerHTML target:#searchResults">
                             <div class="row g-2 mb-3">
                                 <div class="col-12">
                                     <input type="text" class="form-control" name="query"

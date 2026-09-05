@@ -14,13 +14,13 @@
                     <a class="nav-link" href="https://thonbecker.biz">Home</a>
                 </li>
                 <li class="nav-item" th:if="${page == 'admin'}">
-                    <a class="nav-link" th:href="@{/booking}">Public Booking Page</a>
+                    <a class="nav-link" th:href="@{/booking}" hx-preload="mouseenter">Public Booking Page</a>
                 </li>
                 <li class="nav-item" th:if="${page == 'admin'}">
                     <span class="nav-link">Administrator</span>
                 </li>
                 <li class="nav-item" th:if="${page == 'confirmation'}">
-                    <a class="nav-link" th:href="@{/booking}">Book Another Meeting</a>
+                    <a class="nav-link" th:href="@{/booking}" hx-preload="mouseenter">Book Another Meeting</a>
                 </li>
             </ul>
         </div>
@@ -39,14 +39,12 @@
             Time Slot
         </button>
     </div>
-    <div th:if="${slots == null or slots.isEmpty()}" class="alert alert-info">
+    <div th:if="${error == null and (slots == null or slots.isEmpty())}" class="alert alert-info">
         <i class="bi bi-info-circle"></i>
         No available time slots for this date. Please select another date.
     </div>
-    <div th:if="${error != null}" class="alert alert-danger">
-        <i class="bi bi-exclamation-triangle"></i>
-        <span th:text="${error}">Error message</span>
-    </div>
+    <div th:if="${error != null}"
+         th:replace="~{fragments/htmx :: error(${error}, ${retryUrl}, '#timeSlots')}"></div>
 </div>
 </body>
 </html>

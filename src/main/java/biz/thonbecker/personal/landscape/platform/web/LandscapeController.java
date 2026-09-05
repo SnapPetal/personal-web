@@ -157,10 +157,13 @@ public class LandscapeController {
             @RequestParam(value = "zone", required = false) final HardinessZone zone,
             @RequestParam(value = "lightRequirement", required = false) final LightRequirement lightRequirement,
             @RequestParam(value = "waterRequirement", required = false) final WaterRequirement waterRequirement,
-            final Model model) {
+            final Model model,
+            final HttpServletResponse response) {
 
         if (query == null || query.isBlank() || zone == null) {
             model.addAttribute("plants", List.of());
+            model.addAttribute("error", "Enter a plant name and select a hardiness zone.");
+            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
             return "landscape/fragments :: search-results";
         }
 
@@ -173,6 +176,7 @@ public class LandscapeController {
             log.error("Plant search failed: {}", e.getMessage(), e);
             model.addAttribute("plants", List.of());
             model.addAttribute("error", "Failed to search plants. Please try again.");
+            response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         }
 
         return "landscape/fragments :: search-results";

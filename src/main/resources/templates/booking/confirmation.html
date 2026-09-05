@@ -16,7 +16,8 @@
     <link th:href="@{/css/main.css}" rel="stylesheet">
 
 </head>
-<body class="booking-page" hx-browser-indicator:inherited="true">
+<body class="booking-page" hx-browser-indicator:inherited="true"
+      hx-boost:inherited="true" hx-history-elt>
 <!-- Navigation -->
 <nav th:replace="~{booking/fragments :: navigation('confirmation')}"></nav>
 
