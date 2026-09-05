@@ -87,12 +87,16 @@ public class BookingController {
         try {
             log.debug("Fetching available slots for type {} on {}", bookingTypeId, date);
             final var slots = bookingService.getAvailableSlots(bookingTypeId, date);
-            eventPublisher.publishEvent(
-                    new BookingAvailabilityViewedEvent("booking-anonymous", bookingTypeId, slots.size()));
             model.addAttribute("slots", slots);
             model.addAttribute("bookingTypeId", bookingTypeId);
             model.addAttribute("date", date);
             model.addAttribute("retryUrl", "/booking/types/" + bookingTypeId + "/slots?date=" + date);
+            try {
+                eventPublisher.publishEvent(
+                        new BookingAvailabilityViewedEvent("booking-anonymous", bookingTypeId, slots.size()));
+            } catch (final RuntimeException e) {
+                log.warn("Failed to record booking availability analytics: {}", e.getMessage(), e);
+            }
             log.info("Found {} available slots", slots.size());
         } catch (final Exception e) {
             log.error("Failed to fetch available slots: {}", e.getMessage(), e);
