@@ -21,6 +21,11 @@ public class MagicLinkAuthenticationFilter extends OncePerRequestFilter {
     private final UserSessionResolver sessionResolver;
 
     @Override
+    protected boolean shouldNotFilter(final HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/booking/admin/");
+    }
+
+    @Override
     protected void doFilterInternal(
             final HttpServletRequest request, final HttpServletResponse response, final FilterChain filterChain)
             throws ServletException, IOException {
