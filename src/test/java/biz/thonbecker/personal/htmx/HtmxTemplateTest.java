@@ -38,7 +38,8 @@ class HtmxTemplateTest {
 
     private static Stream<String> readTemplates() throws IOException {
         try (var paths = Files.walk(TEMPLATE_ROOT)) {
-            return paths.filter(path -> path.toString().endsWith(".html"))
+            return paths
+                    .filter(path -> path.toString().endsWith(".html"))
                     .map(path -> {
                         try {
                             return Files.readString(path);

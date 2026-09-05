@@ -151,8 +151,7 @@ public class FoosballController {
     }
 
     @PostMapping("/htmx/players")
-    public String createPlayerHtmx(
-            @RequestParam String name, Model model, HttpServletResponse response) {
+    public String createPlayerHtmx(@RequestParam String name, Model model, HttpServletResponse response) {
         try {
             if (name != null && !name.trim().isEmpty()) {
                 Player player = new Player(name.trim());

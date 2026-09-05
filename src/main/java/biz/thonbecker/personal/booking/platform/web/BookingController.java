@@ -79,10 +79,7 @@ public class BookingController {
     }
 
     private String renderAvailableSlots(
-            final Long bookingTypeId,
-            final LocalDate date,
-            final Model model,
-            final HttpServletResponse response) {
+            final Long bookingTypeId, final LocalDate date, final Model model, final HttpServletResponse response) {
 
         try {
             log.debug("Fetching available slots for type {} on {}", bookingTypeId, date);
