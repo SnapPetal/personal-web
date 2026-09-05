@@ -24,7 +24,10 @@ class HtmxTemplateTest {
         assertTrue(allTemplates.contains("<hx-partial"));
         assertTrue(allTemplates.contains("hx-status:422"));
         assertTrue(allTemplates.contains("hx-sync=\"this:abort\""));
-        assertTrue(allTemplates.contains("hx-get=\"/booking/slots\""));
+        assertTrue(allTemplates.contains("hx-get=\"/booking/types/0/slots\""));
+        assertFalse(allTemplates.contains("/booking/slots"));
+        assertTrue(
+                allTemplates.contains("<th:block th:if=\"${error != null and (slots == null or slots.isEmpty())}\">"));
         assertFalse(allTemplates.contains("hx-boost:inherited=\"true\""));
     }
 

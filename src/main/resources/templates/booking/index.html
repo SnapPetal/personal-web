@@ -97,15 +97,12 @@
                             <!-- Date Selection -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Select Date</label>
-                                <input type="hidden" id="bookingTypeId" name="bookingTypeId"
-                                       x-model="selectedBookingTypeId">
                                 <input type="date" class="form-control" x-ref="bookingDate"
                                        id="bookingDate" name="date"
                                        x-model="bookingDate"
                                        th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
                                        @change="loadAvailableSlots()"
-                                       hx-get="/booking/slots"
-                                       hx-include="#bookingTypeId"
+                                       hx-get="/booking/types/0/slots"
                                        hx-trigger="change"
                                        hx-target="#timeSlots"
                                        hx-swap="innerHTML"

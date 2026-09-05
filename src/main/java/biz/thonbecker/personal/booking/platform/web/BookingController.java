@@ -69,9 +69,9 @@ public class BookingController {
      * @param model Spring MVC model
      * @return Thymeleaf fragment with time slots
      */
-    @GetMapping("/slots")
+    @GetMapping("/types/{bookingTypeId}/slots")
     public String getAvailableSlots(
-            @RequestParam final Long bookingTypeId,
+            @PathVariable final Long bookingTypeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date,
             final Model model,
             final HttpServletResponse response) {
@@ -88,7 +88,7 @@ public class BookingController {
             model.addAttribute("slots", slots);
             model.addAttribute("bookingTypeId", bookingTypeId);
             model.addAttribute("date", date);
-            model.addAttribute("retryUrl", "/booking/slots?bookingTypeId=" + bookingTypeId + "&date=" + date);
+            model.addAttribute("retryUrl", "/booking/types/" + bookingTypeId + "/slots?date=" + date);
             try {
                 eventPublisher.publishEvent(
                         new BookingAvailabilityViewedEvent("booking-anonymous", bookingTypeId, slots.size()));
@@ -104,7 +104,7 @@ public class BookingController {
         } catch (final Exception e) {
             log.error("Failed to fetch available slots: {}", e.getMessage(), e);
             model.addAttribute("error", "Failed to load available time slots. Please try again.");
-            model.addAttribute("retryUrl", "/booking/slots?bookingTypeId=" + bookingTypeId + "&date=" + date);
+            model.addAttribute("retryUrl", "/booking/types/" + bookingTypeId + "/slots?date=" + date);
             response.setStatus(HttpServletResponse.SC_BAD_GATEWAY);
         }
 
