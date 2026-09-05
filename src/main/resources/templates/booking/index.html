@@ -102,8 +102,6 @@
                                        x-model="bookingDate"
                                        th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
                                        @change="loadAvailableSlots()"
-                                       hx-get="/booking/types/0/slots"
-                                       hx-trigger="change"
                                        hx-target="#timeSlots"
                                        hx-swap="innerHTML"
                                        hx-sync="this:abort"
@@ -219,10 +217,6 @@
             selectBookingType(button) {
                 this.selectedBookingTypeId = button.getAttribute('data-type-id');
                 this.selectedBookingTypeName = button.getAttribute('data-type-name');
-                this.$refs.bookingDate.setAttribute(
-                    'hx-get',
-                    `/booking/types/${this.selectedBookingTypeId}/slots`,
-                );
                 this.showBookingForm = true;
                 this.$nextTick(() => {
                     this.$refs.bookingForm.scrollIntoView({ behavior: 'smooth' });
@@ -233,6 +227,9 @@
                 if (!this.bookingDate || !this.selectedBookingTypeId) return;
 
                 this.showTimeSlots = true;
+                htmx.ajax('GET', `/booking/types/${this.selectedBookingTypeId}/slots`, {
+                    source: this.$refs.bookingDate,
+                });
             },
 
             selectTimeSlot(button) {
