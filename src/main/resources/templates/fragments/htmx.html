@@ -6,7 +6,9 @@
      role="alert">
     <span>
         <i class="bi bi-exclamation-triangle me-2"></i>
-        <span th:text="${message}">Something went wrong. Please try again.</span>
+        <span th:text="${message ?: 'Something went wrong. Please try again.'}">
+            Something went wrong. Please try again.
+        </span>
     </span>
     <button th:if="${retryUrl != null}"
             type="button"

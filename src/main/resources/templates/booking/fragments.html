@@ -43,7 +43,7 @@
         <i class="bi bi-info-circle"></i>
         No available time slots for this date. Please select another date.
     </div>
-    <div th:if="${error != null}"
+    <div th:if="${error != null and (slots == null or slots.isEmpty())}"
          th:replace="~{fragments/htmx :: error(${error}, ${retryUrl}, '#timeSlots')}"></div>
 </div>
 </body>
