@@ -158,7 +158,7 @@ public class FoosballController {
                 foosballService.createPlayer(player);
                 model.addAttribute("success", "Player '" + name.trim() + "' added successfully!");
                 model.addAttribute("players", foosballService.getAllPlayers());
-                response.setHeader("HX-Trigger", "playerUpdate");
+                response.setHeader("HX-Trigger", "playerUpdate,refresh-players");
             } else {
                 model.addAttribute("error", "Please provide a player name.");
             }

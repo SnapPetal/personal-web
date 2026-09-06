@@ -7,7 +7,7 @@ htmx.registerExtension("loading-states", {
   htmx_after_request(elt, detail) {
     if (elt.tagName === "FORM" || elt.tagName === "BUTTON") {
       elt.classList.remove("processing");
-      if (elt.tagName === "FORM" && detail.ctx.response?.ok) {
+      if (elt.tagName === "FORM" && detail.ctx.response?.status < 400) {
         const modal = elt.closest(".modal");
         if (modal) {
           const modalInstance = bootstrap.Modal.getInstance(modal);
