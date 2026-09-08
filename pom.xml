@@ -18,7 +18,7 @@
     <bootstrap.version>5.3.8</bootstrap.version>
     <caffeine.version>3.2.4</caffeine.version>
     <djl.pytorch.version>2.7.1</djl.pytorch.version>
-    <djl.version>0.36.0</djl.version>
+    <djl.version>0.37.0</djl.version>
     <htmx.org.version>4.0.0</htmx.org.version>
     <java.version>25</java.version>
     <jspecify.version>1.0.1</jspecify.version>
