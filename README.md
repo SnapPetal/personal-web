@@ -109,6 +109,8 @@ PERSONAL_CF_ACCESS_ADMIN_EMAIL
 | **Real-time** | STOMP over SockJS (trivia, skatetricks); raw WebSocket (Godot tank game)           |
 | **AWS**       | S3, S3 Vectors, SES, CloudFront, Polly, Lightsail                                  |
 
+Frontend interaction ownership and migration guidance: [docs/frontend-ui-architecture.md](docs/frontend-ui-architecture.md)
+
 ### Modules
 
 ```
