@@ -156,11 +156,10 @@ class PostHogEventListener {
     @Async
     void onUserRegistered(final UserRegisteredEvent event) {
         postHogAnalyticsService.capture(
-                event.email(),
+                event.userId(),
                 "user_registered",
                 Map.of(
                         "user_id", event.userId(),
-                        "username", event.username(),
                         "registered_at", event.registeredAt().toString()));
     }
 
@@ -168,7 +167,7 @@ class PostHogEventListener {
     @Async
     void onUserLogin(final UserLoginEvent event) {
         postHogAnalyticsService.capture(
-                event.username(),
+                event.userId(),
                 "user_login",
                 Map.of("user_id", event.userId(), "login_at", event.loginAt().toString()));
     }
@@ -179,41 +178,34 @@ class PostHogEventListener {
         postHogAnalyticsService.capture(
                 event.userId(),
                 "user_profile_updated",
-                Map.of(
-                        "display_name",
-                        event.displayName(),
-                        "updated_at",
-                        event.updatedAt().toString()));
+                Map.of("updated_at", event.updatedAt().toString()));
     }
 
     @EventListener
     @Async
     void onBookingCreated(final BookingCreatedEvent event) {
         postHogAnalyticsService.capture(
-                event.attendeeEmail(),
+                "booking-" + event.bookingId(),
                 PostHogEventNames.BOOKING_CONFIRMED,
                 Map.of(
-                        "booking_id", event.bookingId(),
-                        "confirmation_code", event.confirmationCode(),
-                        "booking_type", event.bookingTypeName(),
-                        "attendee_name", event.attendeeName(),
-                        "start_time", event.startTime().toString(),
-                        "end_time", event.endTime().toString()));
+                        "booking_id",
+                        event.bookingId(),
+                        "booking_type",
+                        event.bookingTypeName(),
+                        "duration_minutes",
+                        java.time.Duration.between(event.startTime(), event.endTime())
+                                .toMinutes()));
     }
 
     @EventListener
     @Async
     void onBookingCancelled(final BookingCancelledEvent event) {
         postHogAnalyticsService.capture(
-                event.attendeeEmail(),
+                "booking-" + event.bookingId(),
                 PostHogEventNames.BOOKING_CANCELLED,
                 Map.of(
                         "booking_id", event.bookingId(),
-                        "confirmation_code", event.confirmationCode(),
-                        "booking_type", event.bookingTypeName(),
-                        "attendee_name", event.attendeeName(),
-                        "start_time", event.startTime().toString(),
-                        "end_time", event.endTime().toString()));
+                        "booking_type", event.bookingTypeName()));
     }
 
     @EventListener
@@ -221,7 +213,6 @@ class PostHogEventListener {
     void onQuizStarted(final QuizStartedEvent event) {
         final var properties = new LinkedHashMap<String, Object>();
         properties.put("quiz_id", event.quizId());
-        properties.put("title", event.title());
         properties.put("difficulty", event.difficulty());
         properties.put("question_count", event.questionCount());
         properties.put("player_count", event.playerIds().size());
@@ -235,9 +226,6 @@ class PostHogEventListener {
     void onQuizCompleted(final QuizCompletedEvent event) {
         final var properties = new LinkedHashMap<String, Object>();
         properties.put("quiz_id", event.quizId());
-        properties.put("title", event.title());
-        properties.put("winner_id", event.winnerId());
-        properties.put("winner_name", event.winnerName());
         properties.put("final_score", event.finalScore());
         properties.put("player_count", event.allPlayers().size());
         properties.put("completed_at", event.completedAt().toString());
@@ -253,7 +241,6 @@ class PostHogEventListener {
                 "player_joined_quiz",
                 Map.of(
                         "quiz_id", event.quizId(),
-                        "player_name", event.playerName(),
                         "joined_at", event.joinedAt().toString()));
     }
 
@@ -262,11 +249,8 @@ class PostHogEventListener {
     void onGameRecorded(final GameRecordedEvent event) {
         final var properties = new LinkedHashMap<String, Object>();
         properties.put("game_id", event.gameId());
-        properties.put("team1_name", event.team1Name());
         properties.put("team1_score", event.team1Score());
-        properties.put("team2_name", event.team2Name());
         properties.put("team2_score", event.team2Score());
-        properties.put("winner_team_name", event.winnerTeamName());
         properties.put("result", event.result());
         properties.put("recorded_at", event.recordedAt().toString());
 
@@ -279,10 +263,6 @@ class PostHogEventListener {
         postHogAnalyticsService.capture(
                 event.playerId(),
                 "player_created",
-                Map.of(
-                        "player_name",
-                        event.playerName(),
-                        "created_at",
-                        event.createdAt().toString()));
+                Map.of("created_at", event.createdAt().toString()));
     }
 }

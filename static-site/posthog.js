@@ -22,7 +22,21 @@
       capture_pageview: true,
       capture_pageleave: true,
       autocapture: true,
-      session_recording: { maskAllInputs: true },
+      capture_dead_clicks: true,
+      capture_exceptions: true,
+      capture_performance: true,
+      capture_heatmaps: true,
+      session_recording: {
+        maskAllInputs: true,
+        maskTextSelector: ".ph-mask, [data-ph-mask]",
+        maskCapturedNetworkRequestFn: (request) => {
+          if (request.name) {
+            request.name = request.name.split("?")[0];
+          }
+          return request;
+        },
+      },
+      property_denylist: ["email", "phone", "username"],
     });
 
     const capture = (event, properties = {}) => window.posthog.capture(event, properties);

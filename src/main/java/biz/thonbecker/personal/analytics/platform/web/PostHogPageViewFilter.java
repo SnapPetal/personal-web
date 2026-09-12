@@ -35,6 +35,11 @@ class PostHogPageViewFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             final HttpServletRequest request, final HttpServletResponse response, final FilterChain filterChain)
             throws ServletException, IOException {
+        if (!postHogProperties.isConfigured() || postHogProperties.isBrowserConfigured()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final var distinctId = resolveDistinctId(request, response);
         filterChain.doFilter(request, response);
 
@@ -46,10 +51,6 @@ class PostHogPageViewFilter extends OncePerRequestFilter {
     }
 
     private boolean shouldCapture(final HttpServletRequest request, final HttpServletResponse response) {
-        if (!postHogProperties.isConfigured() || postHogProperties.isBrowserConfigured()) {
-            return false;
-        }
-
         if (!"GET".equalsIgnoreCase(request.getMethod())) {
             return false;
         }

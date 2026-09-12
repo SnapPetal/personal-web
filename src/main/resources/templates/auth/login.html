@@ -27,7 +27,7 @@
                    th:href="@{/auth/login(redirect=${destination.path})}"
                    th:text="|Sign in to ${destination.label}|"></a>
             </div>
-            <form th:if="${redirect != null}" method="post" th:action="@{/auth/request}">
+            <form th:if="${redirect != null}" class="ph-no-capture" method="post" th:action="@{/auth/request}">
                 <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
                 <input name="redirect" th:value="${redirect}" type="hidden">
                 <label class="form-label" for="email">Email</label>
