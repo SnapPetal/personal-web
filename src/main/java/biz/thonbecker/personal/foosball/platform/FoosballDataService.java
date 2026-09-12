@@ -50,11 +50,11 @@ public class FoosballDataService {
     }
 
     public Optional<Player> findPlayerByName(String name) {
-        return playerRepository.findByName(name);
+        return playerRepository.findByTenantIdAndName(TenantContext.requireTenantId(), name);
     }
 
     public List<Player> getAllPlayers() {
-        return playerRepository.findAllByOrderByNameAsc();
+        return playerRepository.findAllByTenantIdOrderByNameAsc(TenantContext.requireTenantId());
     }
 
     // Game management
@@ -125,7 +125,7 @@ public class FoosballDataService {
      * Get leaderboard (top 10 players by rating)
      */
     public List<Player> getLeaderboard() {
-        return playerRepository.findTop10ByOrderByRatingDesc();
+        return playerRepository.findTop10ByTenantIdOrderByRatingDesc(TenantContext.requireTenantId());
     }
 
     // Team performance statistics
@@ -147,7 +147,7 @@ public class FoosballDataService {
     }
 
     public Long getTotalPlayers() {
-        return playerRepository.count();
+        return playerRepository.countByTenantId(TenantContext.requireTenantId());
     }
 
     public Long getGamesWithWinner() {

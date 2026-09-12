@@ -4,25 +4,22 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
-import org.springframework.data.rest.core.annotation.RestResource;
 
-@RepositoryRestResource(path = "players", collectionResourceRel = "players", itemResourceRel = "player")
+@RepositoryRestResource(exported = false)
 public interface PlayerRepository extends CrudRepository<Player, Long> {
 
-    @RestResource(path = "by-name", rel = "by-name")
-    Optional<Player> findByName(String name);
+    Optional<Player> findByTenantIdAndName(Long tenantId, String name);
 
-    @RestResource(path = "search", rel = "search")
-    List<Player> findByNameContainingIgnoreCase(String name);
+    List<Player> findByTenantIdAndNameContainingIgnoreCase(Long tenantId, String name);
 
-    List<Player> findAllByOrderByNameAsc();
+    List<Player> findAllByTenantIdOrderByNameAsc(Long tenantId);
 
     // Rating/Ranking queries
-    @RestResource(path = "by-rating", rel = "by-rating")
-    List<Player> findAllByOrderByRatingDesc();
+    List<Player> findAllByTenantIdOrderByRatingDesc(Long tenantId);
 
-    @RestResource(path = "leaderboard", rel = "leaderboard")
-    List<Player> findTop10ByOrderByRatingDesc();
+    List<Player> findTop10ByTenantIdOrderByRatingDesc(Long tenantId);
 
-    List<Player> findByGamesPlayedGreaterThanEqualOrderByRatingDesc(int minGames);
+    List<Player> findByTenantIdAndGamesPlayedGreaterThanEqualOrderByRatingDesc(Long tenantId, int minGames);
+
+    long countByTenantId(Long tenantId);
 }
