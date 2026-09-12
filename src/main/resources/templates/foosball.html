@@ -231,7 +231,7 @@
                           hx-target="#main-alerts"
                           hx-swap="innerHTML"
                           hx-indicator="#addGameForm"
-                          hx-disabled-elt="#addGameModal button"
+                          hx-disable="#addGameModal button"
                           hx-on::after:request="
                               if(ctx.response?.status < 400) {
                                   this.reset();
