@@ -21,7 +21,7 @@
     
     <!-- JS dependencies -->
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
-    <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
     <script th:src="@{/js/foosball.js}"></script>
 </head>
 <body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
