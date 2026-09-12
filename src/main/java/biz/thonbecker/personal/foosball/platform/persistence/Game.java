@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.Filter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -33,7 +32,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "games", schema = "foosball")
 @EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
-@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class Game {
 
     @Id

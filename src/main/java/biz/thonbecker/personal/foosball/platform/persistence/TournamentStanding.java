@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.*;
-import org.hibernate.annotations.Filter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -27,7 +26,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
                     columnNames = {"tournament_id", "registration_id"})
         })
 @EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
-@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class TournamentStanding {
 
     @Id

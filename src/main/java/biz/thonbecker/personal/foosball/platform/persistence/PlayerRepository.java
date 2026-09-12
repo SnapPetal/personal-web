@@ -10,6 +10,8 @@ public interface PlayerRepository extends CrudRepository<Player, Long> {
 
     Optional<Player> findByTenantIdAndName(Long tenantId, String name);
 
+    Optional<Player> findByTenantIdAndId(Long tenantId, Long id);
+
     List<Player> findByTenantIdAndNameContainingIgnoreCase(Long tenantId, String name);
 
     List<Player> findAllByTenantIdOrderByNameAsc(Long tenantId);

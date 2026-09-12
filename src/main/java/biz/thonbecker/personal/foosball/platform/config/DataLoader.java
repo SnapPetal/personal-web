@@ -3,6 +3,8 @@ package biz.thonbecker.personal.foosball.platform.config;
 import biz.thonbecker.personal.foosball.platform.FoosballDataService;
 import biz.thonbecker.personal.foosball.platform.persistence.Game;
 import biz.thonbecker.personal.foosball.platform.persistence.Player;
+import biz.thonbecker.personal.foosball.platform.persistence.TenantRepository;
+import biz.thonbecker.personal.foosball.platform.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 public class DataLoader {
 
     private final FoosballDataService foosballService;
+    private final TenantRepository tenantRepository;
 
     @Value("${foosball.sample-data.enabled:true}")
     private boolean sampleDataEnabled;
@@ -48,6 +51,18 @@ public class DataLoader {
             return;
         }
 
+        final var tenant = tenantRepository
+                .findBySlug("ramsey-solutions")
+                .orElseThrow(() -> new IllegalStateException("Ramsey Solutions tenant is missing"));
+        TenantContext.set(tenant.getId());
+        try {
+            loadSampleData();
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void loadSampleData() {
         log.info("Loading sample foosball data...");
 
         // Create sample players with varied ratings across different rank tiers

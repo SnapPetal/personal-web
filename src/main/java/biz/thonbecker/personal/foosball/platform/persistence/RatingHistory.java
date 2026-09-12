@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import lombok.*;
-import org.hibernate.annotations.Filter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -28,7 +27,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
             @Index(name = "idx_rating_history_recorded_at", columnList = "recorded_at")
         })
 @EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
-@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class RatingHistory {
 
     @Id

@@ -22,9 +22,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -37,8 +34,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Table(name = "players", schema = "foosball")
 @EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
-@FilterDef(name = "foosballTenant", parameters = @ParamDef(name = "tenantId", type = Long.class))
-@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class Player {
 
     @Id
@@ -49,7 +44,7 @@ public class Player {
     private Long tenantId;
 
     @NotBlank(message = "Player name is required")
-    @Column(name = "name", unique = true, nullable = false, length = 100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
     // Rating system fields

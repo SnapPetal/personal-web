@@ -4,6 +4,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -11,8 +12,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.rest.core.annotation.RestResource;
 
-@RepositoryRestResource(path = "games", collectionResourceRel = "games", itemResourceRel = "game")
+@RepositoryRestResource(exported = false)
 public interface GameRepository extends CrudRepository<Game, Long> {
+
+    List<Game> findAllByTenantId(Long tenantId);
+
+    Optional<Game> findByTenantIdAndId(Long tenantId, Long id);
 
     @RestResource(path = "by-player", rel = "by-player")
     @Query(
@@ -24,20 +29,22 @@ public interface GameRepository extends CrudRepository<Game, Long> {
             + "LEFT JOIN FETCH g.whiteTeamPlayer2 "
             + "LEFT JOIN FETCH g.blackTeamPlayer1 "
             + "LEFT JOIN FETCH g.blackTeamPlayer2 "
-            + "ORDER BY g.playedAt DESC LIMIT 10")
-    List<GameWithPlayers> findRecentGames();
+            + "WHERE g.tenantId = :tenantId ORDER BY g.playedAt DESC LIMIT 10")
+    List<GameWithPlayers> findRecentGames(@Param("tenantId") Long tenantId);
 
     @RestResource(path = "last", rel = "last")
     @Query("SELECT g FROM Game g " + "LEFT JOIN FETCH g.whiteTeamPlayer1 "
             + "LEFT JOIN FETCH g.whiteTeamPlayer2 "
             + "LEFT JOIN FETCH g.blackTeamPlayer1 "
             + "LEFT JOIN FETCH g.blackTeamPlayer2 "
-            + "ORDER BY g.playedAt DESC LIMIT 1")
-    List<GameWithPlayers> findLastGame();
+            + "WHERE g.tenantId = :tenantId ORDER BY g.playedAt DESC LIMIT 1")
+    List<GameWithPlayers> findLastGame(@Param("tenantId") Long tenantId);
 
     // Statistics queries
-    @Query("SELECT COUNT(g) FROM Game g WHERE g.winner IS NOT NULL")
-    Long countGamesWithWinner();
+    @Query("SELECT COUNT(g) FROM Game g WHERE g.tenantId = :tenantId AND g.winner IS NOT NULL")
+    Long countGamesWithWinner(@Param("tenantId") Long tenantId);
+
+    long countByTenantId(Long tenantId);
 
     // Score statistics - no longer tracked, returning 0
     default Double getAverageTotalScore() {

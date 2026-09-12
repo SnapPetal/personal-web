@@ -13,6 +13,7 @@ import biz.thonbecker.personal.foosball.platform.persistence.TournamentRegistrat
 import biz.thonbecker.personal.foosball.platform.persistence.TournamentRepository;
 import biz.thonbecker.personal.foosball.platform.persistence.TournamentStanding;
 import biz.thonbecker.personal.foosball.platform.persistence.TournamentStandingRepository;
+import biz.thonbecker.personal.foosball.platform.tenant.TenantContext;
 import biz.thonbecker.personal.foosball.platform.tournament.algorithm.DoubleEliminationAlgorithm;
 import biz.thonbecker.personal.foosball.platform.tournament.algorithm.SingleEliminationAlgorithm;
 import biz.thonbecker.personal.foosball.platform.tournament.algorithm.TournamentAlgorithm;
@@ -52,7 +53,7 @@ public class TournamentService {
         log.info("Creating tournament: {} by player: {}", request.name(), createdById);
 
         final var creator = playerRepository
-                .findById(createdById)
+                .findByTenantIdAndId(TenantContext.requireTenantId(), createdById)
                 .orElseThrow(() -> new EntityNotFoundException("Player not found with id: " + createdById));
 
         // Support single and double elimination
@@ -106,26 +107,26 @@ public class TournamentService {
 
     public Tournament getTournamentById(Long tournamentId) {
         return tournamentRepository
-                .findById(tournamentId)
+                .findByIdAndTenantId(tournamentId, TenantContext.requireTenantId())
                 .orElseThrow(() -> new EntityNotFoundException("Tournament not found with id: " + tournamentId));
     }
 
     public Tournament getTournamentWithRegistrations(Long tournamentId) {
         return tournamentRepository
-                .findByIdWithRegistrations(tournamentId)
+                .findByIdWithRegistrations(tournamentId, TenantContext.requireTenantId())
                 .orElseThrow(() -> new EntityNotFoundException("Tournament not found with id: " + tournamentId));
     }
 
     public Page<TournamentSummaryDto> getTournamentSummaries(Pageable pageable) {
-        return tournamentRepository.findTournamentSummaries(pageable);
+        return tournamentRepository.findTournamentSummaries(TenantContext.requireTenantId(), pageable);
     }
 
     public List<Tournament> getActiveTournaments() {
-        return tournamentRepository.findActiveTournaments();
+        return tournamentRepository.findActiveTournaments(TenantContext.requireTenantId());
     }
 
     public List<Tournament> getTournamentsForPlayer(Long playerId) {
-        return tournamentRepository.findTournamentsForPlayer(playerId);
+        return tournamentRepository.findTournamentsForPlayer(playerId, TenantContext.requireTenantId());
     }
 
     public void deleteTournament(Long tournamentId) {
@@ -202,14 +203,14 @@ public class TournamentService {
         }
 
         final var player = playerRepository
-                .findById(request.playerId())
+                .findByTenantIdAndId(TenantContext.requireTenantId(), request.playerId())
                 .orElseThrow(() -> new EntityNotFoundException("Player not found with id: " + request.playerId()));
 
         TournamentRegistration registration;
 
         if (request.isTeamRegistration()) {
             final var partner = playerRepository
-                    .findById(request.partnerId())
+                    .findByTenantIdAndId(TenantContext.requireTenantId(), request.partnerId())
                     .orElseThrow(
                             () -> new EntityNotFoundException("Partner not found with id: " + request.partnerId()));
 
@@ -229,11 +230,11 @@ public class TournamentService {
     public void withdrawFromTournament(Long tournamentId, Long playerId) {
         log.info("Withdrawing player {} from tournament {}", playerId, tournamentId);
 
+        final var tournament = getTournamentById(tournamentId);
+
         final var registration = registrationRepository
                 .findByTournamentIdAndPlayerId(tournamentId, playerId)
                 .orElseThrow(() -> new EntityNotFoundException("Registration not found"));
-
-        final var tournament = getTournamentById(tournamentId);
 
         if (tournament.getStatus() == Tournament.TournamentStatus.IN_PROGRESS
                 || tournament.getStatus() == Tournament.TournamentStatus.COMPLETED) {
@@ -245,6 +246,7 @@ public class TournamentService {
     }
 
     public List<TournamentRegistration> getTournamentRegistrations(Long tournamentId) {
+        getTournamentById(tournamentId);
         return registrationRepository.findByTournamentIdOrderBySeedAscRegistrationDateAsc(tournamentId);
     }
 
@@ -295,11 +297,13 @@ public class TournamentService {
     }
 
     public List<TournamentMatch> getTournamentMatches(Long tournamentId) {
+        getTournamentById(tournamentId);
         return matchRepository.findByTournamentIdOrderByRoundNumberAscMatchNumberAsc(tournamentId);
     }
 
     public List<biz.thonbecker.personal.foosball.platform.web.model.BracketViewDto> getBracketView(Long tournamentId) {
         log.info("Fetching bracket view for tournament: {}", tournamentId);
+        getTournamentById(tournamentId);
         final var bracket = matchRepository.findBracketView(tournamentId);
         log.info("Found {} matches in bracket for tournament {}", bracket.size(), tournamentId);
         return bracket;
@@ -307,7 +311,7 @@ public class TournamentService {
 
     public TournamentMatch getMatchById(Long matchId) {
         return matchRepository
-                .findByIdWithDetails(matchId)
+                .findByIdWithDetails(matchId, TenantContext.requireTenantId())
                 .orElseThrow(() -> new EntityNotFoundException("Match not found with id: " + matchId));
     }
 
@@ -316,7 +320,7 @@ public class TournamentService {
 
         final var match = getMatchById(matchId);
         final var game = gameRepository
-                .findById(gameId)
+                .findByTenantIdAndId(TenantContext.requireTenantId(), gameId)
                 .orElseThrow(() -> new EntityNotFoundException("Game not found with id: " + gameId));
 
         if (!match.canStart()) {
@@ -350,7 +354,7 @@ public class TournamentService {
 
         final var match = getMatchById(matchId);
         final var winner = registrationRepository
-                .findById(request.winnerRegistrationId())
+                .findByIdAndTournamentTenantId(request.winnerRegistrationId(), TenantContext.requireTenantId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Registration not found with id: " + request.winnerRegistrationId()));
 

@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TournamentRegistrationRepository extends JpaRepository<TournamentRegistration, Long> {
 
+    Optional<TournamentRegistration> findByIdAndTournamentTenantId(Long id, Long tenantId);
+
     // Find registrations for a tournament
     List<TournamentRegistration> findByTournamentIdOrderBySeedAscRegistrationDateAsc(Long tournamentId);
 

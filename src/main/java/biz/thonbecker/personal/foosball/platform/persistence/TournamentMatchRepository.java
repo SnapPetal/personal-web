@@ -61,6 +61,6 @@ public interface TournamentMatchRepository extends JpaRepository<TournamentMatch
             + "LEFT JOIN FETCH w.player "
             + "LEFT JOIN FETCH w.partner "
             + "LEFT JOIN FETCH m.game "
-            + "WHERE m.id = :id")
-    Optional<TournamentMatch> findByIdWithDetails(@Param("id") Long id);
+            + "WHERE m.id = :id AND m.tournament.tenantId = :tenantId")
+    Optional<TournamentMatch> findByIdWithDetails(@Param("id") Long id, @Param("tenantId") Long tenantId);
 }

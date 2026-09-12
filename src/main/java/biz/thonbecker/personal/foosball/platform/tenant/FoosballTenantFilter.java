@@ -1,25 +1,19 @@
 package biz.thonbecker.personal.foosball.platform.tenant;
 
 import biz.thonbecker.personal.foosball.platform.persistence.TenantRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.hibernate.Session;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Resolves the tenant URL segment and enables Hibernate's tenant filter. */
+/** Resolves the tenant URL segment and establishes the request tenant context. */
 @Component
 public class FoosballTenantFilter extends OncePerRequestFilter {
 
     private final TenantRepository tenantRepository;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public FoosballTenantFilter(TenantRepository tenantRepository) {
         this.tenantRepository = tenantRepository;
@@ -43,10 +37,6 @@ public class FoosballTenantFilter extends OncePerRequestFilter {
         TenantContext.set(tenant.get().getId());
         try {
             request.setAttribute("foosballTenantSlug", tenant.get().getSlug());
-            entityManager
-                    .unwrap(Session.class)
-                    .enableFilter("foosballTenant")
-                    .setParameter("tenantId", tenant.get().getId());
             filterChain.doFilter(request, response);
         } finally {
             TenantContext.clear();

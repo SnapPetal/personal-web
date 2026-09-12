@@ -77,20 +77,20 @@ public class FoosballDataService {
 
     public List<Game> getAllGames() {
         final var games = new ArrayList<Game>();
-        gameRepository.findAll().forEach(games::add);
+        gameRepository.findAllByTenantId(TenantContext.requireTenantId()).forEach(games::add);
         return games;
     }
 
     public Optional<Game> getGameById(Long id) {
-        return gameRepository.findById(id);
+        return gameRepository.findByTenantIdAndId(TenantContext.requireTenantId(), id);
     }
 
     public List<GameWithPlayers> getRecentGames() {
-        return gameRepository.findRecentGames();
+        return gameRepository.findRecentGames(TenantContext.requireTenantId());
     }
 
     public List<GameWithPlayers> getLastGame() {
-        final var result = gameRepository.findLastGame();
+        final var result = gameRepository.findLastGame(TenantContext.requireTenantId());
         if (!result.isEmpty()) {
             final var game = result.getFirst();
             log.info(
@@ -143,7 +143,7 @@ public class FoosballDataService {
 
     // Overall statistics
     public Long getTotalGames() {
-        return gameRepository.count();
+        return gameRepository.countByTenantId(TenantContext.requireTenantId());
     }
 
     public Long getTotalPlayers() {
@@ -151,7 +151,7 @@ public class FoosballDataService {
     }
 
     public Long getGamesWithWinner() {
-        return gameRepository.countGamesWithWinner();
+        return gameRepository.countGamesWithWinner(TenantContext.requireTenantId());
     }
 
     public Double getAverageTotalScore() {
