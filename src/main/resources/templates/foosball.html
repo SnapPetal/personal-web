@@ -233,7 +233,7 @@
                           hx-indicator="#addGameForm"
                           hx-disabled-elt="#addGameModal button"
                           hx-on::after:request="
-                              if(event.detail.successful && event.detail.xhr.status < 400) {
+                              if(ctx.response?.status < 400) {
                                   this.reset();
                                   bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
                               }
