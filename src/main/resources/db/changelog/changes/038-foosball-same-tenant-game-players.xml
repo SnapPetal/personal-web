@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="038-foosball-same-tenant-game-players" author="thonbecker">
+        <comment>Prevent games from referencing players belonging to another tenant</comment>
+        <sql><![CDATA[
+            CREATE UNIQUE INDEX uk_players_tenant_id_id ON foosball.players (tenant_id, id);
+
+            ALTER TABLE foosball.games
+                ADD CONSTRAINT fk_games_white_player1_same_tenant
+                FOREIGN KEY (tenant_id, white_team_player1_id)
+                REFERENCES foosball.players (tenant_id, id);
+            ALTER TABLE foosball.games
+                ADD CONSTRAINT fk_games_white_player2_same_tenant
+                FOREIGN KEY (tenant_id, white_team_player2_id)
+                REFERENCES foosball.players (tenant_id, id);
+            ALTER TABLE foosball.games
+                ADD CONSTRAINT fk_games_black_player1_same_tenant
+                FOREIGN KEY (tenant_id, black_team_player1_id)
+                REFERENCES foosball.players (tenant_id, id);
+            ALTER TABLE foosball.games
+                ADD CONSTRAINT fk_games_black_player2_same_tenant
+                FOREIGN KEY (tenant_id, black_team_player2_id)
+                REFERENCES foosball.players (tenant_id, id);
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

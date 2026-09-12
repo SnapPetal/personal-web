@@ -112,7 +112,7 @@
 <th:block th:fragment="playerOptions">
     <option value="">Select Player...</option>
     <option th:each="player : ${players}"
-            th:value="${player.name}"
+            th:value="${player.id}"
             th:text="${player.name}"
             th:attr="data-id=${player.id}">
     </option>
@@ -180,10 +180,10 @@
     <script type="text/javascript" th:inline="javascript">
         (function() {
             const lastGameTeams = {
-                whitePlayer1: /*[[${whiteTeamPlayer1}]]*/ null,
-                whitePlayer2: /*[[${whiteTeamPlayer2}]]*/ null,
-                blackPlayer1: /*[[${blackTeamPlayer1}]]*/ null,
-                blackPlayer2: /*[[${blackTeamPlayer2}]]*/ null
+                whitePlayer1: /*[[${whiteTeamPlayer1Id}]]*/ null,
+                whitePlayer2: /*[[${whiteTeamPlayer2Id}]]*/ null,
+                blackPlayer1: /*[[${blackTeamPlayer1Id}]]*/ null,
+                blackPlayer2: /*[[${blackTeamPlayer2Id}]]*/ null
             };
 
             // Store globally so it persists

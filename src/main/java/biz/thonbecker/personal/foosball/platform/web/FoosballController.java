@@ -6,6 +6,7 @@ import biz.thonbecker.personal.foosball.domain.Player;
 import biz.thonbecker.personal.foosball.domain.Team;
 import biz.thonbecker.personal.foosball.platform.FoosballService;
 import biz.thonbecker.personal.foosball.platform.TournamentService;
+import biz.thonbecker.personal.foosball.platform.persistence.TenantRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +30,19 @@ public class FoosballController {
 
     private final FoosballService foosballService;
     private final TournamentService tournamentService;
+    private final TenantRepository tenantRepository;
 
-    public FoosballController(FoosballService foosballService, TournamentService tournamentService) {
+    public FoosballController(
+            FoosballService foosballService, TournamentService tournamentService, TenantRepository tenantRepository) {
         this.foosballService = foosballService;
         this.tournamentService = tournamentService;
+        this.tenantRepository = tenantRepository;
     }
 
     @GetMapping
     public String foosballPage(Model model) {
         boolean serviceAvailable = foosballService.isServiceAvailable();
+        model.addAttribute("tenants", tenantRepository.findAll());
         model.addAttribute("serviceAvailable", serviceAvailable);
 
         if (serviceAvailable) {
@@ -137,6 +142,18 @@ public class FoosballController {
                 model.addAttribute("whiteTeamPlayer2", wp2);
                 model.addAttribute("blackTeamPlayer1", bp1);
                 model.addAttribute("blackTeamPlayer2", bp2);
+                model.addAttribute(
+                        "whiteTeamPlayer1Id",
+                        foosballService.findPlayerByName(wp1).map(Player::getId).orElse(null));
+                model.addAttribute(
+                        "whiteTeamPlayer2Id",
+                        foosballService.findPlayerByName(wp2).map(Player::getId).orElse(null));
+                model.addAttribute(
+                        "blackTeamPlayer1Id",
+                        foosballService.findPlayerByName(bp1).map(Player::getId).orElse(null));
+                model.addAttribute(
+                        "blackTeamPlayer2Id",
+                        foosballService.findPlayerByName(bp2).map(Player::getId).orElse(null));
             }
         } catch (Exception e) {
             log.error("Error loading last game teams", e);
@@ -171,23 +188,24 @@ public class FoosballController {
 
     @PostMapping("/htmx/games")
     public String createGameHtmx(
-            @RequestParam String whiteTeamPlayer1,
-            @RequestParam String whiteTeamPlayer2,
-            @RequestParam String blackTeamPlayer1,
-            @RequestParam String blackTeamPlayer2,
+            @RequestParam Long whiteTeamPlayer1,
+            @RequestParam Long whiteTeamPlayer2,
+            @RequestParam Long blackTeamPlayer1,
+            @RequestParam Long blackTeamPlayer2,
             @RequestParam String winner,
             Model model) {
 
         try {
             // Validation
-            if (whiteTeamPlayer1 == null
-                    || whiteTeamPlayer1.isEmpty()
-                    || whiteTeamPlayer2 == null
-                    || whiteTeamPlayer2.isEmpty()
-                    || blackTeamPlayer1 == null
-                    || blackTeamPlayer1.isEmpty()
-                    || blackTeamPlayer2 == null
-                    || blackTeamPlayer2.isEmpty()) {
+            final var whitePlayer1 =
+                    foosballService.findPlayerById(whiteTeamPlayer1).orElse(null);
+            final var whitePlayer2 =
+                    foosballService.findPlayerById(whiteTeamPlayer2).orElse(null);
+            final var blackPlayer1 =
+                    foosballService.findPlayerById(blackTeamPlayer1).orElse(null);
+            final var blackPlayer2 =
+                    foosballService.findPlayerById(blackTeamPlayer2).orElse(null);
+            if (whitePlayer1 == null || whitePlayer2 == null || blackPlayer1 == null || blackPlayer2 == null) {
                 model.addAttribute("error", "Please select all players.");
                 return "foosball-fragments :: alert";
             }
@@ -198,8 +216,8 @@ public class FoosballController {
             }
 
             // Create game using new domain model
-            Team whiteTeam = new Team(whiteTeamPlayer1, whiteTeamPlayer2);
-            Team blackTeam = new Team(blackTeamPlayer1, blackTeamPlayer2);
+            Team whiteTeam = new Team(whitePlayer1.getName(), whitePlayer2.getName());
+            Team blackTeam = new Team(blackPlayer1.getName(), blackPlayer2.getName());
 
             // Map winner string to GameResult
             biz.thonbecker.personal.foosball.domain.GameResult result;

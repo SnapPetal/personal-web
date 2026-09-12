@@ -8,6 +8,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/dbmaster
     user: dbmasteruser
     password:
+    contexts: dev
 
   # DevTools configuration for hot reload
   devtools:

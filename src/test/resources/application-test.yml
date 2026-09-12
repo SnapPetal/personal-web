@@ -2,6 +2,8 @@ spring:
   docker:
     compose:
       enabled: false
+  liquibase:
+    contexts: test,dev
   ai:
     openai:
       api-key: test

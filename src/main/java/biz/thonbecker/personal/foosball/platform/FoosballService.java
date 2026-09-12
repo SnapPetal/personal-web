@@ -33,6 +33,14 @@ public class FoosballService {
                 .collect(Collectors.toList());
     }
 
+    public java.util.Optional<Player> findPlayerById(Long id) {
+        return foosballDataService.findPlayerById(id).map(this::toPlayerDomain);
+    }
+
+    public java.util.Optional<Player> findPlayerByName(String name) {
+        return foosballDataService.findPlayerByName(name).map(this::toPlayerDomain);
+    }
+
     @Transactional
     public void createPlayer(Player player) {
         if (player == null) {

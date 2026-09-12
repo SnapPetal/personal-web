@@ -1,9 +1,9 @@
 package biz.thonbecker.personal.foosball.platform.web.model;
 
 public record GameRequest(
-        String whiteTeamPlayer1,
-        String whiteTeamPlayer2,
-        String blackTeamPlayer1,
-        String blackTeamPlayer2,
+        Long whiteTeamPlayer1Id,
+        Long whiteTeamPlayer2Id,
+        Long blackTeamPlayer1Id,
+        Long blackTeamPlayer2Id,
         int whiteTeamScore,
         int blackTeamScore) {}

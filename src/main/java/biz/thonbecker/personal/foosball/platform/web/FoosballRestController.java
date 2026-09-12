@@ -65,13 +65,13 @@ public class FoosballRestController {
     @PostMapping("/games")
     public ResponseEntity<Game> recordGame(@RequestBody GameRequest request) {
         final var whiteTeamPlayer1 =
-                foosballService.findPlayerByName(request.whiteTeamPlayer1()).orElse(null);
+                foosballService.findPlayerById(request.whiteTeamPlayer1Id()).orElse(null);
         final var whiteTeamPlayer2 =
-                foosballService.findPlayerByName(request.whiteTeamPlayer2()).orElse(null);
+                foosballService.findPlayerById(request.whiteTeamPlayer2Id()).orElse(null);
         final var blackTeamPlayer1 =
-                foosballService.findPlayerByName(request.blackTeamPlayer1()).orElse(null);
+                foosballService.findPlayerById(request.blackTeamPlayer1Id()).orElse(null);
         final var blackTeamPlayer2 =
-                foosballService.findPlayerByName(request.blackTeamPlayer2()).orElse(null);
+                foosballService.findPlayerById(request.blackTeamPlayer2Id()).orElse(null);
 
         if (whiteTeamPlayer1 == null
                 || whiteTeamPlayer2 == null

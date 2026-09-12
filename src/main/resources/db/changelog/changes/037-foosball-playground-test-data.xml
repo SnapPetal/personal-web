@@ -3,7 +3,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="037-foosball-playground-test-data" author="thonbecker">
+    <changeSet id="037-foosball-playground-test-data" author="thonbecker" context="dev">
         <comment>Create an isolated tenant with sample Foosball data for testing</comment>
         <sql><![CDATA[
             INSERT INTO foosball.tenants (id, name, slug)

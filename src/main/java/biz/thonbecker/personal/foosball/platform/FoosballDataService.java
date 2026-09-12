@@ -53,6 +53,10 @@ public class FoosballDataService {
         return playerRepository.findByTenantIdAndName(TenantContext.requireTenantId(), name);
     }
 
+    public Optional<Player> findPlayerById(Long id) {
+        return playerRepository.findByTenantIdAndId(TenantContext.requireTenantId(), id);
+    }
+
     public List<Player> getAllPlayers() {
         return playerRepository.findAllByTenantIdOrderByNameAsc(TenantContext.requireTenantId());
     }
