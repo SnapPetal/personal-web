@@ -256,11 +256,13 @@
                 const email = this.attendeeEmail.trim();
 
                 if (!name || !email) {
+                    this.captureBookingFailure('validation');
                     alert('Please fill in all required fields');
                     return;
                 }
 
                 if (!this.selectedStartTime) {
+                    this.captureBookingFailure('slot_missing');
                     alert('Please select a time slot');
                     return;
                 }
@@ -286,6 +288,7 @@
                     if (!response.ok) {
                         return response.text().then(text => {
                             console.error('Booking error:', response.status, text);
+                            this.captureBookingFailure('server', response.status);
                             throw new Error('Booking failed: ' + response.status);
                         });
                     }
@@ -295,9 +298,23 @@
                     window.location.href = `/booking/confirmation/${booking.confirmationCode}`;
                 })
                 .catch(error => {
+                    if (!error.message.startsWith('Booking failed:')) {
+                        this.captureBookingFailure('network');
+                    }
                     alert('Failed to create booking. Please try again.');
                     console.error(error);
                 });
+            },
+
+            captureBookingFailure(stage, statusCode = null) {
+                if (!window.personalPostHog?.capture) return;
+
+                const properties = {
+                    stage,
+                    booking_type_id: this.selectedBookingTypeId,
+                };
+                if (statusCode) properties.status_code = statusCode;
+                window.personalPostHog.capture('booking_failed', properties);
             },
 
             resetForm() {
