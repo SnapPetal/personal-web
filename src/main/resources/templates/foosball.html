@@ -31,18 +31,14 @@
             <div class="d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">⚽ Foosball Management</h4>
                 <div class="d-flex gap-2 align-items-center">
-                    <div class="dropdown">
-                        <button class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                            Switch tenant
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li th:each="tenant : ${tenants}">
-                                <a class="dropdown-item"
-                                   th:href="@{'/foosball/' + ${tenant.slug}}"
-                                   th:text="${tenant.name}"></a>
-                            </li>
-                        </ul>
-                    </div>
+                    <label class="visually-hidden" for="tenantSwitcher">Switch tenant</label>
+                    <select id="tenantSwitcher" class="form-select form-select-sm" aria-label="Switch tenant"
+                            onchange="window.location.href = this.value">
+                        <option th:each="tenant : ${tenants}"
+                                th:value="@{'/foosball/' + ${tenant.slug}}"
+                                th:text="${tenant.name}"
+                                th:selected="${tenant.slug == tenantSlug}"></option>
+                    </select>
                     <a href="https://thonbecker.biz" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-arrow-left"></i> Back to Main Page
                     </a>
