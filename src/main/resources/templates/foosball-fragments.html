@@ -97,25 +97,11 @@
             </thead>
             <tbody>
                 <tr th:each="game : ${games}">
-                    <td th:text="${#temporals.format(game.gameDate, 'MMM dd, yyyy HH:mm')}"></td>
-                    <td>
-                        <span th:if="${game.team1Players != null and !#lists.isEmpty(game.team1Players)}"
-                              th:text="${#strings.listJoin(game.team1Players.![name], ', ')}"></span>
-                        <span th:unless="${game.team1Players != null and !#lists.isEmpty(game.team1Players)}">Team 1</span>
-                    </td>
-                    <td>
-                        <span class="badge bg-primary" th:text="${game.team1Score ?: 0}"></span>
-                        <span class="text-muted">-</span>
-                        <span class="badge bg-secondary" th:text="${game.team2Score ?: 0}"></span>
-                    </td>
-                    <td>
-                        <span th:if="${game.team2Players != null and !#lists.isEmpty(game.team2Players)}"
-                              th:text="${#strings.listJoin(game.team2Players.![name], ', ')}"></span>
-                        <span th:unless="${game.team2Players != null and !#lists.isEmpty(game.team2Players)}">Team 2</span>
-                    </td>
-                    <td>
-                        <span class="badge bg-success" th:text="${game.winner ?: 'N/A'}"></span>
-                    </td>
+                    <td th:text="${#temporals.format(game.playedAt, 'MMM dd, yyyy HH:mm')}"></td>
+                    <td th:text="${game.whiteTeam.player1 + ', ' + game.whiteTeam.player2}"></td>
+                    <td><span class="text-muted">-</span></td>
+                    <td th:text="${game.blackTeam.player1 + ', ' + game.blackTeam.player2}"></td>
+                    <td><span class="badge bg-success" th:text="${game.result}"></span></td>
                 </tr>
             </tbody>
         </table>
