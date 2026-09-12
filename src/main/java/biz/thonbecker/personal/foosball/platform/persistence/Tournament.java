@@ -1,5 +1,6 @@
 package biz.thonbecker.personal.foosball.platform.persistence;
 
+import biz.thonbecker.personal.foosball.platform.tenant.TenantAssignmentListener;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -26,6 +27,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
@@ -39,12 +41,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor
 @Entity
 @Table(name = "tournaments", schema = "foosball")
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
+@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class Tournament {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @NotBlank(message = "Tournament name is required")
     @Column(name = "name", nullable = false)

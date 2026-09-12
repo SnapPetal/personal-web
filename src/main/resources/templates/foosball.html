@@ -24,7 +24,7 @@
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
     <script th:src="@{/js/foosball.js}"></script>
 </head>
-<body class="foosball-page" hx-browser-indicator:inherited="true">
+<body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
     <!-- Simple Header with Back Button -->
     <div class="foosball-header py-3 border-bottom bg-light">
         <div class="container">
@@ -101,22 +101,22 @@
                             <div class="card-body foosball-quick-actions">
                                 <div class="row">
                                     <div class="col-md-3 mb-3">
-                                        <a th:href="@{/foosball/players}" class="btn btn-info w-100">
+                                        <a th:href="@{'/foosball/' + ${tenantSlug} + '/players'}" class="btn btn-info w-100">
                                             <i class="bi bi-people"></i> View Players
                                         </a>
                                     </div>
                                     <div class="col-md-3 mb-3">
-                                        <a th:href="@{/foosball/team-stats}" class="btn btn-info w-100">
+                                        <a th:href="@{'/foosball/' + ${tenantSlug} + '/team-stats'}" class="btn btn-info w-100">
                                             <i class="bi bi-bar-chart-steps"></i> View Team Stats
                                         </a>
                                     </div>
                                      <div class="col-md-3 mb-3">
-                                        <a th:href="@{/foosball/recent-games}" class="btn btn-info w-100">
+                                        <a th:href="@{'/foosball/' + ${tenantSlug} + '/recent-games'}" class="btn btn-info w-100">
                                             <i class="bi bi-clock-history"></i> View Recent Games
                                         </a>
                                     </div>
                                     <div class="col-md-3 mb-3">
-                                        <a th:href="@{/foosball/tournaments}" class="btn btn-warning w-100">
+                                        <a th:href="@{'/foosball/' + ${tenantSlug} + '/tournaments'}" class="btn btn-warning w-100">
                                             <i class="bi bi-trophy"></i> Tournaments
                                         </a>
                                     </div>
@@ -133,7 +133,7 @@
                             <div class="card-header app-card-header d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0"><i class="bi bi-graph-up"></i> Player Statistics</h5>
                                 <button class="btn btn-outline-primary btn-sm foosball-refresh-btn" 
-                                        hx-get="/foosball/fragments/player-stats" 
+                                        th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-stats'}"
                                         hx-target="#playerStatsList" 
                                         hx-indicator="#stats-loading">
                                     <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -150,7 +150,7 @@
                                 <!-- Player stats list with auto-refresh -->
                                 <div id="playerStatsList" 
                                     class="tab-pane fade show active"
-                                    hx-get="/foosball/fragments/player-stats"
+                                    th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-stats'}"
                                     hx-trigger="playerUpdate, playerStatsUpdated from:body"
                                     hx-target="this"
                                     hx-swap="innerMorph transition:true"
@@ -176,7 +176,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="addPlayerForm"
-                          hx-post="/foosball/htmx/players"
+                          th:hx-post="@{'/foosball/' + ${tenantSlug} + '/htmx/players'}"
                           hx-target="#main-alerts"
                           hx-swap="none"
                           hx-indicator="#addPlayerForm"
@@ -217,7 +217,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="addGameForm"
-                          hx-post="/foosball/htmx/games"
+                          th:hx-post="@{'/foosball/' + ${tenantSlug} + '/htmx/games'}"
                           hx-target="#main-alerts"
                           hx-swap="none"
                           hx-indicator="#addGameForm"
@@ -242,7 +242,7 @@
                                                 id="whiteTeamPlayer1"
                                                 name="whiteTeamPlayer1"
                                                 required
-                                                hx-get="/foosball/fragments/player-options"
+                                                th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
                                                 hx-target="this"
                                                 hx-swap="innerHTML">
@@ -258,7 +258,7 @@
                                                 id="whiteTeamPlayer2"
                                                 name="whiteTeamPlayer2"
                                                 required
-                                                hx-get="/foosball/fragments/player-options"
+                                                th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
                                                 hx-target="this"
                                                 hx-swap="innerHTML">
@@ -279,7 +279,7 @@
                                                 id="blackTeamPlayer1"
                                                 name="blackTeamPlayer1"
                                                 required
-                                                hx-get="/foosball/fragments/player-options"
+                                                th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
                                                 hx-target="this"
                                                 hx-swap="innerHTML">
@@ -295,7 +295,7 @@
                                                 id="blackTeamPlayer2"
                                                 name="blackTeamPlayer2"
                                                 required
-                                                hx-get="/foosball/fragments/player-options"
+                                                th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
                                                 hx-target="this"
                                                 hx-swap="innerHTML">
@@ -341,7 +341,7 @@
 
             modal.addEventListener('shown.bs.modal', function() {
                 // Fetch last game teams when modal opens
-                fetch('/foosball/fragments/last-game-teams')
+                fetch(`/foosball/${document.body.dataset.tenantSlug}/fragments/last-game-teams`)
                     .then(response => response.text())
                     .then(html => {
                         // Create a temporary div to parse the response

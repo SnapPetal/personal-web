@@ -2,6 +2,7 @@ package biz.thonbecker.personal.foosball.platform.persistence;
 
 import static biz.thonbecker.personal.foosball.platform.RatingService.INITIAL_RATING;
 
+import biz.thonbecker.personal.foosball.platform.tenant.TenantAssignmentListener;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +22,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -32,12 +36,17 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor
 @Entity
 @Table(name = "players", schema = "foosball")
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
+@FilterDef(name = "foosballTenant", parameters = @ParamDef(name = "tenantId", type = Long.class))
+@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class Player {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @NotBlank(message = "Player name is required")
     @Column(name = "name", unique = true, nullable = false, length = 100)

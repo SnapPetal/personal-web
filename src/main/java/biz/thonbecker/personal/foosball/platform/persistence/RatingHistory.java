@@ -1,9 +1,11 @@
 package biz.thonbecker.personal.foosball.platform.persistence;
 
+import biz.thonbecker.personal.foosball.platform.tenant.TenantAssignmentListener;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import lombok.*;
+import org.hibernate.annotations.Filter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -25,12 +27,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
             @Index(name = "idx_rating_history_player", columnList = "player_id"),
             @Index(name = "idx_rating_history_recorded_at", columnList = "recorded_at")
         })
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
+@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class RatingHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private @Nullable Long id;
+
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @NotNull(message = "Player is required")
     @ManyToOne(fetch = FetchType.LAZY)

@@ -9,6 +9,7 @@ import biz.thonbecker.personal.foosball.platform.persistence.PlayerStats;
 import biz.thonbecker.personal.foosball.platform.persistence.PlayerStatsRepository;
 import biz.thonbecker.personal.foosball.platform.persistence.TeamStats;
 import biz.thonbecker.personal.foosball.platform.persistence.TeamStatsRepository;
+import biz.thonbecker.personal.foosball.platform.tenant.TenantContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -105,19 +106,19 @@ public class FoosballDataService {
 
     // Player statistics
     public List<PlayerStats> getTopPlayersByWinPercentage(int minGames) {
-        return playerStatsRepository.findTopPlayersByWinPercentage(minGames);
+        return playerStatsRepository.findTopPlayersByWinPercentage(TenantContext.requireTenantId(), minGames);
     }
 
     public List<PlayerStats> getTopPlayersByTotalGames(int minGames) {
-        return playerStatsRepository.findTopPlayersByTotalGames(minGames);
+        return playerStatsRepository.findTopPlayersByTotalGames(TenantContext.requireTenantId(), minGames);
     }
 
     public List<PlayerStats> getTopPlayersByWins(int minGames) {
-        return playerStatsRepository.findTopPlayersByWins(minGames);
+        return playerStatsRepository.findTopPlayersByWins(TenantContext.requireTenantId(), minGames);
     }
 
     public List<PlayerStats> getAllPlayerStatsOrderedByWinPercentage() {
-        return playerStatsRepository.findAllPlayerStatsOrderedByWinPercentage();
+        return playerStatsRepository.findAllPlayerStatsOrderedByWinPercentage(TenantContext.requireTenantId());
     }
 
     /**
@@ -129,15 +130,15 @@ public class FoosballDataService {
 
     // Team performance statistics
     public List<TeamStats> getTopTeamsByWinPercentage(int minGames) {
-        return teamStatsRepository.findTopTeamsByWinPercentage(minGames);
+        return teamStatsRepository.findTopTeamsByWinPercentage(TenantContext.requireTenantId(), minGames);
     }
 
     public List<TeamStats> getTopTeamsByAverageScore(int minGames) {
-        return teamStatsRepository.findTopTeamsByAverageScore(minGames);
+        return teamStatsRepository.findTopTeamsByAverageScore(TenantContext.requireTenantId(), minGames);
     }
 
     public List<TeamStats> getAllTeamStatsOrderedByWinPercentage() {
-        return teamStatsRepository.findAllTeamStatsOrderedByWinPercentage();
+        return teamStatsRepository.findAllTeamStatsOrderedByWinPercentage(TenantContext.requireTenantId());
     }
 
     // Overall statistics

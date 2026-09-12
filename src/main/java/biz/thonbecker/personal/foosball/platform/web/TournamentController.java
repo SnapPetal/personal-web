@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/tournaments")
+@RequestMapping("/api/tournaments/{tenantSlug}")
 @RequiredArgsConstructor
 public class TournamentController {
 

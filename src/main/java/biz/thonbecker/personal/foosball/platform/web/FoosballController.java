@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * Delegates to FoosballService for business logic.
  */
 @Controller
-@RequestMapping("/foosball")
+@RequestMapping("/foosball/{tenantSlug}")
 @Slf4j
 public class FoosballController {
 

@@ -45,7 +45,7 @@
                     <h5 class="mb-0"><i class="bi bi-people-fill"></i> All Players</h5>
                 </div>
                 <div class="card-body" id="player-table-container" 
-                     hx-get="/foosball/fragments/player-table" 
+                     th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-table'}"
                      hx-trigger="refresh-players from:body">
                     <div th:fragment="playerTable">
                         <div th:if="${#lists.isEmpty(players)}" class="text-center text-muted py-4">
@@ -81,7 +81,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="addPlayerForm"
-                          hx-post="/foosball/htmx/players"
+                          th:hx-post="@{'/foosball/' + ${tenantSlug} + '/htmx/players'}"
                           hx-target="#main-alerts"
                           hx-swap="none"
                           hx-indicator="#addPlayerForm"

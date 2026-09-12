@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="036-foosball-tenant-stat-views" author="thonbecker">
+        <comment>Expose tenant IDs in Foosball statistics views for tenant-scoped queries</comment>
+        <sql><![CDATA[
+            DROP VIEW IF EXISTS foosball.player_stats;
+            CREATE VIEW foosball.player_stats AS
+            SELECT p.id, p.tenant_id, p.name, p.rating, p.peak_rating, p.current_streak,
+                   p.best_streak, p.games_played,
+                   COUNT(DISTINCT g.id) AS total_games,
+                   COUNT(CASE WHEN g.winner = 'WHITE' AND (g.white_team_player1_id = p.id OR g.white_team_player2_id = p.id) THEN 1 END)
+                   + COUNT(CASE WHEN g.winner = 'BLACK' AND (g.black_team_player1_id = p.id OR g.black_team_player2_id = p.id) THEN 1 END) AS wins,
+                   (COUNT(CASE WHEN g.winner = 'WHITE' AND (g.white_team_player1_id = p.id OR g.white_team_player2_id = p.id) THEN 1 END)
+                   + COUNT(CASE WHEN g.winner = 'BLACK' AND (g.black_team_player1_id = p.id OR g.black_team_player2_id = p.id) THEN 1 END)) * 100.0
+                   / NULLIF(COUNT(DISTINCT g.id), 0) AS win_percentage
+            FROM foosball.players p
+            LEFT JOIN foosball.games g ON p.tenant_id = g.tenant_id AND p.id IN
+                (g.white_team_player1_id, g.white_team_player2_id, g.black_team_player1_id, g.black_team_player2_id)
+            GROUP BY p.id, p.tenant_id, p.name, p.rating, p.peak_rating, p.current_streak, p.best_streak, p.games_played;
+
+            DROP VIEW IF EXISTS foosball.team_stats;
+            CREATE VIEW foosball.team_stats AS
+            SELECT p1.tenant_id,
+                   p1.id AS player1_id, p1.name AS player1_name, p2.id AS player2_id, p2.name AS player2_name,
+                   COUNT(DISTINCT g.id) AS games_played_together,
+                   COUNT(CASE WHEN g.winner = 'WHITE' AND ((g.white_team_player1_id = p1.id AND g.white_team_player2_id = p2.id)
+                       OR (g.white_team_player1_id = p2.id AND g.white_team_player2_id = p1.id)) THEN 1 END)
+                   + COUNT(CASE WHEN g.winner = 'BLACK' AND ((g.black_team_player1_id = p1.id AND g.black_team_player2_id = p2.id)
+                       OR (g.black_team_player1_id = p2.id AND g.black_team_player2_id = p1.id)) THEN 1 END) AS wins,
+                   (COUNT(CASE WHEN g.winner = 'WHITE' AND ((g.white_team_player1_id = p1.id AND g.white_team_player2_id = p2.id)
+                       OR (g.white_team_player1_id = p2.id AND g.white_team_player2_id = p1.id)) THEN 1 END)
+                   + COUNT(CASE WHEN g.winner = 'BLACK' AND ((g.black_team_player1_id = p1.id AND g.black_team_player2_id = p2.id)
+                       OR (g.black_team_player1_id = p2.id AND g.black_team_player2_id = p1.id)) THEN 1 END)) * 100.0
+                   / NULLIF(COUNT(DISTINCT g.id), 0) AS win_percentage,
+                   0 AS avg_team_score
+            FROM foosball.players p1
+            CROSS JOIN foosball.players p2
+            LEFT JOIN foosball.games g ON g.tenant_id = p1.tenant_id AND g.tenant_id = p2.tenant_id AND
+                ((g.white_team_player1_id = p1.id AND g.white_team_player2_id = p2.id)
+                OR (g.black_team_player1_id = p1.id AND g.black_team_player2_id = p2.id)
+                OR (g.white_team_player1_id = p2.id AND g.white_team_player2_id = p1.id)
+                OR (g.black_team_player1_id = p2.id AND g.black_team_player2_id = p1.id))
+            WHERE p1.tenant_id = p2.tenant_id AND p1.id < p2.id
+            GROUP BY p1.tenant_id, p1.id, p1.name, p2.id, p2.name
+            HAVING COUNT(DISTINCT g.id) > 0;
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

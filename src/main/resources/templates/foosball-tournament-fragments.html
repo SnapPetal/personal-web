@@ -33,7 +33,7 @@
                         </div>
                     </div>
                     <div>
-                        <a th:href="@{'/foosball/tournaments/' + ${tournament.id()}}"
+                        <a th:href="@{'/foosball/' + ${tenantSlug} + '/tournaments/' + ${tournament.id()}}"
                            class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-eye"></i> View
                         </a>

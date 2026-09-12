@@ -1,11 +1,13 @@
 package biz.thonbecker.personal.foosball.platform.persistence;
 
+import biz.thonbecker.personal.foosball.platform.tenant.TenantAssignmentListener;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.*;
+import org.hibernate.annotations.Filter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -24,12 +26,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
                     name = "uk_tournament_registration_standing",
                     columnNames = {"tournament_id", "registration_id"})
         })
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
+@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class TournamentStanding {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private @Nullable Long id;
+
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @NotNull(message = "Tournament is required")
     @ManyToOne(fetch = FetchType.LAZY)

@@ -23,7 +23,7 @@
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
 </head>
-<body class="foosball-page" hx-browser-indicator:inherited="true">
+<body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
     <!-- Header -->
     <div class="foosball-header py-3 border-bottom bg-light">
         <div class="container">
@@ -33,7 +33,7 @@
                     <small class="text-secondary">Single & Double Elimination Brackets</small>
                 </div>
                 <div>
-                    <a th:href="@{/foosball}" class="btn btn-outline-secondary btn-sm me-2">
+                    <a th:href="@{'/foosball/' + ${tenantSlug}}" class="btn btn-outline-secondary btn-sm me-2">
                         <i class="bi bi-arrow-left"></i> Back to Foosball
                     </a>
                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createTournamentModal">
@@ -57,7 +57,7 @@
                 </div>
                 <div class="card-body">
                     <div id="tournaments-list"
-                         hx-get="/foosball/tournaments/fragments/list"
+                         th:hx-get="@{'/foosball/' + ${tenantSlug} + '/tournaments/fragments/list'}"
                          hx-trigger="load"
                          hx-indicator="#tournaments-list"
                          hx-swap="innerMorph">
@@ -134,12 +134,13 @@
             };
 
             const createdById = parseInt(formData.get('createdById'));
+            const tenantSlug = document.body.dataset.tenantSlug;
 
             try {
                 const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-                const response = await fetch(`/api/tournaments?createdById=${createdById}`, {
+                const response = await fetch(`/api/tournaments/${tenantSlug}?createdById=${createdById}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -154,7 +155,7 @@
                     form.reset();
 
                     // Redirect to tournament detail page
-                    window.location.href = `/foosball/tournaments/${tournament.id}`;
+                    window.location.href = `/foosball/${tenantSlug}/tournaments/${tournament.id}`;
                 } else {
                     alert('Failed to create tournament');
                 }

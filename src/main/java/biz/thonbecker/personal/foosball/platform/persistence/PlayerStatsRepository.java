@@ -9,40 +9,40 @@ public interface PlayerStatsRepository extends Repository<Player, Long> {
 
     @Query(
             value =
-                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats ORDER BY rating DESC, win_percentage DESC, total_games DESC",
+                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE tenant_id = :tenantId ORDER BY rating DESC, win_percentage DESC, total_games DESC",
             nativeQuery = true)
-    List<PlayerStats> findAllPlayerStatsOrderedByWinPercentage();
+    List<PlayerStats> findAllPlayerStatsOrderedByWinPercentage(@Param("tenantId") long tenantId);
 
     // Removed: Old rank_score calculation replaced with ELO rating system
     // Use Player.rating field instead via PlayerRepository
 
     @Query(
             value =
-                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats ORDER BY total_games DESC, win_percentage DESC",
+                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE tenant_id = :tenantId ORDER BY total_games DESC, win_percentage DESC",
             nativeQuery = true)
-    List<PlayerStats> findAllPlayerStatsOrderedByTotalGames();
+    List<PlayerStats> findAllPlayerStatsOrderedByTotalGames(@Param("tenantId") long tenantId);
 
     @Query(
             value =
-                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats ORDER BY wins DESC, win_percentage DESC",
+                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE tenant_id = :tenantId ORDER BY wins DESC, win_percentage DESC",
             nativeQuery = true)
-    List<PlayerStats> findAllPlayerStatsOrderedByWins();
+    List<PlayerStats> findAllPlayerStatsOrderedByWins(@Param("tenantId") long tenantId);
 
     @Query(
             value =
-                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE total_games >= :minGames ORDER BY rating DESC, win_percentage DESC",
+                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE tenant_id = :tenantId AND total_games >= :minGames ORDER BY rating DESC, win_percentage DESC",
             nativeQuery = true)
-    List<PlayerStats> findTopPlayersByWinPercentage(@Param("minGames") int minGames);
+    List<PlayerStats> findTopPlayersByWinPercentage(@Param("tenantId") long tenantId, @Param("minGames") int minGames);
 
     @Query(
             value =
-                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE total_games >= :minGames ORDER BY total_games DESC",
+                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE tenant_id = :tenantId AND total_games >= :minGames ORDER BY total_games DESC",
             nativeQuery = true)
-    List<PlayerStats> findTopPlayersByTotalGames(@Param("minGames") int minGames);
+    List<PlayerStats> findTopPlayersByTotalGames(@Param("tenantId") long tenantId, @Param("minGames") int minGames);
 
     @Query(
             value =
-                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE total_games >= :minGames ORDER BY wins DESC",
+                    "SELECT id, name, rating, peak_rating, current_streak, best_streak, games_played, total_games, wins, win_percentage FROM foosball.player_stats WHERE tenant_id = :tenantId AND total_games >= :minGames ORDER BY wins DESC",
             nativeQuery = true)
-    List<PlayerStats> findTopPlayersByWins(@Param("minGames") int minGames);
+    List<PlayerStats> findTopPlayersByWins(@Param("tenantId") long tenantId, @Param("minGames") int minGames);
 }

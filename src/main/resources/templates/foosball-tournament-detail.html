@@ -22,7 +22,7 @@
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
 </head>
-<body class="foosball-page" hx-browser-indicator:inherited="true">
+<body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
     <!-- Header -->
     <div class="foosball-header py-3 border-bottom bg-light">
         <div class="container-fluid">
@@ -32,7 +32,7 @@
                     <small class="text-secondary" th:text="${tournament.description}"></small>
                 </div>
                 <div>
-                    <a th:href="@{/foosball/tournaments}" class="btn btn-outline-secondary btn-sm">
+                    <a th:href="@{'/foosball/' + ${tenantSlug} + '/tournaments'}" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-arrow-left"></i> Back
                     </a>
                 </div>
@@ -182,7 +182,7 @@
                         <div class="alert alert-info py-2" th:if="${players.isEmpty()}">
                             <small>
                                 <i class="bi bi-info-circle"></i> No players found.
-                                <a th:href="@{/foosball}" target="_blank" class="alert-link">Create players first</a>
+                                <a th:href="@{'/foosball/' + ${tenantSlug}}" target="_blank" class="alert-link">Create players first</a>
                                 then refresh this page.
                             </small>
                         </div>
@@ -208,6 +208,7 @@
     <script th:inline="javascript">
         const tournamentId = /*[[${tournament.id}]]*/ 0;
         const tournamentStatus = /*[[${tournament.status}]]*/ '';
+        const tenantSlug = /*[[${tenantSlug}]]*/ 'ramsey-solutions';
 
         // Render bracket if tournament is in progress
         if (tournamentStatus !== 'DRAFT' && tournamentStatus !== 'REGISTRATION_OPEN' && tournamentStatus !== 'REGISTRATION_CLOSED') {
@@ -217,7 +218,7 @@
 
         async function loadAndRenderBracket() {
             try {
-                const response = await fetch(`/api/tournaments/${tournamentId}/bracket`);
+                const response = await fetch(`/api/tournaments/${tenantSlug}/${tournamentId}/bracket`);
                 if (response.ok) {
                     const bracket = await response.json();
                     console.log('Loaded bracket:', bracket);
@@ -410,7 +411,7 @@
                 const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-                const response = await fetch(`/api/tournaments/${tournamentId}/register`, {
+                const response = await fetch(`/api/tournaments/${tenantSlug}/${tournamentId}/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -443,7 +444,7 @@
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
                 console.log('Starting tournament...');
-                const response = await fetch(`/api/tournaments/${tournamentId}/start`, {
+                const response = await fetch(`/api/tournaments/${tenantSlug}/${tournamentId}/start`, {
                     method: 'POST',
                     headers: {
                         [csrfHeader]: csrfToken
@@ -472,7 +473,7 @@
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
                 const endpoint = action === 'REGISTRATION_OPEN' ? 'registration/open' : 'registration/close';
-                const response = await fetch(`/api/tournaments/${tournamentId}/${endpoint}`, {
+                const response = await fetch(`/api/tournaments/${tenantSlug}/${tournamentId}/${endpoint}`, {
                     method: 'POST',
                     headers: {
                         [csrfHeader]: csrfToken
@@ -492,7 +493,7 @@
 
         async function loadReadyMatches() {
             try {
-                const response = await fetch(`/api/tournaments/${tournamentId}/matches`);
+                const response = await fetch(`/api/tournaments/${tenantSlug}/${tournamentId}/matches`);
                 if (response.ok) {
                     const matches = await response.json();
                     const readyMatches = matches.filter(m => m.status === 'READY');
@@ -561,7 +562,7 @@
                 const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
                 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
 
-                const response = await fetch(`/api/tournaments/matches/${matchId}/score`, {
+                const response = await fetch(`/api/tournaments/${tenantSlug}/matches/${matchId}/score`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 package biz.thonbecker.personal.foosball.platform.persistence;
 
+import biz.thonbecker.personal.foosball.platform.tenant.TenantAssignmentListener;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +21,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Filter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -30,12 +32,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor
 @Entity
 @Table(name = "games", schema = "foosball")
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class, TenantAssignmentListener.class})
+@Filter(name = "foosballTenant", condition = "tenant_id = :tenantId")
 public class Game {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private Long tenantId;
 
     @NotNull(message = "White team player 1 is required")
     @ManyToOne(fetch = FetchType.LAZY)

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/foosball")
+@RequestMapping("/api/foosball/{tenantSlug}")
 public class FoosballRestController {
 
     private final FoosballDataService foosballService;

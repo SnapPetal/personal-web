@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="037-foosball-playground-test-data" author="thonbecker">
+        <comment>Create an isolated tenant with sample Foosball data for testing</comment>
+        <sql><![CDATA[
+            INSERT INTO foosball.tenants (id, name, slug)
+            VALUES (2, 'Foosball Playground', 'playground')
+            ON CONFLICT (id) DO NOTHING;
+
+            SELECT setval(
+                pg_get_serial_sequence('foosball.tenants', 'id'),
+                GREATEST((SELECT COALESCE(MAX(id), 2) FROM foosball.tenants), 2),
+                true);
+
+            INSERT INTO foosball.players
+                (tenant_id, name, rating, peak_rating, games_played, current_streak, best_streak)
+            VALUES
+                (2, 'Alex', 1500, 1500, 0, 0, 0),
+                (2, 'Jordan', 1500, 1500, 0, 0, 0),
+                (2, 'Taylor', 1500, 1500, 0, 0, 0),
+                (2, 'Morgan', 1500, 1500, 0, 0, 0)
+            ON CONFLICT (tenant_id, name) DO NOTHING;
+
+            INSERT INTO foosball.games
+                (tenant_id, white_team_player1_id, white_team_player2_id,
+                 black_team_player1_id, black_team_player2_id, winner)
+            SELECT 2,
+                   white_player.id, white_partner.id,
+                   black_player.id, black_partner.id,
+                   'WHITE'
+            FROM foosball.players white_player
+            JOIN foosball.players white_partner ON white_partner.tenant_id = 2 AND white_partner.name = 'Jordan'
+            JOIN foosball.players black_player ON black_player.tenant_id = 2 AND black_player.name = 'Taylor'
+            JOIN foosball.players black_partner ON black_partner.tenant_id = 2 AND black_partner.name = 'Morgan'
+            WHERE white_player.tenant_id = 2 AND white_player.name = 'Alex'
+              AND NOT EXISTS (
+                  SELECT 1 FROM foosball.games g
+                  WHERE g.tenant_id = 2
+                    AND g.white_team_player1_id = white_player.id
+                    AND g.white_team_player2_id = white_partner.id
+                    AND g.black_team_player1_id = black_player.id
+                    AND g.black_team_player2_id = black_partner.id
+              );
+
+            INSERT INTO foosball.games
+                (tenant_id, white_team_player1_id, white_team_player2_id,
+                 black_team_player1_id, black_team_player2_id, winner)
+            SELECT 2,
+                   white_player.id, white_partner.id,
+                   black_player.id, black_partner.id,
+                   'BLACK'
+            FROM foosball.players white_player
+            JOIN foosball.players white_partner ON white_partner.tenant_id = 2 AND white_partner.name = 'Taylor'
+            JOIN foosball.players black_player ON black_player.tenant_id = 2 AND black_player.name = 'Alex'
+            JOIN foosball.players black_partner ON black_partner.tenant_id = 2 AND black_partner.name = 'Morgan'
+            WHERE white_player.tenant_id = 2 AND white_player.name = 'Jordan'
+              AND NOT EXISTS (
+                  SELECT 1 FROM foosball.games g
+                  WHERE g.tenant_id = 2
+                    AND g.white_team_player1_id = white_player.id
+                    AND g.white_team_player2_id = white_partner.id
+                    AND g.black_team_player1_id = black_player.id
+                    AND g.black_team_player2_id = black_partner.id
+              );
+        ]]></sql>
+    </changeSet>
+</databaseChangeLog>

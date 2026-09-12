@@ -10,7 +10,7 @@
                 <i th:class="${icon}" aria-hidden="true"></i>
                 <span th:text="${title}">Foosball</span>
             </h4>
-            <a th:href="@{/foosball}" class="btn btn-outline-secondary btn-sm">
+            <a th:href="@{'/foosball/' + ${tenantSlug} }" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-arrow-left"></i>
                 <span th:text="${backLabel}">Back to Foosball</span>
             </a>
@@ -25,7 +25,7 @@
         <i class="bi bi-graph-up display-4"></i>
         <p class="mt-2">No player statistics available yet.</p>
         <button class="btn btn-outline-primary btn-sm"
-                hx-get="/foosball/fragments/player-stats"
+                th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-stats'}"
                 hx-target="#playerStatsList">
             <i class="bi bi-arrow-clockwise"></i> Refresh Stats
         </button>
