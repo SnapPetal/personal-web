@@ -22,7 +22,7 @@
     <htmx.org.version>4.0.0</htmx.org.version>
     <java.version>25</java.version>
     <jspecify.version>1.0.1</jspecify.version>
-    <lombok.version>1.18.46</lombok.version>
+    <lombok.version>1.18.48</lombok.version>
     <maven.compiler.release>25</maven.compiler.release>
     <playwright.version>1.62.0</playwright.version>
     <plyr.version>3.7.8</plyr.version>
