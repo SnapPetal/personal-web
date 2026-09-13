@@ -29,7 +29,12 @@ function loadLastGameTeams() {
   fetch(
     `/foosball/${document.body.dataset.tenantSlug}/fragments/last-game-teams`
   )
-    .then((response) => response.text())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Unable to load last game teams (${response.status})`);
+      }
+      return response.text();
+    })
     .then((html) => {
       const fragment = document
         .createRange()
@@ -39,14 +44,14 @@ function loadLastGameTeams() {
         return;
       }
 
-      const selectors = {
-        whitePlayer1: "#whiteTeamPlayer1",
-        whitePlayer2: "#whiteTeamPlayer2",
-        blackPlayer1: "#blackTeamPlayer1",
-        blackPlayer2: "#blackTeamPlayer2",
+      const players = {
+        "data-white-player-1": "#whiteTeamPlayer1",
+        "data-white-player-2": "#whiteTeamPlayer2",
+        "data-black-player-1": "#blackTeamPlayer1",
+        "data-black-player-2": "#blackTeamPlayer2",
       };
-      Object.entries(selectors).forEach(([player, selector]) => {
-        const playerId = fragment.dataset[player];
+      Object.entries(players).forEach(([attribute, selector]) => {
+        const playerId = fragment.getAttribute(attribute);
         const select = document.querySelector(selector);
         if (playerId && select) {
           select.value = playerId;
