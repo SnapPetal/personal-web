@@ -340,49 +340,5 @@
         </div>
     </footer>
 
-    <!-- Last Game Teams Handler -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('addGameModal');
-
-            modal.addEventListener('shown.bs.modal', function() {
-                // Fetch last game teams when modal opens
-                fetch(`/foosball/${document.body.dataset.tenantSlug}/fragments/last-game-teams`)
-                    .then(response => response.text())
-                    .then(html => {
-                        // Create a temporary div to parse the response
-                        const temp = document.createElement('div');
-                        temp.innerHTML = html;
-
-                        // Execute any scripts in the response
-                        const scripts = temp.getElementsByTagName('script');
-                        for (let script of scripts) {
-                            eval(script.textContent);
-                        }
-
-                        // Wait a bit for player options to load via HTMX, then set values
-                        setTimeout(function() {
-                            if (window.lastGameTeamsData) {
-                                console.log('Setting last game teams:', window.lastGameTeamsData);
-
-                                if (window.lastGameTeamsData.whitePlayer1) {
-                                    document.getElementById('whiteTeamPlayer1').value = window.lastGameTeamsData.whitePlayer1;
-                                }
-                                if (window.lastGameTeamsData.whitePlayer2) {
-                                    document.getElementById('whiteTeamPlayer2').value = window.lastGameTeamsData.whitePlayer2;
-                                }
-                                if (window.lastGameTeamsData.blackPlayer1) {
-                                    document.getElementById('blackTeamPlayer1').value = window.lastGameTeamsData.blackPlayer1;
-                                }
-                                if (window.lastGameTeamsData.blackPlayer2) {
-                                    document.getElementById('blackTeamPlayer2').value = window.lastGameTeamsData.blackPlayer2;
-                                }
-                            }
-                        }, 500); // Wait 500ms for player options to load
-                    })
-                    .catch(error => console.error('Error loading last game teams:', error));
-            });
-        });
-    </script>
 </body>
 </html>

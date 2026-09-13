@@ -163,22 +163,12 @@
 </th:block>
 
 <!-- Last Game Teams Fragment -->
-<div th:fragment="lastGameTeams">
-    <script type="text/javascript" th:inline="javascript">
-        (function() {
-            const lastGameTeams = {
-                whitePlayer1: /*[[${whiteTeamPlayer1Id}]]*/ null,
-                whitePlayer2: /*[[${whiteTeamPlayer2Id}]]*/ null,
-                blackPlayer1: /*[[${blackTeamPlayer1Id}]]*/ null,
-                blackPlayer2: /*[[${blackTeamPlayer2Id}]]*/ null
-            };
-
-            // Store globally so it persists
-            window.lastGameTeamsData = lastGameTeams;
-
-            console.log('Last game teams loaded:', lastGameTeams);
-        })();
-    </script>
+<div th:fragment="lastGameTeams"
+     data-last-game-teams="true"
+     th:attr="data-white-player-1=${whiteTeamPlayer1Id},
+              data-white-player-2=${whiteTeamPlayer2Id},
+              data-black-player-1=${blackTeamPlayer1Id},
+              data-black-player-2=${blackTeamPlayer2Id}">
 </div>
 
 </html>
