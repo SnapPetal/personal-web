@@ -82,7 +82,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="createTournamentForm">
+                    <form id="createTournamentForm"
+                          th:hx-post="@{'/foosball/' + ${tenantSlug} + '/tournaments/create'}"
+                          hx-target="#main-alerts"
+                          hx-swap="none"
+                          hx-indicator="#createTournamentForm">
                         <div class="mb-3">
                             <label for="tournamentName" class="form-label">Tournament Name</label>
                             <input type="text" class="form-control" id="tournamentName" name="name" required>

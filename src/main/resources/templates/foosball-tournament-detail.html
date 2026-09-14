@@ -68,17 +68,20 @@
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button th:if="${tournament.status.name() == 'DRAFT'}"
                                                 class="btn btn-outline-success"
-                                                data-tournament-action="REGISTRATION_OPEN">
+                                                th:hx-post="@{'/foosball/' + ${tenantSlug} + '/tournaments/' + ${tournament.id} + '/registration/open'}"
+                                                hx-swap="none">
                                             <i class="bi bi-door-open"></i> Open Registration
                                         </button>
                                         <button th:if="${tournament.status.name() == 'REGISTRATION_OPEN'}"
                                                 class="btn btn-outline-warning"
-                                                data-tournament-action="REGISTRATION_CLOSED">
+                                                th:hx-post="@{'/foosball/' + ${tenantSlug} + '/tournaments/' + ${tournament.id} + '/registration/close'}"
+                                                hx-swap="none">
                                             <i class="bi bi-door-closed"></i> Close Registration
                                         </button>
                                         <button th:if="${tournament.status.name() == 'REGISTRATION_CLOSED'}"
                                                 class="btn btn-outline-primary"
-                                                data-tournament-action="START">
+                                                th:hx-post="@{'/foosball/' + ${tenantSlug} + '/tournaments/' + ${tournament.id} + '/start'}"
+                                                hx-swap="none">
                                             <i class="bi bi-play-circle"></i> Start Tournament
                                         </button>
                                     </div>
@@ -164,7 +167,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="registerForm">
+                    <form id="registerForm"
+                          th:hx-post="@{'/foosball/' + ${tenantSlug} + '/tournaments/' + ${tournament.id} + '/register'}"
+                          hx-swap="none">
                         <div class="mb-3">
                             <label for="regPlayer1" class="form-label">Player <span class="text-danger">*</span></label>
                             <select class="form-select" id="regPlayer1" name="playerId" required>

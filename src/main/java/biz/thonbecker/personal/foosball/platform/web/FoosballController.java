@@ -7,6 +7,9 @@ import biz.thonbecker.personal.foosball.domain.Team;
 import biz.thonbecker.personal.foosball.platform.FoosballService;
 import biz.thonbecker.personal.foosball.platform.TournamentService;
 import biz.thonbecker.personal.foosball.platform.persistence.TenantRepository;
+import biz.thonbecker.personal.foosball.platform.persistence.Tournament;
+import biz.thonbecker.personal.foosball.platform.web.model.CreateTournamentRequest;
+import biz.thonbecker.personal.foosball.platform.web.model.TournamentRegistrationRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -85,6 +88,61 @@ public class FoosballController {
                 "tournaments",
                 tournamentService.getTournamentSummaries(pageable).getContent());
         return "foosball-tournament-fragments :: tournamentList";
+    }
+
+    @PostMapping("/tournaments/create")
+    public void createTournamentHtmx(
+            @PathVariable String tenantSlug,
+            @RequestParam String name,
+            @RequestParam(required = false) String description,
+            @RequestParam String tournamentType,
+            @RequestParam(required = false) Integer maxParticipants,
+            @RequestParam Long createdById,
+            HttpServletResponse response) {
+        final var request = new CreateTournamentRequest(
+                name,
+                description,
+                Tournament.TournamentType.valueOf(tournamentType),
+                maxParticipants,
+                null,
+                null,
+                null,
+                null);
+        final var tournament = tournamentService.createTournament(request, createdById);
+        response.setHeader("HX-Redirect", "/foosball/" + tenantSlug + "/tournaments/" + tournament.getId());
+    }
+
+    @PostMapping("/tournaments/{id}/registration/open")
+    public void openTournamentRegistrationHtmx(
+            @PathVariable String tenantSlug, @PathVariable Long id, HttpServletResponse response) {
+        tournamentService.openRegistration(id);
+        response.setHeader("HX-Redirect", "/foosball/" + tenantSlug + "/tournaments/" + id);
+    }
+
+    @PostMapping("/tournaments/{id}/registration/close")
+    public void closeTournamentRegistrationHtmx(
+            @PathVariable String tenantSlug, @PathVariable Long id, HttpServletResponse response) {
+        tournamentService.closeRegistration(id);
+        response.setHeader("HX-Redirect", "/foosball/" + tenantSlug + "/tournaments/" + id);
+    }
+
+    @PostMapping("/tournaments/{id}/start")
+    public void startTournamentHtmx(
+            @PathVariable String tenantSlug, @PathVariable Long id, HttpServletResponse response) {
+        tournamentService.startTournament(id);
+        response.setHeader("HX-Redirect", "/foosball/" + tenantSlug + "/tournaments/" + id);
+    }
+
+    @PostMapping("/tournaments/{id}/register")
+    public void registerForTournamentHtmx(
+            @PathVariable String tenantSlug,
+            @PathVariable Long id,
+            @RequestParam Long playerId,
+            @RequestParam(required = false) Long partnerId,
+            @RequestParam(required = false) String teamName,
+            HttpServletResponse response) {
+        tournamentService.registerForTournament(id, new TournamentRegistrationRequest(playerId, partnerId, teamName));
+        response.setHeader("HX-Redirect", "/foosball/" + tenantSlug + "/tournaments/" + id);
     }
 
     @GetMapping("/tournaments/{id}")
