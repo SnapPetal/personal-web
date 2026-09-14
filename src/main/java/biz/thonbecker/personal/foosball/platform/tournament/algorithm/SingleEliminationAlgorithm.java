@@ -102,14 +102,17 @@ public class SingleEliminationAlgorithm implements TournamentAlgorithm {
                 .sorted((m1, m2) -> Integer.compare(m1.getMatchNumber(), m2.getMatchNumber()))
                 .toList();
 
-        // Assign teams with byes going to lower seeds
+        // Put byes in the first-round slots so every bracket slot has a path forward.
+        final var bracketSize = firstRoundMatches.size() * 2;
+        final var byeCount = bracketSize - participantCount;
         var registrationIndex = 0;
-        for (TournamentMatch match : firstRoundMatches) {
+        for (var matchIndex = 0; matchIndex < firstRoundMatches.size(); matchIndex++) {
+            final var match = firstRoundMatches.get(matchIndex);
             if (registrationIndex < registrations.size()) {
                 match.setTeam1(registrations.get(registrationIndex++));
             }
 
-            if (registrationIndex < registrations.size()) {
+            if (matchIndex >= byeCount && registrationIndex < registrations.size()) {
                 match.setTeam2(registrations.get(registrationIndex++));
             }
 
