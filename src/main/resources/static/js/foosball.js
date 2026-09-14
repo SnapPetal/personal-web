@@ -69,6 +69,33 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("createTournamentForm")
     ?.addEventListener("submit", createTournament);
+
+  document
+    .getElementById("registerForm")
+    ?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      window.registerForTournament?.();
+    });
+
+  document.querySelectorAll("[data-tournament-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const action = button.dataset.tournamentAction;
+      if (action === "START") {
+        window.startTournament?.();
+      } else {
+        window.updateTournamentStatus?.(action);
+      }
+    });
+  });
+
+  document.addEventListener("submit", (event) => {
+    const form = event.target;
+    const matchId = form.dataset.matchId;
+    if (matchId) {
+      event.preventDefault();
+      window.submitScore?.(event, Number.parseInt(matchId, 10));
+    }
+  });
 });
 
 async function createTournament(event) {

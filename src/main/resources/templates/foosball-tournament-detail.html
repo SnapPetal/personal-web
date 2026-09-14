@@ -21,6 +21,7 @@
     <!-- JS dependencies -->
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/js/foosball.js}"></script>
 </head>
 <body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
     <!-- Header -->
@@ -67,17 +68,17 @@
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button th:if="${tournament.status.name() == 'DRAFT'}"
                                                 class="btn btn-outline-success"
-                                                onclick="updateTournamentStatus('REGISTRATION_OPEN')">
+                                                data-tournament-action="REGISTRATION_OPEN">
                                             <i class="bi bi-door-open"></i> Open Registration
                                         </button>
                                         <button th:if="${tournament.status.name() == 'REGISTRATION_OPEN'}"
                                                 class="btn btn-outline-warning"
-                                                onclick="updateTournamentStatus('REGISTRATION_CLOSED')">
+                                                data-tournament-action="REGISTRATION_CLOSED">
                                             <i class="bi bi-door-closed"></i> Close Registration
                                         </button>
                                         <button th:if="${tournament.status.name() == 'REGISTRATION_CLOSED'}"
                                                 class="btn btn-outline-primary"
-                                                onclick="startTournament()">
+                                                data-tournament-action="START">
                                             <i class="bi bi-play-circle"></i> Start Tournament
                                         </button>
                                     </div>
@@ -199,7 +200,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="registerForTournament()">Register</button>
+                    <button type="submit" class="btn btn-primary">Register</button>
                 </div>
             </div>
         </div>
@@ -520,7 +521,7 @@
                         <div class="mb-2">
                             <strong>Round ${match.roundNumber}, Match ${match.matchNumber}</strong>
                         </div>
-                        <form id="score-form-${match.id}" onsubmit="submitScore(event, ${match.id})">
+                        <form id="score-form-${match.id}" data-match-id="${match.id}">
                             <div class="row g-2 align-items-end">
                                 <div class="col-5">
                                     <label class="form-label small mb-1">${match.team1DisplayName || 'Team 1'}</label>
