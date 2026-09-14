@@ -22,6 +22,7 @@
     <!-- JS dependencies -->
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/foosball.js}"></script>
 </head>
 <body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
     <!-- Header -->
@@ -81,7 +82,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="createTournamentForm">
+                    <form id="createTournamentForm"
+                          th:hx-post="@{'/foosball/' + ${tenantSlug} + '/tournaments/create'}"
+                          hx-target="#main-alerts"
+                          hx-swap="none"
+                          hx-indicator="#createTournamentForm">
                         <div class="mb-3">
                             <label for="tournamentName" class="form-label">Tournament Name</label>
                             <input type="text" class="form-control" id="tournamentName" name="name" required>
@@ -115,55 +120,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="createTournament()">Create</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
                 </div>
             </div>
         </div>
     </div>
-
-    <script>
-        async function createTournament() {
-            const form = document.getElementById('createTournamentForm');
-            const formData = new FormData(form);
-
-            const request = {
-                name: formData.get('name'),
-                description: formData.get('description'),
-                tournamentType: formData.get('tournamentType') || 'SINGLE_ELIMINATION',
-                maxParticipants: formData.get('maxParticipants') ? parseInt(formData.get('maxParticipants')) : null
-            };
-
-            const createdById = parseInt(formData.get('createdById'));
-            const tenantSlug = document.body.dataset.tenantSlug;
-
-            try {
-                const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-                const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-
-                const response = await fetch(`/api/tournaments/${tenantSlug}?createdById=${createdById}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        [csrfHeader]: csrfToken
-                    },
-                    body: JSON.stringify(request)
-                });
-
-                if (response.ok) {
-                    const tournament = await response.json();
-                    bootstrap.Modal.getInstance(document.getElementById('createTournamentModal')).hide();
-                    form.reset();
-
-                    // Redirect to tournament detail page
-                    window.location.href = `/foosball/${tenantSlug}/tournaments/${tournament.id}`;
-                } else {
-                    alert('Failed to create tournament');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Failed to create tournament');
-            }
-        }
-    </script>
 </body>
 </html>
