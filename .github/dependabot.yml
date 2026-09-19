@@ -63,6 +63,10 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # eslint-config-airbnb-base 15.0.0 requires eslint 7 or 8
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
