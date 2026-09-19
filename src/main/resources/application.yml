@@ -56,25 +56,27 @@ spring:
         jdbc:
           time_zone: UTC
 
-  # Spring AI OpenAI Configuration
+  # Spring AI Bedrock Configuration
   ai:
-    openai:
-      api-key: ${PERSONAL_OPENAI_API_KEY:${OPENAI_API_KEY:}}
-      chat:
-        model: ${PERSONAL_OPENAI_CHAT_MODEL:gpt-4o}
-        max-tokens: 4096
-      embedding:
-        model: ${PERSONAL_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
-        dimensions: ${PERSONAL_OPENAI_EMBEDDING_DIMENSIONS:1024}
-      image:
-        model: ${PERSONAL_OPENAI_IMAGE_MODEL:dall-e-3}
-        n: 1
-        response_format: b64_json
-        size: 1024x1024
+    bedrock:
+      converse:
+        chat:
+          enabled: true
+          options:
+            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-3-5-sonnet-20241022-v2:0}
+            max-tokens: 4096
+            temperature: 0.3
+      titan:
+        embedding:
+          model: amazon.titan-embed-text-v2:0
+          input-type: TEXT
+      aws:
+        region: ${PERSONAL_AWS_REGION:us-east-1}
+        access-key: ${PERSONAL_AWS_ACCESS_KEY_ID:test}
+        secret-key: ${PERSONAL_AWS_SECRET_ACCESS_KEY:test}
     model:
-      chat: openai
-      embedding: openai
-      image: openai
+      chat: bedrock-converse
+      embedding: bedrock-titan
     vectorstore:
       s3:
         vector-bucket-name: ${SKATETRICKS_VECTORSTORE_BUCKET:thonbecker-vectors}
@@ -156,7 +158,12 @@ landscape:
     cdn-domain: https://cdn.thonbecker.com
     folder-prefix: landscape-plans/
   image-generation:
-    responses-model: ${PERSONAL_OPENAI_IMAGE_RESPONSES_MODEL:gpt-4.1-mini}
+    model: ${PERSONAL_BEDROCK_IMAGE_MODEL:amazon.nova-canvas-v1:0}
+
+# Trivia Configuration
+trivia:
+  ai:
+    model: ${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-3-5-haiku-20241022-v1:0}
 
 # Notification Configuration (email only)
 notification:

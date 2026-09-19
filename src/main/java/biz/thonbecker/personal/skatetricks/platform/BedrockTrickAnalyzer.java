@@ -18,7 +18,7 @@ import org.springframework.util.MimeTypeUtils;
 
 @Component
 @Slf4j
-class OpenAiTrickAnalyzer implements TrickAnalyzer {
+class BedrockTrickAnalyzer implements TrickAnalyzer {
 
     private final ChatClient chatClient;
     private final PoseEstimationService poseEstimationService;
@@ -28,7 +28,7 @@ class OpenAiTrickAnalyzer implements TrickAnalyzer {
     private final TrickKnowledgeService trickKnowledgeService;
 
     @Autowired(required = false)
-    OpenAiTrickAnalyzer(
+    BedrockTrickAnalyzer(
             @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
             PoseEstimationService poseEstimationService,
             VideoFrameExtractor videoFrameExtractor,
@@ -181,8 +181,7 @@ class OpenAiTrickAnalyzer implements TrickAnalyzer {
                 .system(systemPrompt)
                 .user(u -> u.text(userPrompt).media(media))
                 .call()
-                .entity(TrickAnalysisResponseSchema.class, spec -> spec.useProviderStructuredOutput()
-                        .validateSchema());
+                .entity(TrickAnalysisResponseSchema.class);
     }
 
     private String fetchSimilarExamples(final String poseText) {

@@ -234,7 +234,7 @@ public class LandscapeService {
         try {
             final var imageData = fetchPlanImage(plan);
 
-            // Get text descriptions from OpenAI
+            // Get text descriptions from Bedrock
             final var textAnalysis = aiService.analyzeSeasons(
                     imageData, HardinessZone.valueOf(plan.getHardinessZone()), plantDescriptions);
 

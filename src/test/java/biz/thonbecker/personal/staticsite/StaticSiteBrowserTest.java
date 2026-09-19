@@ -132,7 +132,7 @@ class StaticSiteBrowserTest {
     private static Page newPage(final int width, final int height) {
         final var page = browser.newPage(new Browser.NewPageOptions().setViewportSize(width, height));
         page.route(
-                "https://unpkg.com/htmx.org@4.0.0",
+                url -> url.contains("htmx.org"),
                 route -> route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
                         .setStatus(200)
                         .setContentType("application/javascript")
@@ -144,6 +144,12 @@ class StaticSiteBrowserTest {
                           });
                         });
                         """)));
+        page.route(
+                url -> url.contains("static/array.js") || url.contains("e.thonbecker.biz"),
+                route -> route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
+                        .setStatus(200)
+                        .setContentType("application/javascript")
+                        .setBody("")));
         page.onConsoleMessage(message -> {
             if (message.type().equals("error") && !message.text().contains("PERSONALWEB_THEME")) {
                 browserErrors.add("console: " + message.text());

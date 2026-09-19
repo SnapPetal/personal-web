@@ -35,7 +35,7 @@ mvn spring-boot:build-image -Dspring-boot.build-image.imageName=personal
 
 ## Local Development Setup
 
-1. Copy `.env.example` to `.env` and fill in AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, `PERSONAL_AWS_REGION`), OpenAI credentials (`PERSONAL_OPENAI_API_KEY`), and Nextcloud credentials (`PERSONAL_NEXTCLOUD_USERNAME`, `PERSONAL_NEXTCLOUD_APP_PASSWORD`).
+1. Copy `.env.example` to `.env` and fill in AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, `PERSONAL_AWS_REGION`) and Nextcloud credentials (`PERSONAL_NEXTCLOUD_USERNAME`, `PERSONAL_NEXTCLOUD_APP_PASSWORD`).
 2. Spring Boot Docker Compose integration auto-starts PostgreSQL from `docker-compose.yml` when running locally—no manual `docker-compose up` needed.
 3. The `dev` profile (`application-dev.yml`) overrides the datasource to `localhost:5432/dbmaster` with user `dbmasteruser` and no password.
 4. **Hot Reload**: Spring Boot DevTools is enabled in the `dev` profile for automatic restart when files change:
@@ -58,7 +58,6 @@ Cognito is no longer used for application identity. Landscape plans are owned by
 **GitHub Secrets (for production):**
 
 ```bash
-PERSONAL_OPENAI_API_KEY
 PERSONAL_NEXTCLOUD_USERNAME
 PERSONAL_NEXTCLOUD_APP_PASSWORD
 PERSONAL_CF_ACCESS_ISSUER
@@ -88,7 +87,7 @@ Each module follows this internal package convention:
 |----------------|----------------------|------------------------------------------------------------------------|
 | `foosball`     | `FoosballService`    | Table soccer game tracking, stats, tournaments, ELO rating             |
 | `trivia`       | `TriviaService`      | AI-powered FPU trivia, WebSocket multiplayer                           |
-| `skatetricks`  | `SkateTricksService` | YOLO pose estimation + OpenAI vision trick detection                   |
+| `skatetricks`  | `SkateTricksService` | YOLO pose estimation + AWS Bedrock vision trick detection              |
 | `landscape`    | `LandscapeService`   | AI-powered landscape planning with USDA plant database integration     |
 | `booking`      | `BookingService`     | Appointment scheduling with auto-availability, event publishing        |
 | `tankgame`     | _(self-contained)_   | Godot tank game prototype with player progression                      |
@@ -147,12 +146,12 @@ Other event listeners (logging in notification module) use `@EventListener` sinc
 - **Caching**: Caffeine (`CacheConfig`). Used for Bible verse, Dad joke responses, plant data, plant images (24-hour TTL).
 - **Retry**: Spring Retry (`RetryConfig`) for fault-tolerant external API calls.
 - **Scheduled jobs**: ShedLock (`ShedlockConfig`) prevents duplicate execution in distributed environments.
-- **AI**: Spring AI 2.0.0-M5 with OpenAI for chat, vision, embeddings, structured output, and image generation. `EmbeddingService` uses Spring AI's `EmbeddingModel` with OpenAI embeddings for S3 Vectors storage. DJL (Deep Java Library) with PyTorch remains local for YOLO pose estimation in skatetricks.
-- **Image Generation**: `LandscapeImageGenerationService` uses Spring AI's OpenAI `ImageModel` for seasonal landscape images. It returns base64 image data for the existing seasonal preview response contract.
+- **AI**: Spring AI with AWS Bedrock (Claude Converse for chat and vision, Titan Text Embeddings v2 for S3 Vectors storage). Amazon Nova Canvas for landscape image generation via AWS SDK `BedrockRuntimeClient`. DJL (Deep Java Library) with PyTorch remains local for YOLO pose estimation in skatetricks.
+- **Image Generation**: `LandscapeImageGenerationService` uses AWS Bedrock Nova Canvas (`amazon.nova-canvas-v1:0`) with CANNY_EDGE conditioning for seasonal landscape images. It returns base64 image data for the existing seasonal preview response contract.
 - **WebSockets**: STOMP over SockJS for trivia and skatetricks browser features; the tank game uses a Godot HTML5 client with a raw WebSocket endpoint. Skatetricks video conversion uses WebSocket for progress updates, but analysis uses HTTP polling to avoid timeout issues with long-running AI inference.
 - **Async processing**: Skatetricks uses async endpoints with status polling for video conversion and analysis. Long-running operations (30+ seconds) are processed in background threads via `ExecutorService`. Client polls status endpoints (GET `/skatetricks/convert/{id}/status`, `/skatetricks/analyze/{id}/status`) every 2 seconds. YOLO models pre-load at startup (`@PostConstruct`) to prevent first-request timeouts.
 - **MediaConvert configuration**: Skatetricks transcoding requires `skatetricks.transcoding.mediaconvert-role-arn` (`SKATETRICKS_MEDIACONVERT_ROLE_ARN`). Do not set `SKATETRICKS_MEDIACONVERT_ENDPOINT`; `AwsMediaConvertVideoTranscoder` resolves the account-specific endpoint at runtime via `DescribeEndpoints`.
-- **Video analysis frame sampling**: Uploaded/imported MP4 analysis extracts duration-aware frames server-side before OpenAI vision analysis. `skatetricks.analysis.max-frames` (`SKATETRICKS_ANALYSIS_MAX_FRAMES`) defaults to `24`.
+- **Video analysis frame sampling**: Uploaded/imported MP4 analysis extracts duration-aware frames server-side before AWS Bedrock Claude vision analysis. `skatetricks.analysis.max-frames` (`SKATETRICKS_ANALYSIS_MAX_FRAMES`) defaults to `24`.
 - **Frontend**: Thymeleaf templates + HTMX + Alpine.js + Bootstrap 5. Frontend libraries served as WebJars. Fabric.js for interactive canvas (landscape plant placement). **IMPORTANT**: All static resource references (`/js/**`, `/css/**`) MUST use Thymeleaf expressions (`th:src="@{/js/...}"`, `th:href="@{/css/...}"`), never plain `src` or `href`. Spring Boot's content-based resource versioning (`spring.web.resources.chain.strategy.content`) appends MD5 hashes to URLs for cache busting across deployments.
 - **Alpine.js**: Used for client-side reactivity across all modules. Components are registered via `Alpine.data()` inside an `alpine:init` event listener (e.g., `document.addEventListener("alpine:init", () => { Alpine.data("bibleVerse", () => ({...})); });`). This ensures components are registered with Alpine before DOM processing and avoids race conditions with `defer`-loaded Alpine. WebSocket/canvas/media code stays imperative within the component methods. Alpine.js is loaded via WebJar (`org.webjars.npm:alpinejs:3.14.9`) with `defer` attribute. Global CSS rule `[x-cloak] { display: none !important; }` in `main.css` prevents flash of unstyled content. Use `x-if` (not `x-show`) when multiple states should never coexist in the DOM simultaneously (e.g., loading spinner vs content).
 - **Alpine.js Reference**: Use the [official Alpine.js Start Here guide](https://alpinejs.dev/start-here) and its linked directive/API documentation for `x-data`, `x-on`/`@`, `x-text`, `x-model`, `x-show`, `x-if`, `x-ref`, lifecycle hooks, and Alpine globals. Keep Alpine state local to the component that owns it and register reusable components through `Alpine.data()`.
@@ -160,7 +159,7 @@ Other event listeners (logging in notification module) use `@EventListener` sinc
 - **HTMX Reference**: Use the [official HTMX reference](https://htmx.org/reference/) for attributes, request/response headers, events, extensions, the JavaScript API, and configuration options. Prefer declarative HTMX attributes for server-rendered fragment interactions; use Alpine or imperative JavaScript only for client-side state and canvas/media/WebSocket behavior.
 - **Theme Toggle**: Sun/moon icon toggle in navbar (home page only) as Alpine `themeToggle()` component. Theme preference is stored in the shared `PERSONALWEB_THEME` cookie on `.thonbecker.biz`, so booking pages automatically apply the same theme.
 - **CSRF**: Cookie-based CSRF tokens (`CookieCsrfTokenRepository`) with `CsrfTokenRequestAttributeHandler` for eager token generation (required in Spring Security 6+ where CSRF tokens are deferred by default). `csrf-utils.js` supports both meta tag and cookie-based token delivery with cookie as fallback. Alpine components on pages without meta tags (booking) read the token directly from the `XSRF-TOKEN` cookie.
-- **Structured AI Output**: Skatetricks trick analyzer uses `AdvisorParams.ENABLE_NATIVE_STRUCTURED_OUTPUT` with Spring AI's `.entity()` for type-safe JSON responses from OpenAI. `@JsonIgnoreProperties(ignoreUnknown = true)` on response schema records handles extra fields the model may include. System prompts lead with "Your output MUST be ONLY a valid JSON object" to prevent text-before-JSON responses.
+- **Structured AI Output**: Skatetricks trick analyzer uses Spring AI's `.entity(TrickAnalysisResponseSchema.class)` for type-safe JSON responses from Bedrock Claude. `@JsonIgnoreProperties(ignoreUnknown = true)` on response schema records handles extra fields the model may include. System prompts lead with "Your output MUST be ONLY a valid JSON object" to prevent text-before-JSON responses.
 
 ### Testing
 
@@ -224,35 +223,34 @@ Always run `mvn spotless:apply` before committing Java, JS, or Markdown changes.
 - Use `Objects.isNull()` and `Objects.nonNull()` instead of `== null` / `!= null` checks.
 - Do not embed new helper, support, or utility classes inside other source files. Add new top-level classes in their own files, even when the class is small.
 
-### OpenAI / Spring AI Configuration
+### AWS Bedrock / Spring AI Configuration
 
-The application has moved off AWS Bedrock. Do not add Bedrock starters, Bedrock model IDs, Titan embedding configuration, or `BedrockRuntimeClient` back into the app unless explicitly requested.
+The application uses AWS Bedrock for generative AI, embeddings, and image generation.
 
-**Current Spring AI M5 configuration** (`application.yml`):
+**Current Spring AI configuration** (`application.yml`):
 
 ```yaml
 spring:
   ai:
-    openai:
-      api-key: ${PERSONAL_OPENAI_API_KEY:${OPENAI_API_KEY:}}
-      chat:
-        options:
-          model: ${PERSONAL_OPENAI_CHAT_MODEL:gpt-4o}
-          max-tokens: 4096
-      embedding:
-        options:
-          model: ${PERSONAL_OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
-          dimensions: ${PERSONAL_OPENAI_EMBEDDING_DIMENSIONS:1024}
-      image:
-        options:
-          model: ${PERSONAL_OPENAI_IMAGE_MODEL:dall-e-3}
-          n: 1
-          response-format: b64_json
-          size: 1024x1024
+    bedrock:
+      converse:
+        chat:
+          enabled: true
+          options:
+            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-3-5-sonnet-20241022-v2:0}
+            max-tokens: 4096
+            temperature: 0.3
+      titan:
+        embedding:
+          model: amazon.titan-embed-text-v2:0
+          input-type: TEXT
+      aws:
+        region: ${PERSONAL_AWS_REGION:us-east-1}
+        access-key: ${PERSONAL_AWS_ACCESS_KEY_ID:test}
+        secret-key: ${PERSONAL_AWS_SECRET_ACCESS_KEY:test}
     model:
-      chat: openai
-      embedding: openai
-      image: openai
+      chat: bedrock-converse
+      embedding: bedrock-titan
 ```
 
 #### Spring AI Multimodal Messages (Images + Text)
@@ -318,8 +316,8 @@ This applies to FinancialPeaceQuestionGenerator (trivia module). For image analy
 The `skatetricks` module uses **AWS S3 Vectors** as a vector store for Retrieval-Augmented Generation (RAG) to improve trick detection accuracy over time.
 
 **Two-model architecture:**
-- **OpenAI chat/vision model** — visual trick analysis via Spring AI `ChatClient`
-- **OpenAI text embeddings** (`text-embedding-3-small`, configured to 1024 dimensions) — compact motion signatures via Spring AI `EmbeddingModel`
+- **AWS Bedrock Claude chat/vision model** — visual trick analysis via Spring AI `ChatClient`
+- **AWS Bedrock Titan Text Embeddings v2** (`amazon.titan-embed-text-v2:0`, 1024 dimensions) — compact motion signatures via Spring AI `EmbeddingModel`
 
 **Embedding strategy — two text outputs from PoseData:**
 - `toPromptText()` — verbose per-frame skeletal data injected into the model prompt for visual analysis
@@ -328,7 +326,7 @@ The `skatetricks` module uses **AWS S3 Vectors** as a vector store for Retrieval
 The `embedding_text` column on `trick_attempts` stores the compact text. If null (legacy rows), falls back to raw `pose_data` for embedding.
 
 **Store flow** (verified attempt -> vector store):
-1. Trick analyzed by OpenAI; YOLO pose data saved to `pose_data` column, embedding text to `embedding_text` column in DB
+1. Trick analyzed by Bedrock Claude; YOLO pose data saved to `pose_data` column, embedding text to `embedding_text` column in DB
 2. Auto-verified if `confidence >= 80`; otherwise surfaced to user for confirmation/correction
 3. On verification: `writeToVectorStore()` embeds the **embedding text** (compact motion signature) via `EmbeddingService`, stores with `PutInputVector` keyed `attempt-{id}` and `Document` metadata (`trickName`, `confidence`, `formScore`, `attemptId`, `feedback`)
 4. Attempts without pose/embedding data (e.g., direct video analysis path) are skipped for vector store writes
@@ -336,15 +334,13 @@ The `embedding_text` column on `trick_attempts` stores the compact text. If null
 **IMPORTANT**: Both the stored vectors and query vectors must embed the **same type of data** (embedding text from `toEmbeddingText()`). The embedding text captures motion signatures (rotation, airborne ratio, knee bend, key frame angles) so that similar trick mechanics cluster together in vector space.
 
 **RAG query flow** (frame analysis path only):
-1. `OpenAiTrickAnalyzer.fetchSimilarExamples()` embeds the compact embedding text
-2. Queries `queryVectors` top-3 by cosine similarity
-3. Similar verified past attempts (with feedback from metadata) are injected as few-shot examples into the system prompt
+1. `BedrockTrickAnalyzer.fetchSimilarExamples()` queries top-3 similar attempts via Spring AI `VectorStore`
+2. Similar verified past attempts (with feedback from metadata) are injected as few-shot examples into the system prompt
 
 **Key classes:**
-- `EmbeddingService` — wraps Spring AI `EmbeddingModel`, returns `List<Float>` (1024 dims)
 - `VectorStoreInitializer` — `@PostConstruct` creates the index (`DataType.FLOAT32`, `DistanceMetric.COSINE`, dim=1024); supports `recreate` flag for index reset. Conditional on `skatetricks.vectorstore.enabled`.
 - `writeToVectorStore()` in `SkateTricksService` — embeds embedding text, upserts (same key replaces on correction)
-- `fetchSimilarExamples()` in `OpenAiTrickAnalyzer` — RAG retrieval for frame analysis
+- `fetchSimilarExamples()` in `BedrockTrickAnalyzer` — RAG retrieval for frame analysis
 
 **Configuration** (`application.yml`):
 
@@ -354,11 +350,11 @@ skatetricks:
     bucket: thonbecker-vectors
     index: skatetricks-tricks
     dimension: 1024
-    recreate: true   # Wipes and recreates the index on startup for the OpenAI embedding migration
+    recreate: false
     enabled: true    # Set to false to disable vector store (disabled in dev profile)
 ```
 
-The `S3VectorsClient` bean, `VectorStoreInitializer`, and `EmbeddingService` are all conditional on `skatetricks.vectorstore.enabled` (defaults to `true`, set to `false` in `application-dev.yml`).
+The `S3VectorsClient` bean and `VectorStoreInitializer` are conditional on `skatetricks.vectorstore.enabled` (defaults to `true`, set to `false` in `application-dev.yml`).
 
 **Known gap:** `analyzeVideo()` (direct video path) does not query the vector store and does not write to it — no pose data is available in that path.
 
@@ -367,8 +363,8 @@ The `S3VectorsClient` bean, `VectorStoreInitializer`, and `EmbeddingService` are
 The `landscape` module provides AI-powered landscape design with plant selection based on USDA hardiness zones.
 
 **Architecture:**
-- **OpenAI chat/vision model** — analyzes landscape images to recommend suitable plants and describe seasonal views
-- **OpenAI image model** — generates seasonal landscape variation images via Spring AI `ImageModel`
+- **AWS Bedrock Claude chat/vision model** — analyzes landscape images to recommend suitable plants and describe seasonal views
+- **Amazon Nova Canvas image model** — generates seasonal landscape variation images via AWS SDK `BedrockRuntimeClient`
 - **USDA Plants Database API** — authoritative plant data with hardiness zone, light/water requirements
 - **USDA Plants Gallery** — plant images fetched by USDA symbol (`PlantImageService`)
 - **AWS S3 + CloudFront** — stores uploaded landscape images with CDN delivery
@@ -376,17 +372,17 @@ The `landscape` module provides AI-powered landscape design with plant selection
 
 **Key features:**
 1. **Image Upload**: Users upload photos of their yard (JPEG/PNG, max 100MB)
-2. **AI Analysis**: OpenAI analyzes the image considering sunlight exposure, existing vegetation, space constraints
+2. **AI Analysis**: Claude analyzes the image considering sunlight exposure, existing vegetation, space constraints
 3. **Plant Search**: Search USDA Plants Database with filters for hardiness zone, sun/water requirements
 4. **Interactive Plant Placement**: Fabric.js canvas — select a plant, click on the image to place it. Plant-type icons (tree, shrub, flower) with real plant photos from USDA gallery
-5. **Seasonal AI Preview**: OpenAI generates text descriptions and images showing the landscape in spring, summer, fall, winter
+5. **Seasonal AI Preview**: Claude generates text descriptions and Nova Canvas generates images showing the landscape in spring, summer, fall, winter
 6. **Plan Management**: Save, load, and delete landscape plans with placements persisted to database
 7. **Caching**: Plant data, search results, and plant images cached for 24 hours with Caffeine
 
 **Key classes:**
 - `LandscapeService` — coordinates image storage, AI analysis, plant search, placement, and seasonal preview
-- `LandscapeAiService` — uses OpenAI for plant recommendations and seasonal text descriptions
-- `LandscapeImageGenerationService` — uses Spring AI `ImageModel` for seasonal image generation
+- `LandscapeAiService` — uses Bedrock Claude for plant recommendations and seasonal text descriptions
+- `LandscapeImageGenerationService` — uses Amazon Nova Canvas for seasonal image generation
 - `PlantImageService` — fetches plant photos from USDA gallery by symbol, cached 24 hours
 - `PlantApiService` — integrates with USDA Plants Database (with caching and retry logic)
 - `LandscapeImageStorageService` — uploads images to S3 with timestamped keys

@@ -7,8 +7,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.bedrock.converse.BedrockChatOptions;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,8 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
     @Autowired(required = false)
     public FinancialPeaceQuestionGenerator(
             @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
-            @Value("${trivia.ai.model:${PERSONAL_OPENAI_TRIVIA_MODEL:gpt-4o-mini}}") String model) {
+            @Value("${trivia.ai.model:${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-3-5-haiku-20241022-v1:0}}")
+                    String model) {
         this.chatClient = chatClientBuilder != null ? chatClientBuilder.build() : null;
         this.model = model;
     }
@@ -44,7 +45,10 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
 
             final var responses = chatClient
                     .prompt()
-                    .options(OpenAiChatOptions.builder().model(model).maxTokens(2048))
+                    .options(BedrockChatOptions.builder()
+                            .model(model)
+                            .maxTokens(2048)
+                            .temperature(0.3))
                     .user(u -> u.text("""
                             You are a financial literacy expert specializing in Dave Ramsey's Financial Peace principles.
                             Generate {count} multiple-choice trivia questions about Dave Ramsey's Financial Peace teachings.
@@ -73,8 +77,7 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
                             - HARD: Detailed scenarios and edge cases
                             """).param("count", String.valueOf(count)).param("difficulty", difficulty.name()))
                     .call()
-                    .entity(QuestionBatch.class, spec -> spec.useProviderStructuredOutput()
-                            .validateSchema())
+                    .entity(QuestionBatch.class)
                     .questions();
 
             final var questions = responses.stream()

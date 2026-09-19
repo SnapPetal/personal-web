@@ -67,7 +67,7 @@ The troop has **4 active** scouts and **23 disabled** scouts. The enforced daily
 
 |               Scout                |                                       Reason it remains disabled                                        |
 |------------------------------------|---------------------------------------------------------------------------------------------------------|
-| `signals-scout-ai-observability`   | OpenAI is used in the application, but PostHog LLM trace telemetry is not confirmed.                    |
+| `signals-scout-ai-observability`   | AWS Bedrock is used in the application, but PostHog LLM trace telemetry is not confirmed.               |
 | `signals-scout-anomaly-detection`  | No saved insight or dashboard usage was confirmed; generic coverage is more relevant at this stage.     |
 | `signals-scout-apm`                | No PostHog APM or OpenTelemetry usage was confirmed.                                                    |
 | `signals-scout-conversations`      | Support was just enabled and no inbound channel or ticket activity is configured yet.                   |

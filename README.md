@@ -19,14 +19,14 @@ A modular monolith personal portfolio and interactive applications platform buil
 
 ### Interactive Applications
 
-|      Application      |                                Description                                |
-|-----------------------|---------------------------------------------------------------------------|
-| **Foosball**          | Table soccer game tracking with ELO ratings and tournaments               |
-| **FPU Trivia**        | AI-powered Financial Peace University trivia with real-time multiplayer   |
-| **Skatetricks AI**    | YOLO pose estimation + OpenAI vision trick detection with RAG learning    |
-| **Landscape Planner** | AI-powered landscape design with USDA plant database and Fabric.js canvas |
-| **Booking System**    | Appointment scheduling with auto-availability and calendar integration    |
-| **Tank Game**         | Godot HTML5 tank prototype with Spring WebSocket connectivity             |
+|      Application      |                                 Description                                 |
+|-----------------------|-----------------------------------------------------------------------------|
+| **Foosball**          | Table soccer game tracking with ELO ratings and tournaments                 |
+| **FPU Trivia**        | AI-powered Financial Peace University trivia with real-time multiplayer     |
+| **Skatetricks AI**    | YOLO pose estimation + AWS Bedrock vision trick detection with RAG learning |
+| **Landscape Planner** | AI-powered landscape design with USDA plant database and Fabric.js canvas   |
+| **Booking System**    | Appointment scheduling with auto-availability and calendar integration      |
+| **Tank Game**         | Godot HTML5 tank prototype with Spring WebSocket connectivity               |
 
 ## Quick Start
 
@@ -35,7 +35,7 @@ A modular monolith personal portfolio and interactive applications platform buil
 - Java 25+
 - Maven 3.9.16+
 - Docker (Spring Boot auto-starts PostgreSQL via Docker Compose)
-- OpenAI API key and AWS credentials (Polly, S3, S3 Vectors, SES)
+- AWS credentials (Bedrock, Polly, S3, S3 Vectors, SES)
 
 ### Setup
 
@@ -43,7 +43,7 @@ A modular monolith personal portfolio and interactive applications platform buil
 git clone https://github.com/SnapPetal/personal-web.git
 cd personal-web
 cp .env.example .env
-# Edit .env with your AWS, OpenAI, and Nextcloud credentials
+# Edit .env with your AWS and Nextcloud credentials
 mvn -f design-system/pom.xml install -DskipTests
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
@@ -68,7 +68,7 @@ For Skatetricks transcoding, set `SKATETRICKS_MEDIACONVERT_ROLE_ARN` from the Ho
 
 Skatetricks accepts user-uploaded video files, converts them to MP4, publishes them to the CDN, and analyzes the uploaded video.
 
-Skatetricks video analysis extracts duration-aware sequential frames from uploaded/imported MP4s before calling OpenAI vision. Tune `SKATETRICKS_ANALYSIS_MAX_FRAMES` if production needs more or fewer images per analysis; the default is `24`.
+Skatetricks video analysis extracts duration-aware sequential frames from uploaded/imported MP4s before calling AWS Bedrock Claude vision. Tune `SKATETRICKS_ANALYSIS_MAX_FRAMES` if production needs more or fewer images per analysis; the default is `24`.
 
 ## Authentication
 
@@ -100,14 +100,14 @@ PERSONAL_CF_ACCESS_ADMIN_EMAIL
 
 ### Stack
 
-|     Layer     |                                    Technologies                                    |
-|---------------|------------------------------------------------------------------------------------|
-| **Backend**   | Spring Boot 4, Spring Modulith, Spring AI, Spring Security                         |
-| **AI/ML**     | Spring AI with OpenAI chat, vision, embeddings, image generation; DJL PyTorch YOLO |
-| **Database**  | PostgreSQL 18, Liquibase migrations, Caffeine cache                                |
-| **Frontend**  | Thymeleaf, HTMX, Alpine.js, Bootstrap 5, Fabric.js, Godot HTML5, WebJars           |
-| **Real-time** | STOMP over SockJS (trivia, skatetricks); raw WebSocket (Godot tank game)           |
-| **AWS**       | S3, S3 Vectors, SES, CloudFront, Polly, Lightsail                                  |
+|     Layer     |                                                 Technologies                                                 |
+|---------------|--------------------------------------------------------------------------------------------------------------|
+| **Backend**   | Spring Boot 4, Spring Modulith, Spring AI, Spring Security                                                   |
+| **AI/ML**     | Spring AI with AWS Bedrock (Claude converse chat/vision, Titan embeddings v2, Nova Canvas); DJL PyTorch YOLO |
+| **Database**  | PostgreSQL 18, Liquibase migrations, Caffeine cache                                                          |
+| **Frontend**  | Thymeleaf, HTMX, Alpine.js, Bootstrap 5, Fabric.js, Godot HTML5, WebJars                                     |
+| **Real-time** | STOMP over SockJS (trivia, skatetricks); raw WebSocket (Godot tank game)                                     |
+| **AWS**       | Bedrock, S3, S3 Vectors, SES, CloudFront, Polly, Lightsail                                                   |
 
 Frontend interaction ownership and migration guidance: [docs/frontend-ui-architecture.md](docs/frontend-ui-architecture.md)
 
@@ -117,7 +117,7 @@ Frontend interaction ownership and migration guidance: [docs/frontend-ui-archite
 src/main/java/biz/thonbecker/personal/
 ├── foosball/       # Game tracking, stats, tournaments, ELO rating
 ├── trivia/         # AI-powered FPU trivia, WebSocket multiplayer
-├── skatetricks/    # YOLO pose estimation + OpenAI vision trick detection
+├── skatetricks/    # YOLO pose estimation + AWS Bedrock vision trick detection
 ├── landscape/      # AI-powered landscape planning with USDA plant data
 ├── booking/        # Appointment scheduling with auto-availability
 ├── tankgame/       # Tank game progression and raw WebSocket prototype

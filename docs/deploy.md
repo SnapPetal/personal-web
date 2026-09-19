@@ -168,15 +168,12 @@ That keeps the server-side deployment stable while allowing the image tag to be 
 The PersonalWeb container must receive these runtime AI variables:
 
 ```bash
-PERSONAL_OPENAI_API_KEY=
-PERSONAL_OPENAI_CHAT_MODEL=gpt-4o
-PERSONAL_OPENAI_TRIVIA_MODEL=gpt-4o-mini
-PERSONAL_OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-PERSONAL_OPENAI_EMBEDDING_DIMENSIONS=1024
-PERSONAL_OPENAI_IMAGE_MODEL=dall-e-3
+PERSONAL_BEDROCK_CHAT_MODEL=us.anthropic.claude-3-5-sonnet-20241022-v2:0
+PERSONAL_BEDROCK_TRIVIA_MODEL=us.anthropic.claude-3-5-haiku-20241022-v1:0
+PERSONAL_BEDROCK_IMAGE_MODEL=amazon.nova-canvas-v1:0
 ```
 
-For production, store the OpenAI key in Secrets Manager as `personalweb/openai-api-key` from the HomeWeb CDK stack. The `nextcloud-aws` deployment runs `scripts/sync-personalweb-openai-secret.sh` before restarting containers, which writes `PERSONAL_OPENAI_API_KEY` and the default model variables into the private server-side `.env` consumed by compose. The Spring app still reads `PERSONAL_OPENAI_API_KEY`; Secrets Manager is the source of truth for the secret value.
+For production, AWS Bedrock permissions are granted by the HomeWeb CDK stack's `homeweb-personalweb-services-policy` to the `homeweb-services-user`. The container uses the AWS credentials provided by `PERSONAL_AWS_ACCESS_KEY_ID` and `PERSONAL_AWS_SECRET_ACCESS_KEY`.
 
 The current production compose file in `nextcloud-aws` does not use an image variable for the personal site. It currently references:
 

@@ -1,56 +1,51 @@
 package biz.thonbecker.personal.landscape.platform.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.imageio.ImageIO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
+import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
+import tools.jackson.databind.ObjectMapper;
 
 /**
- * Service for generating landscape images using OpenAI image editing.
+ * Service for generating landscape images using Amazon Nova Canvas via AWS Bedrock.
  */
 @Service
 @Slf4j
 public class LandscapeImageGenerationService {
 
-    private static final URI DEFAULT_RESPONSES_URI = URI.create("https://api.openai.com/v1/responses");
+    private static final String DEFAULT_MODEL_ID = "amazon.nova-canvas-v1:0";
+    private static final int IMAGE_WIDTH = 1024;
+    private static final int IMAGE_HEIGHT = 1024;
+    private static final int MAX_PIXELS = 4_194_304;
 
-    @Value("${landscape.image-generation.responses-model:${PERSONAL_OPENAI_IMAGE_RESPONSES_MODEL:gpt-4.1-mini}}")
-    private String imageResponsesModelName;
-
-    @Value("${spring.ai.openai.api-key:}")
-    private String openAiApiKey;
-
-    private final URI responsesUri;
+    private final BedrockRuntimeClient bedrockRuntimeClient;
     private final ObjectMapper objectMapper;
-    private final HttpClient httpClient;
-    private volatile boolean imageGenerationAccessDenied;
+    private final String modelId;
 
-    public LandscapeImageGenerationService() {
-        this(
-                DEFAULT_RESPONSES_URI,
-                new ObjectMapper(),
-                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build());
-    }
-
-    LandscapeImageGenerationService(
-            final URI responsesUri, final ObjectMapper objectMapper, final HttpClient httpClient) {
-        this.responsesUri = responsesUri;
+    @Autowired
+    public LandscapeImageGenerationService(
+            @Nullable final BedrockRuntimeClient bedrockRuntimeClient,
+            final ObjectMapper objectMapper,
+            @Value("${landscape.image-generation.model:" + DEFAULT_MODEL_ID + "}") final String modelId) {
+        this.bedrockRuntimeClient = bedrockRuntimeClient;
         this.objectMapper = objectMapper;
-        this.httpClient = httpClient;
+        this.modelId = modelId;
     }
 
     /**
-     * Generates a seasonal variation by editing the original landscape image.
+     * Generates a seasonal variation by editing the original landscape image using Nova Canvas.
      *
      * @param landscapeImageData Original landscape image bytes
      * @param season Season name (Spring, Summer, Fall, Winter)
@@ -61,44 +56,67 @@ public class LandscapeImageGenerationService {
             final byte[] landscapeImageData, final String season, final List<PlantPlacementPrompt> placements) {
 
         try {
-            if (Objects.isNull(openAiApiKey) || openAiApiKey.isBlank()) {
-                log.warn("Skipping {} landscape image edit because no OpenAI API key is configured", season);
-                return null;
-            }
-            if (imageGenerationAccessDenied) {
-                log.debug(
-                        "Skipping {} landscape image edit because OpenAI image generation access is unavailable",
+            if (Objects.isNull(bedrockRuntimeClient)) {
+                log.warn(
+                        "Skipping {} landscape image generation because BedrockRuntimeClient is not configured",
                         season);
                 return null;
             }
 
-            log.info("Generating {} landscape image edit with OpenAI", season);
-            final var requestBody = objectMapper.writeValueAsString(
-                    buildImageGenerationRequestBody(landscapeImageData, buildSeasonalEditPrompt(season, placements)));
+            log.info("Generating {} landscape image with Nova Canvas", season);
 
-            final var request = HttpRequest.newBuilder()
-                    .uri(responsesUri)
-                    .timeout(Duration.ofSeconds(120))
-                    .header("Authorization", "Bearer " + openAiApiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+            final var resizedData = resizeIfNeeded(landscapeImageData);
+            final var base64Image = Base64.getEncoder().encodeToString(resizedData);
+            final var prompt = buildSeasonalEditPrompt(season, placements);
+
+            final var requestBody = Map.of(
+                    "taskType",
+                    "TEXT_IMAGE",
+                    "textToImageParams",
+                    Map.of(
+                            "text",
+                            prompt,
+                            "conditionImage",
+                            base64Image,
+                            "controlMode",
+                            "CANNY_EDGE",
+                            "controlStrength",
+                            0.8),
+                    "imageGenerationConfig",
+                    Map.of("width", IMAGE_WIDTH, "height", IMAGE_HEIGHT, "quality", "standard", "numberOfImages", 1));
+
+            final var jsonBody = objectMapper.writeValueAsString(requestBody);
+
+            final var request = InvokeModelRequest.builder()
+                    .modelId(modelId)
+                    .contentType("application/json")
+                    .accept("application/json")
+                    .body(SdkBytes.fromUtf8String(jsonBody))
                     .build();
 
-            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                handleFailedResponse(season, response.statusCode(), response.body());
+            final var response = bedrockRuntimeClient.invokeModel(request);
+            final var responseJson = response.body().asUtf8String();
+
+            final var rootNode = objectMapper.readTree(responseJson);
+
+            if (rootNode.has("error")) {
+                log.warn(
+                        "Nova Canvas returned error for {} image: {}",
+                        season,
+                        rootNode.get("error").asText());
                 return null;
             }
 
-            final var responseJson = objectMapper.readTree(response.body());
-            final var base64Image = extractGeneratedImage(responseJson);
-
-            if (Objects.nonNull(base64Image) && !base64Image.isBlank()) {
-                log.info("Successfully generated {} landscape image", season);
-                return base64Image;
+            final var images = rootNode.path("images");
+            if (images.isArray() && !images.isEmpty()) {
+                final var generatedImage = images.get(0).asText();
+                if (Objects.nonNull(generatedImage) && !generatedImage.isBlank()) {
+                    log.info("Successfully generated {} landscape image", season);
+                    return generatedImage;
+                }
             }
 
-            log.warn("OpenAI image generation returned no base64 image for {}", season);
+            log.warn("Nova Canvas returned no base64 image for {}", season);
             return null;
 
         } catch (final Exception e) {
@@ -107,80 +125,46 @@ public class LandscapeImageGenerationService {
         }
     }
 
-    private void handleFailedResponse(final String season, final int statusCode, final String responseBody) {
-        if (statusCode == 403 && responseBody.contains("organization must be verified")) {
-            imageGenerationAccessDenied = true;
-            log.warn(
-                    "OpenAI image generation is unavailable for this organization. "
-                            + "Seasonal previews will use the local plan image fallback until the organization is "
-                            + "verified. OpenAI response for {}: {}",
-                    season,
-                    responseBody);
-            return;
-        }
-
-        log.error("OpenAI image edit failed for {}: status={}, body={}", season, statusCode, responseBody);
-    }
-
-    private Map<String, Object> buildImageGenerationRequestBody(final byte[] landscapeImageData, final String prompt) {
-        final var textContent = new LinkedHashMap<String, Object>();
-        textContent.put("type", "input_text");
-        textContent.put("text", prompt);
-
-        final var imageContent = new LinkedHashMap<String, Object>();
-        imageContent.put("type", "input_image");
-        imageContent.put("image_url", toDataUrl(landscapeImageData));
-
-        final var inputMessage = new LinkedHashMap<String, Object>();
-        inputMessage.put("role", "user");
-        inputMessage.put("content", List.of(textContent, imageContent));
-
-        final var imageTool = new LinkedHashMap<String, Object>();
-        imageTool.put("type", "image_generation");
-
-        final var toolChoice = new LinkedHashMap<String, Object>();
-        toolChoice.put("type", "image_generation");
-
-        final var body = new LinkedHashMap<String, Object>();
-        body.put("model", imageResponsesModelName);
-        body.put("input", List.of(inputMessage));
-        body.put("tools", List.of(imageTool));
-        body.put("tool_choice", toolChoice);
-        return body;
-    }
-
-    private String extractGeneratedImage(final com.fasterxml.jackson.databind.JsonNode responseJson) {
-        final var output = responseJson.path("output");
-        if (!output.isArray()) {
-            return null;
-        }
-
-        for (final var item : output) {
-            if ("image_generation_call".equals(item.path("type").asText())) {
-                return item.path("result").asText(null);
+    /**
+     * Resizes the image if it exceeds Nova Canvas's 4,194,304 pixel limit.
+     */
+    private byte[] resizeIfNeeded(final byte[] imageData) {
+        try {
+            final var original = ImageIO.read(new ByteArrayInputStream(imageData));
+            if (Objects.isNull(original)) {
+                return imageData;
             }
+
+            final long pixels = (long) original.getWidth() * original.getHeight();
+            if (pixels <= MAX_PIXELS) {
+                return imageData;
+            }
+
+            final var scaleFactor = Math.sqrt((double) MAX_PIXELS / pixels);
+            final var newWidth = (int) (original.getWidth() * scaleFactor);
+            final var newHeight = (int) (original.getHeight() * scaleFactor);
+
+            log.info(
+                    "Resizing image from {}x{} ({} pixels) to {}x{} for Nova Canvas",
+                    original.getWidth(),
+                    original.getHeight(),
+                    pixels,
+                    newWidth,
+                    newHeight);
+
+            final var resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+            final var g = resized.createGraphics();
+            g.drawImage(original, 0, 0, newWidth, newHeight, null);
+            g.dispose();
+
+            final var baos = new ByteArrayOutputStream();
+            ImageIO.write(resized, "jpg", baos);
+            return baos.toByteArray();
+
+        } catch (final Exception e) {
+            log.warn("Failed to resize image, sending original: {}", e.getMessage());
+            return imageData;
         }
-
-        return null;
-    }
-
-    private String toDataUrl(final byte[] imageData) {
-        return detectImageMimeType(imageData) + ";base64," + Base64.getEncoder().encodeToString(imageData);
-    }
-
-    private static String detectImageMimeType(final byte[] imageData) {
-        if (imageData.length >= 8
-                && imageData[0] == (byte) 0x89
-                && imageData[1] == 0x50
-                && imageData[2] == 0x4E
-                && imageData[3] == 0x47
-                && imageData[4] == 0x0D
-                && imageData[5] == 0x0A
-                && imageData[6] == 0x1A
-                && imageData[7] == 0x0A) {
-            return "data:image/png";
-        }
-        return "data:image/jpeg";
     }
 
     private String buildSeasonalEditPrompt(final String season, final List<PlantPlacementPrompt> placements) {

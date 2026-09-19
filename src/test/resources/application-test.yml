@@ -5,8 +5,11 @@ spring:
   liquibase:
     contexts: test,dev
   ai:
-    openai:
-      api-key: test
+    bedrock:
+      aws:
+        region: us-east-1
+        access-key: test
+        secret-key: test
     model:
       chat: none
       embedding: none
@@ -21,6 +24,9 @@ skatetricks:
 PERSONAL_AWS_ACCESS_KEY_ID: test
 PERSONAL_AWS_SECRET_ACCESS_KEY: test
 PERSONAL_AWS_REGION: us-east-1
+
+posthog:
+  enabled: false
 
 notification:
   email:

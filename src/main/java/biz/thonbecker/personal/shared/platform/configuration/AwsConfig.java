@@ -1,11 +1,13 @@
 package biz.thonbecker.personal.shared.platform.configuration;
 
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.mediaconvert.MediaConvertClient;
 import software.amazon.awssdk.services.polly.PollyClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -30,6 +32,16 @@ public class AwsConfig {
     @Value("${PERSONAL_AWS_SECRET_ACCESS_KEY:test}")
     private String secretKey;
 
+    private StaticCredentialsProvider credentialsProvider() {
+        final var resolvedAccessKey = Objects.nonNull(accessKey) && !accessKey.isBlank() ? accessKey : "test";
+        final var resolvedSecretKey = Objects.nonNull(secretKey) && !secretKey.isBlank() ? secretKey : "test";
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create(resolvedAccessKey, resolvedSecretKey));
+    }
+
+    private Region region() {
+        return Region.of(Objects.nonNull(awsRegion) && !awsRegion.isBlank() ? awsRegion : "us-east-1");
+    }
+
     /**
      * Creates a configured PollyClient bean for text-to-speech conversion.
      *
@@ -37,12 +49,9 @@ public class AwsConfig {
      */
     @Bean
     public PollyClient pollyClient() {
-        final var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        final var credentialsProvider = StaticCredentialsProvider.create(credentials);
-
         return PollyClient.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(credentialsProvider)
+                .region(region())
+                .credentialsProvider(credentialsProvider())
                 .build();
     }
 
@@ -53,34 +62,38 @@ public class AwsConfig {
      */
     @Bean
     public S3Client s3Client() {
-        final var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        final var credentialsProvider = StaticCredentialsProvider.create(credentials);
-
         return S3Client.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(credentialsProvider)
+                .region(region())
+                .credentialsProvider(credentialsProvider())
                 .build();
     }
 
     @Bean
     public S3Presigner s3Presigner() {
-        final var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        final var credentialsProvider = StaticCredentialsProvider.create(credentials);
-
         return S3Presigner.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(credentialsProvider)
+                .region(region())
+                .credentialsProvider(credentialsProvider())
                 .build();
     }
 
     @Bean
     public MediaConvertClient mediaConvertClient() {
-        final var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        final var credentialsProvider = StaticCredentialsProvider.create(credentials);
-
         return MediaConvertClient.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(credentialsProvider)
+                .region(region())
+                .credentialsProvider(credentialsProvider())
+                .build();
+    }
+
+    /**
+     * Creates a configured BedrockRuntimeClient bean for Bedrock invocation.
+     *
+     * @return Configured BedrockRuntimeClient
+     */
+    @Bean
+    public BedrockRuntimeClient bedrockRuntimeClient() {
+        return BedrockRuntimeClient.builder()
+                .region(region())
+                .credentialsProvider(credentialsProvider())
                 .build();
     }
 
@@ -91,12 +104,9 @@ public class AwsConfig {
      */
     @Bean
     public SesClient sesClient() {
-        final var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        final var credentialsProvider = StaticCredentialsProvider.create(credentials);
-
         return SesClient.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(credentialsProvider)
+                .region(region())
+                .credentialsProvider(credentialsProvider())
                 .build();
     }
 
@@ -119,12 +129,9 @@ public class AwsConfig {
             havingValue = "true",
             matchIfMissing = true)
     public S3VectorsClient s3VectorsClient() {
-        final var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-        final var credentialsProvider = StaticCredentialsProvider.create(credentials);
-
         return S3VectorsClient.builder()
-                .region(Region.of(awsRegion))
-                .credentialsProvider(credentialsProvider)
+                .region(region())
+                .credentialsProvider(credentialsProvider())
                 .build();
     }
 }

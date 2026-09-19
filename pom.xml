@@ -118,7 +118,11 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.ai</groupId>
-      <artifactId>spring-ai-starter-model-openai</artifactId>
+      <artifactId>spring-ai-starter-model-bedrock</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-starter-model-bedrock-converse</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.ai</groupId>
@@ -252,6 +256,10 @@
       <groupId>org.webjars.npm</groupId>
       <artifactId>plyr</artifactId>
       <version>${plyr.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>bedrockruntime</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

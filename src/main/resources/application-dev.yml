@@ -30,5 +30,9 @@ skatetricks:
   vectorstore:
     enabled: false
 
+PERSONAL_AWS_ACCESS_KEY_ID: ${PERSONAL_AWS_ACCESS_KEY_ID:test}
+PERSONAL_AWS_SECRET_ACCESS_KEY: ${PERSONAL_AWS_SECRET_ACCESS_KEY:test}
+PERSONAL_AWS_REGION: ${PERSONAL_AWS_REGION:us-east-1}
+
 posthog:
   enabled: ${PERSONAL_POSTHOG_ENABLED:false}
