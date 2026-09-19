@@ -70,14 +70,16 @@
                         </div>
                         <div class="col-md-4 text-center">
                             <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-success btn-lg"
-                                        x-show="!isConnected" @click="connect()">
-                                    <i class="bi bi-plug me-2"></i>Connect
-                                </button>
-                                <button type="button" class="btn btn-danger btn-lg"
-                                        x-show="isConnected" @click="disconnect()">
-                                    <i class="bi bi-plug-x me-2"></i>Disconnect
-                                </button>
+                                <template x-if="!isConnected">
+                                    <button type="button" class="btn btn-success btn-lg" @click="connect()">
+                                        <i class="bi bi-plug me-2"></i>Connect
+                                    </button>
+                                </template>
+                                <template x-if="isConnected">
+                                    <button type="button" class="btn btn-danger btn-lg" @click="disconnect()">
+                                        <i class="bi bi-plug-x me-2"></i>Disconnect
+                                    </button>
+                                </template>
                                 <button type="button" class="btn btn-outline-info btn-sm"
                                         @click="testConnection()">
                                     <i class="bi bi-lightning me-2"></i>Test Connection

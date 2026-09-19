@@ -22,6 +22,7 @@
     <!-- JS dependencies -->
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <script defer th:src="@{/webjars/alpinejs/dist/cdn.min.js}"></script>
     <script th:src="@{/js/foosball.js}"></script>
 </head>
 <body class="foosball-page" hx-browser-indicator:inherited="true" th:attr="data-tenant-slug=${tenantSlug}">
@@ -227,6 +228,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="addGameForm"
+                          x-data="foosballGameForm"
                           th:hx-post="@{'/foosball/' + ${tenantSlug} + '/htmx/games'}"
                           hx-target="#main-alerts"
                           hx-swap="innerHTML"
@@ -235,6 +237,7 @@
                           hx-on::after:request="
                               if(ctx.response?.status < 400) {
                                   this.reset();
+                                  reset();
                                   bootstrap.Modal.getInstance(document.getElementById('addGameModal')).hide();
                               }
                           ">
@@ -247,6 +250,7 @@
                                         <select class="form-select foosball-player-select"
                                                 id="whiteTeamPlayer1"
                                                 name="whiteTeamPlayer1"
+                                                x-model="whiteTeamPlayer1"
                                                 required
                                                 th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
@@ -263,6 +267,7 @@
                                         <select class="form-select foosball-player-select"
                                                 id="whiteTeamPlayer2"
                                                 name="whiteTeamPlayer2"
+                                                x-model="whiteTeamPlayer2"
                                                 required
                                                 th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
@@ -284,6 +289,7 @@
                                         <select class="form-select foosball-player-select"
                                                 id="blackTeamPlayer1"
                                                 name="blackTeamPlayer1"
+                                                x-model="blackTeamPlayer1"
                                                 required
                                                 th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
@@ -300,6 +306,7 @@
                                         <select class="form-select foosball-player-select"
                                                 id="blackTeamPlayer2"
                                                 name="blackTeamPlayer2"
+                                                x-model="blackTeamPlayer2"
                                                 required
                                                 th:hx-get="@{'/foosball/' + ${tenantSlug} + '/fragments/player-options'}"
                                                 hx-trigger="playerUpdate from:body"
@@ -316,7 +323,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="winner" class="form-label">Winner</label>
-                            <select class="form-select" id="winner" name="winner" required>
+                            <select class="form-select" id="winner" name="winner" x-model="winner" required>
                                 <option value="">Select Winner...</option>
                                 <option value="TEAM1">Team 1</option>
                                 <option value="TEAM2">Team 2</option>

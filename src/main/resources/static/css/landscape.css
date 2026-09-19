@@ -1,4 +1,6 @@
 /* Landscape Planner Styles */
+@import url("./theme.css");
+@import url("./htmx-indicators.css");
 
 .landscape-page {
     background-color: #f8f9fa;

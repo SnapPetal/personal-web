@@ -384,3 +384,7 @@ function triviaGame() {
     },
   };
 }
+
+document.addEventListener("alpine:init", () => {
+  Alpine.data("triviaGame", triviaGame);
+});

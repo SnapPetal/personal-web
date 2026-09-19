@@ -39,6 +39,7 @@ function skatetricksApp() {
     resultLoadingText: "",
     trickHistory: [],
     supportedTricks: SUPPORTED_TRICKS,
+    activeTab: "live",
 
     // ── Internal imperative state (not rendered directly) ──────────
     sessionId:
@@ -639,3 +640,7 @@ function skatetricksApp() {
     },
   };
 }
+
+document.addEventListener("alpine:init", () => {
+  Alpine.data("skatetricksApp", skatetricksApp);
+});

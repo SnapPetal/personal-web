@@ -1,71 +1,72 @@
 // Foosball Management JavaScript
-// Date formatting utility functions
-function formatDateTime(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+function foosballGameForm() {
+  return {
+    whiteTeamPlayer1: "",
+    whiteTeamPlayer2: "",
+    blackTeamPlayer1: "",
+    blackTeamPlayer2: "",
+    winner: "",
 
-function loadLastGameTeams() {
-  const modal = document.getElementById("addGameModal");
-  if (!modal) {
-    return;
-  }
+    init() {
+      const modal = document.getElementById("addGameModal");
+      modal?.addEventListener("shown.bs.modal", () => this.loadLastGameTeams());
+    },
 
-  fetch(
-    `/foosball/${document.body.dataset.tenantSlug}/fragments/last-game-teams`
-  )
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Unable to load last game teams (${response.status})`);
-      }
-      return response.text();
-    })
-    .then((html) => {
-      const fragment = document
-        .createRange()
-        .createContextualFragment(html)
-        .querySelector("[data-last-game-teams]");
-      if (!fragment) {
+    loadLastGameTeams() {
+      const tenantSlug = document.body.dataset.tenantSlug;
+      if (!tenantSlug) {
         return;
       }
 
-      const players = {
-        "data-white-player-1": "#whiteTeamPlayer1",
-        "data-white-player-2": "#whiteTeamPlayer2",
-        "data-black-player-1": "#blackTeamPlayer1",
-        "data-black-player-2": "#blackTeamPlayer2",
-      };
-      Object.entries(players).forEach(([attribute, selector]) => {
-        const playerId = fragment.getAttribute(attribute);
-        const select = document.querySelector(selector);
-        if (playerId && select) {
-          select.value = playerId;
-        }
-      });
-    })
-    .catch((error) => console.error("Error loading last game teams:", error));
+      fetch(`/foosball/${tenantSlug}/fragments/last-game-teams`)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(
+              `Unable to load last game teams (${response.status})`
+            );
+          }
+          return response.text();
+        })
+        .then((html) => {
+          const fragment = document
+            .createRange()
+            .createContextualFragment(html)
+            .querySelector("[data-last-game-teams]");
+          if (!fragment) {
+            return;
+          }
+
+          const wp1 = fragment.getAttribute("data-white-player-1");
+          const wp2 = fragment.getAttribute("data-white-player-2");
+          const bp1 = fragment.getAttribute("data-black-player-1");
+          const bp2 = fragment.getAttribute("data-black-player-2");
+
+          if (wp1) this.whiteTeamPlayer1 = wp1;
+          if (wp2) this.whiteTeamPlayer2 = wp2;
+          if (bp1) this.blackTeamPlayer1 = bp1;
+          if (bp2) this.blackTeamPlayer2 = bp2;
+        })
+        .catch((error) =>
+          console.error("Error loading last game teams:", error)
+        );
+    },
+
+    reset() {
+      this.whiteTeamPlayer1 = "";
+      this.whiteTeamPlayer2 = "";
+      this.blackTeamPlayer1 = "";
+      this.blackTeamPlayer2 = "";
+      this.winner = "";
+    },
+  };
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  document
-    .getElementById("addGameModal")
-    ?.addEventListener("shown.bs.modal", loadLastGameTeams);
+document.addEventListener("alpine:init", () => {
+  Alpine.data("foosballGameForm", foosballGameForm);
+});
 
+document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("submit", (event) => {
     const form = event.target;
     const matchId = form.dataset.matchId;

@@ -49,8 +49,12 @@
                                        placeholder="Ask about available meeting times..." x-model="message"
                                        :disabled="loading" autocomplete="off">
                                 <button class="btn btn-info" type="submit" :disabled="loading || !message.trim()">
-                                    <span x-show="!loading">Send</span>
-                                    <span x-show="loading" x-cloak>Thinking…</span>
+                                    <template x-if="!loading">
+                                        <span>Send</span>
+                                    </template>
+                                    <template x-if="loading">
+                                        <span>Thinking…</span>
+                                    </template>
                                 </button>
                             </div>
                         </form>

@@ -1,5 +1,6 @@
 @import url("./theme.css");
 @import url("./pages/booking.css");
+@import url("./htmx-indicators.css");
 
 .booking-page {
     min-height: 100vh;
