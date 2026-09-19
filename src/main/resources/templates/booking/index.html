@@ -55,8 +55,19 @@
                             </div>
                         </form>
                         <div class="alert alert-secondary mt-3 mb-0" role="status" x-show="reply || error" x-cloak>
-                            <span x-show="reply" x-text="reply"></span>
-                            <span x-show="error" x-text="error"></span>
+                            <div x-show="reply">
+                                <p class="mb-2" x-text="reply"></p>
+                                <div class="d-flex flex-wrap gap-2 mt-2" x-show="availableSlots && availableSlots.length > 0">
+                                    <template x-for="(slot, idx) in availableSlots" :key="idx">
+                                        <button type="button" class="btn btn-sm btn-outline-primary bg-body"
+                                                @click="selectSlot(slot)">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            <span x-text="formatSlot(slot)"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <span x-show="error" x-text="error" class="text-danger"></span>
                         </div>
                         <small class="text-muted d-block mt-3">No booking actions, private data, or account access are connected to this chat.</small>
                     </div>
@@ -167,14 +178,61 @@
         return {
             message: '',
             reply: '',
+            availableSlots: [],
             error: '',
             loading: false,
+
+            formatSlot(slot) {
+                if (!slot || !slot.start) return '';
+                try {
+                    const date = new Date(slot.start);
+                    return new Intl.DateTimeFormat(undefined, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        timeZone: slot.timezone || undefined,
+                    }).format(date);
+                } catch {
+                    return slot.start;
+                }
+            },
+
+            selectSlot(slot) {
+                if (!slot || !slot.start) return;
+                const date = slot.start.slice(0, 10);
+
+                const bookingFormEl = document.querySelector('.booking-form-card');
+                const isFormVisible = bookingFormEl && bookingFormEl.offsetParent !== null;
+                if (!isFormVisible) {
+                    const firstTypeBtn = document.querySelector('.booking-type-card button[data-type-id]');
+                    if (firstTypeBtn) {
+                        firstTypeBtn.click();
+                    }
+                }
+
+                const bookingDateInput = document.getElementById('bookingDate');
+                if (bookingDateInput) {
+                    bookingDateInput.value = date;
+                    bookingDateInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    bookingDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                setTimeout(() => {
+                    const targetEl = document.getElementById('timeSlots') || bookingDateInput || bookingFormEl;
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 100);
+            },
 
             async send() {
                 const message = this.message.trim();
                 if (!message || this.loading) return;
                 this.loading = true;
                 this.reply = '';
+                this.availableSlots = [];
                 this.error = '';
                 try {
                     const response = await fetch('https://chat.thonbecker.biz/chat', {
@@ -188,6 +246,7 @@
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error || 'The chat is temporarily unavailable.');
                     this.reply = data.message;
+                    this.availableSlots = Array.isArray(data.availableSlots) ? data.availableSlots : [];
                     this.message = '';
                 } catch (error) {
                     this.error = error.message || 'The chat is temporarily unavailable.';
@@ -343,6 +402,11 @@
             }
         };
     }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('publicChat', publicChat);
+        Alpine.data('bookingForm', bookingForm);
+    });
 </script>
 
 </body>
