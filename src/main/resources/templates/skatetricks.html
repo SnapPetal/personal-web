@@ -90,7 +90,7 @@
                 <!-- Connection Status -->
                 <div class="card app-card mt-3">
                     <div class="card-body py-2">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" role="status" aria-live="polite" aria-atomic="true">
                             <i class="bi bi-wifi me-2"></i>
                             <span class="badge" :class="connectionClass" x-text="connectionText"></span>
                             <span class="ms-auto small text-muted" x-text="frameCounterText"></span>

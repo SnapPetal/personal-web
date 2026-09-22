@@ -22,6 +22,7 @@ var SUPPORTED_TRICKS = [
 
 var MAX_FRAME_WIDTH = 640;
 var MAX_SEND_FRAMES = 10;
+var MAX_POLL_ATTEMPTS = 150; // 150 * 2s = 5 minutes
 
 function skatetricksApp() {
   return {
@@ -403,11 +404,23 @@ function skatetricksApp() {
       );
     },
 
-    pollConversionStatus(videoId) {
+    pollConversionStatus(videoId, attempt) {
       var self = this;
+      attempt = attempt || 0;
+
+      if (attempt >= MAX_POLL_ATTEMPTS) {
+        self.frameCounterText = "Conversion timed out. Please try again.";
+        self.analyzeUploadDisabled = true;
+        return;
+      }
+
       fetch("/skatetricks/convert/" + videoId + "/status")
         .then(function (response) {
-          if (!response.ok) return null;
+          if (!response.ok) {
+            throw new Error(
+              "Failed to get conversion status: " + response.status
+            );
+          }
           return response.json();
         })
         .then(function (status) {
@@ -425,12 +438,15 @@ function skatetricksApp() {
             status.status === "converting"
           ) {
             setTimeout(function () {
-              self.pollConversionStatus(videoId);
+              self.pollConversionStatus(videoId, attempt + 1);
             }, 2000);
           }
         })
         .catch(function (e) {
           console.error("Poll error:", e);
+          self.frameCounterText =
+            "Lost connection while checking conversion status. Please try again.";
+          self.analyzeUploadDisabled = true;
         });
     },
 
@@ -479,8 +495,18 @@ function skatetricksApp() {
       }
     },
 
-    pollAnalysisStatus(analysisId) {
+    pollAnalysisStatus(analysisId, attempt) {
       var self = this;
+      attempt = attempt || 0;
+
+      if (attempt >= MAX_POLL_ATTEMPTS) {
+        self.resultLoading = false;
+        self.resultError = "Analysis timed out. Please try again.";
+        self.frameCounterText = "Analysis timed out";
+        self.analyzeUploadDisabled = false;
+        return;
+      }
+
       fetch("/skatetricks/analyze/" + analysisId + "/status")
         .then(function (response) {
           if (!response.ok) {
@@ -504,7 +530,7 @@ function skatetricksApp() {
             self.analyzeUploadDisabled = false;
           } else {
             setTimeout(function () {
-              self.pollAnalysisStatus(analysisId);
+              self.pollAnalysisStatus(analysisId, attempt + 1);
             }, 2000);
           }
         })
