@@ -9,6 +9,7 @@
     <!-- JS dependencies -->
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <th:block th:replace="~{fragments/assets :: bootstrapScripts}"></th:block>
+    <th:block th:replace="~{fragments/assets :: alpineScripts}"></th:block>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/theme-toggle.js}"></script>
 
     <!-- CSS Dependencies -->
@@ -18,11 +19,11 @@
 </head>
 <body class="booking-page" hx-browser-indicator:inherited="true" hx-history-elt>
 <!-- Navigation -->
-<nav th:replace="~{booking/fragments :: navigation('confirmation')}"></nav>
+<header th:replace="~{booking/fragments :: navigation('confirmation')}"></header>
 
 <!-- Main Content -->
-<main class="py-5">
-    <div class="container">
+<main class="booking-main">
+    <div class="booking-shell">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <!-- Success Message -->
@@ -126,7 +127,7 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="text-center mt-4">
+                <div class="page-actions mt-4">
                     <a href="https://thonbecker.biz" class="btn btn-outline-primary">
                         <i class="bi bi-house"></i> Back to Home
                     </a>

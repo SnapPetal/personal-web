@@ -7,15 +7,6 @@
     background: var(--app-body-bg);
 }
 
-.booking-page .navbar {
-    border-bottom: 1px solid var(--app-border-color);
-}
-
-.booking-hero {
-    background: linear-gradient(180deg, var(--app-section-bg) 0%, var(--app-body-bg) 100%);
-    border-bottom: 1px solid var(--app-border-color);
-}
-
 .app-card .card-header,
 .app-card .card-footer {
     color: var(--app-body-color);

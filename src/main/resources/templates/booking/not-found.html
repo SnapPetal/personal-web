@@ -10,15 +10,17 @@
     <th:block th:replace="~{fragments/assets :: bootstrapCss}"></th:block>
     <link th:href="@{/css/main.css}" rel="stylesheet">
 
+    <th:block th:replace="~{fragments/assets :: bootstrapScripts}"></th:block>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/theme-toggle.js}"></script>
+    <th:block th:replace="~{fragments/assets :: alpineScripts}"></th:block>
 </head>
 <body class="booking-page">
 <!-- Navigation -->
-<nav th:replace="~{booking/fragments :: navigation('not-found')}"></nav>
+<header th:replace="~{booking/fragments :: navigation('not-found')}"></header>
 
 <!-- Main Content -->
-<main class="py-5">
-    <div class="container">
+<main class="booking-main">
+    <div class="booking-shell">
         <div class="row justify-content-center">
             <div class="col-lg-6 text-center">
                 <i class="bi bi-search booking-not-found-icon text-muted"></i>
@@ -26,7 +28,7 @@
                 <p class="lead text-muted">
                     We couldn't find a booking with that confirmation code.
                 </p>
-                <div class="mt-4">
+                <div class="page-actions mt-4">
                     <a th:href="@{/booking}" class="btn btn-primary">
                         <i class="bi bi-calendar-plus"></i> Book a Meeting
                     </a>

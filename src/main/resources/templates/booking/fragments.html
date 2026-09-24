@@ -1,31 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<nav th:fragment="navigation(page)" class="navbar navbar-expand-lg navbar-light bg-light shadow-sm sticky-top">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="https://thonbecker.biz">Thon Becker</a>
-        <button aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
-                data-bs-target="#navbarNav" data-bs-toggle="collapse" type="button">
+<header th:fragment="navigation(page)" class="booking-site-header">
+    <div class="booking-header-inner">
+        <a class="booking-brand" href="https://thonbecker.biz">Thon Becker</a>
+        <button aria-controls="booking-navigation" aria-expanded="false" aria-label="Toggle navigation"
+                class="booking-menu-toggle navbar-toggler"
+                data-bs-target="#booking-navigation" data-bs-toggle="collapse" type="button">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="https://thonbecker.biz">Home</a>
-                </li>
-                <li class="nav-item" th:if="${page == 'admin'}">
-                    <a class="nav-link" th:href="@{/booking}" hx-boost="true" hx-preload="mouseenter">Public Booking Page</a>
-                </li>
-                <li class="nav-item" th:if="${page == 'admin'}">
-                    <span class="nav-link">Administrator</span>
-                </li>
-                <li class="nav-item" th:if="${page == 'confirmation'}">
-                    <a class="nav-link" th:href="@{/booking}" hx-boost="true" hx-preload="mouseenter">Book Another Meeting</a>
-                </li>
-            </ul>
+        <div class="collapse booking-navigation" id="booking-navigation">
+            <nav aria-label="Primary navigation" class="booking-primary-nav">
+                <a href="https://thonbecker.biz">Home</a>
+                <a aria-current="page" th:href="@{/booking}" hx-boost="true" hx-preload="mouseenter">Book a meeting</a>
+                <a th:if="${page == 'admin'}" th:href="@{/booking}" hx-boost="true" hx-preload="mouseenter">Public booking page</a>
+                <span class="booking-admin-label" th:if="${page == 'admin'}">Administrator</span>
+                <button aria-label="Toggle dark mode" class="booking-theme-toggle" type="button"
+                        x-data="themeToggle()" x-on:click="toggle()" x-bind:aria-label="isDark ? 'Use light mode' : 'Use dark mode'">
+                    <i aria-hidden="true" x-bind:class="iconClass"></i>
+                </button>
+            </nav>
         </div>
     </div>
-</nav>
+</header>
 
 <!-- Time Slots Fragment -->
 <div th:fragment="time-slots">

@@ -10,7 +10,7 @@
     <th:block th:replace="~{fragments/assets :: htmxScripts}"></th:block>
     <th:block th:replace="~{fragments/assets :: bootstrapScripts}"></th:block>
     <script th:src="@{/webjars/personal-design-system/1.0.0/js/theme-toggle.js}"></script>
-    <script defer th:src="@{/webjars/alpinejs/dist/cdn.min.js}"></script>
+    <th:block th:replace="~{fragments/assets :: alpineScripts}"></th:block>
 
     <!-- CSS Dependencies -->
     <th:block th:replace="~{fragments/assets :: bootstrapCss}"></th:block>
@@ -19,20 +19,20 @@
 </head>
 <body class="booking-page" hx-browser-indicator:inherited="true" hx-history-elt>
 <!-- Navigation -->
-<nav th:replace="~{booking/fragments :: navigation('booking')}"></nav>
+<header th:replace="~{booking/fragments :: navigation('booking')}"></header>
 
 <!-- Main Content -->
-<main>
-    <div class="container" x-data="bookingForm()">
+<main class="booking-main">
+    <div class="booking-shell" x-data="bookingForm()">
         <div class="row justify-content-center">
             <div class="col-lg-10">
-                <!-- Header -->
-                <div class="booking-hero text-center py-5 mb-5">
-                    <h1 class="display-5 fw-bold">Book a Meeting</h1>
-                    <p class="lead text-muted mb-0">Schedule a consultation to discuss your project or technical challenges</p>
+                <div class="booking-hero">
+                    <p class="booking-eyebrow">Let's connect</p>
+                    <h1>Start with a thoughtful conversation.</h1>
+                    <p class="booking-lede">Choose a meeting that fits your needs, then pick a time that works for you.</p>
                 </div>
 
-                <section class="public-chat-card card app-card mb-5" aria-labelledby="public-chat-title">
+                <section class="public-chat-card booking-panel" aria-labelledby="public-chat-title">
                     <div class="card-body p-4" x-data="publicChat()">
                         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                             <div>
@@ -77,7 +77,13 @@
                     </div>
                 </section>
 
-                <!-- Booking Types -->
+                <div class="booking-section-heading">
+                    <div>
+                        <p class="booking-eyebrow">Choose a format</p>
+                        <h2>How can I help?</h2>
+                    </div>
+                    <p>Start by selecting the kind of conversation you need.</p>
+                </div>
                 <div class="row g-4 mb-5">
                     <div th:each="type : ${bookingTypes}" class="col-md-4">
                         <div class="card app-card feature-card booking-type-card">
@@ -99,9 +105,8 @@
                     </div>
                 </div>
 
-                <!-- Booking Form (Initially Hidden) -->
                 <div x-show="showBookingForm" x-cloak x-ref="bookingForm">
-                    <div class="card app-card booking-form-card">
+                    <div class="booking-panel booking-form-card">
                         <div class="card-header app-card-header bg-primary text-white">
                             <h5 class="mb-0">
                                 <i class="bi bi-calendar-check"></i>
