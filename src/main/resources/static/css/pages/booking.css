@@ -149,6 +149,7 @@
 }
 
 .booking-page .public-chat-card {
+    margin-bottom: clamp(3rem, 6vw, 5rem);
     border-color: var(--app-chip-border);
     background: var(--app-chip-bg);
 }
@@ -274,6 +275,35 @@
 
     .booking-page .booking-type-card .btn,
     .booking-page .booking-form-card .btn-lg {
+        min-height: 2.875rem;
+    }
+
+    .booking-page .public-chat-card .card-body {
+        padding: 1.25rem;
+    }
+
+    .booking-page .public-chat-input-group {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .booking-page .public-chat-input-group .form-control {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 400px) {
+    .booking-page .public-chat-input-group {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-page .public-chat-input-group .form-control,
+    .booking-page .public-chat-input-group .btn {
+        border-radius: var(--bs-border-radius);
+    }
+
+    .booking-page .public-chat-input-group .btn {
+        margin-top: 0.5rem;
         min-height: 2.875rem;
     }
 }

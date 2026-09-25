@@ -42,9 +42,9 @@
                             </div>
                             <i class="bi bi-chat-dots fs-2 text-info" aria-hidden="true"></i>
                         </div>
-                        <form @submit.prevent="send()">
+                        <form class="public-chat-form" @submit.prevent="send()">
                             <label class="visually-hidden" for="public-chat-message">Message</label>
-                            <div class="input-group">
+                            <div class="input-group public-chat-input-group">
                                 <input id="public-chat-message" class="form-control" type="text" maxlength="1000"
                                        placeholder="Ask about available meeting times..." x-model="message"
                                        :disabled="loading" autocomplete="off">
