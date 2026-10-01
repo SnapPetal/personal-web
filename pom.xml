@@ -13,10 +13,10 @@
   <version>1.0.0</version>
 
   <properties>
-    <alpinejs.version>3.17.3</alpinejs.version>
+    <alpinejs.version>3.17.4</alpinejs.version>
     <bootstrap-icons.version>1.13.1</bootstrap-icons.version>
     <bootstrap.version>5.3.8</bootstrap.version>
-    <caffeine.version>3.2.4</caffeine.version>
+    <caffeine.version>3.3.0</caffeine.version>
     <djl.pytorch.version>2.7.1</djl.pytorch.version>
     <djl.version>0.38.0</djl.version>
     <htmx.org.version>4.0.0</htmx.org.version>
@@ -59,7 +59,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.55.0</version>
+        <version>2.55.5</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
