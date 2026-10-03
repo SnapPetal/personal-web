@@ -166,7 +166,8 @@ jobs:
         run: |
           set -euo pipefail
           cp target/personal-1.0.0.jar personal-web.jar
-          sha256sum personal-web.jar > personal-web.sha256
+          # The instance compares this file to its last install; keep it a bare hash.
+          sha256sum personal-web.jar | cut -d' ' -f1 > personal-web.sha256
           cat personal-web.sha256
 
       - name: Configure AWS credentials
