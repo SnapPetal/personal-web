@@ -1,203 +1,55 @@
 # Deployment
 
-This repository builds and publishes the PersonalWeb container image from pushes to `main`.
-The published image is:
+Pushes to `main` run `.github/workflows/deploy.yml`. The workflow uses GitHub OIDC and does not use static AWS keys.
 
-- `public.ecr.aws/p0w8z2j2/personal:latest`
+Role: `arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy` in `us-east-1`.
 
-The GitHub Actions workflow in `.github/workflows/deploy.yml` owns the PersonalWeb release. It builds and publishes the image through GitHub OIDC, uploads the static site, refreshes only the `personal-website` service in the shared Lightsail Compose stack, and verifies all three public domains. The shared Compose topology, nginx, certificates, and unrelated host services remain owned by `nextcloud-aws`.
+Both AWS jobs select the `production` GitHub environment, so the OIDC subject is `repo:SnapPetal/personal-web:environment:production`. The role trust in `personal-site-stack` must allow that subject. If it instead trusts `repo:SnapPetal/personal-web:ref:refs/heads/main`, remove `environment: production` from the jobs.
 
-## CloudFront static site
+## Static site
 
-Pushes to `main` also publish the apex static site. That job does not replace the container build or the SSH rollout, so the current Lightsail host keeps serving the site until DNS moves.
-
-The `publish-static` job in `.github/workflows/deploy.yml`:
+The `publish-static` job:
 
 1. Collects `static-site/`, `images/profile.png`, `images/favicon.svg`, and the Godot web export.
-2. Places the Godot export under `tankgame/`, so the web bucket serves it at `/tankgame/` (`/tankgame/index.html`).
-3. Assumes `arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy` in `us-east-1` through GitHub OIDC. No static AWS keys.
-4. Runs `aws s3 sync --delete` to `s3://personal-site-thonbecker`.
-5. Invalidates CloudFront distribution `EIGIJWMOZIYVW` (`d1l03uefskyk66.cloudfront.net`) for `/*`.
+2. Places the Godot export under `tankgame/`, so the site serves it at `/tankgame/index.html`.
+3. Runs `aws s3 sync --delete` to `s3://personal-site-thonbecker`.
+4. Invalidates CloudFront distribution `EIGIJWMOZIYVW` (`d1l03uefskyk66.cloudfront.net`) for `/*`.
 
-The homepage experience count and verse fragment, and the dad-joke player, call `https://app.thonbecker.biz`. HTMX 4 defaults to same-origin fetch mode, so the homepage sets `htmx-config` mode to `cors`. The Godot client keeps using the page host when that host is `app.thonbecker.biz` (or localhost) and otherwise opens `wss://app.thonbecker.biz/tankgame-ws`, which is what the CloudFront copy of the game needs.
+The homepage experience count, verse fragment, and dad-joke player call `https://app.thonbecker.biz`. The Godot client uses the page host on `app.thonbecker.biz` and localhost, and `wss://app.thonbecker.biz/tankgame-ws` from the static site.
 
-The job selects the `production` GitHub environment. Confirm the role trust in `personal-site-stack` before the first production run. The subject must be `repo:SnapPetal/personal-web:environment:production`. If the role instead trusts `repo:SnapPetal/personal-web:ref:refs/heads/main`, remove `environment: production` from the job.
+`--delete` removes objects in the web bucket that are not part of this site.
 
-The container job still assumes `${{ secrets.AWS_ROLE_TO_ASSUME }}` for ECR. That secret is not the static-site role.
+## Application jar
 
-## GitHub Actions OIDC
+The `release` job uses Temurin 25, installs the design-system WebJar, and runs `mvn -B package`. That command runs the test phase. Recent Pull Request runs of `mvn -B verify` succeed on GitHub-hosted runners, so the release does not skip tests.
 
-The deploy workflow expects a GitHub secret named `AWS_ROLE_TO_ASSUME` that contains the IAM role ARN to assume through OIDC.
+Maven already sets `java.version` and `maven.compiler.release` to 25. The job copies `target/personal-1.0.0.jar` to these release-bucket keys, checksum last:
 
-AWS trust policy for the role should restrict access to this repository and branch:
+- `s3://personal-site-releases-thonbecker/personal-web.jar`
+- `s3://personal-site-releases-thonbecker/personal-web.sha256`
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::664759038511:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:SnapPetal/personal-web:ref:refs/heads/main"
-        }
-      }
-    }
-  ]
-}
-```
+`personal-web.sha256` is the output of `sha256sum personal-web.jar` (`<hash>  personal-web.jar`). The Lightsail instance `personal-web` has a systemd timer that pulls those two objects, checks the jar, keeps the previous jar for manual rollback, and restarts the service.
 
-The role also needs permissions to authenticate to ECR Public and push the image used by the deploy workflow.
-At minimum, AWS requires `ecr-public:GetAuthorizationToken` and `sts:GetServiceBearerToken` for the login step, plus push permissions on the public repository.
+The jar still contains the Godot web export at `/tankgame/` so `https://app.thonbecker.biz/tankgame` keeps working.
 
-## Lightsail Linux Instance
+## Domain split
 
-Use [`scripts/deploy-lightsail-personalweb.sh`](../scripts/deploy-lightsail-personalweb.sh) to deploy the latest published image to the Lightsail host over SSH.
+- `thonbecker.biz` and `www.thonbecker.biz` serve the CloudFront site from `personal-site-thonbecker`.
+- `booking.thonbecker.biz` is the public booking site.
+- `app.thonbecker.biz` is the Spring Boot origin, including WebSockets. The private Cloudflare OS booking integration uses this host and forwards the Cloudflare Access JWT.
+- `e.thonbecker.biz` is the PostHog managed-proxy host. It is not served by this workflow.
 
-Use [`scripts/deploy-personalweb.sh`](../scripts/deploy-personalweb.sh) for custom hosts, alternate compose paths, or other SSH targets.
+`docker-compose.yml` remains the local development Postgres definition. It is not used in production.
 
-Known production target from `nextcloud-aws`:
+## Removed container and SSH rollout
 
-- SSH: `ssh -i ~/.ssh/lightsail.pem ubuntu@18.213.161.133`
-- Remote app repo: `~/nextcloud-aws`
-- Compose service: `personal-website`
-- Published port: `127.0.0.1:3003 -> 8080`
-- Public site: `https://thonbecker.biz`
+This workflow no longer builds a Paketo image, pushes to ECR Public, or rolls a container out over SSH. These files were removed with that path:
 
-### Domain split
+- `Aptfile` (buildpack apt packages for the image build)
+- `deploy/lightsail/nginx-domains.conf.example`
+- `scripts/deploy-lightsail-personalweb.sh`
+- `scripts/deploy-personalweb.sh`
+- `scripts/deploy-lightsail-static.sh`
+- Spring Boot Maven plugin `spring-boot.build-image` configuration in `pom.xml`
 
-The production host already runs host-managed nginx in the `nextcloud-aws` repository; do not add another Caddy or nginx container. The intended routing is:
-
-- `thonbecker.biz` and `www.thonbecker.biz` serve the files from `static-site/` at `/var/www/thonbecker-static`.
-- `booking.thonbecker.biz` proxies only booking and shared asset paths to `127.0.0.1:3003`.
-- `app.thonbecker.biz` redirects `/` to `https://thonbecker.biz` and proxies the complete Spring
-  Boot application (including WebSockets) for all other paths.
-- `e.thonbecker.biz` is the neutral first-party PostHog managed-proxy host. Its DNS CNAME points
-  to the target generated by PostHog; it is not served by the Lightsail nginx instance.
-
-The private Cloudflare OS booking integration uses `https://app.thonbecker.biz` as its upstream. Do not point `BOOKING_ADMIN_BASE_URL` at `booking.thonbecker.biz`; that hostname is reserved for the public booking experience. The Worker forwards the Cloudflare Access JWT in `Authorization: Bearer` form to Spring.
-
-An nginx reference is available at [`deploy/lightsail/nginx-domains.conf.example`](../deploy/lightsail/nginx-domains.conf.example). The authoritative production virtual hosts must live in `nextcloud-aws/nginx` so its deployment workflow and Certbot manage them.
-
-For PostHog, create the managed proxy in PostHog organization settings, point the `e` DNS CNAME at
-PostHog's generated `proxy-us.posthog.com` target, and leave Cloudflare proxying disabled for that
-record. The browser SDK then sends through `https://e.thonbecker.biz`; backend capture remains
-direct to the configured PostHog regional API host.
-
-Deploy the apex static files independently with:
-
-```bash
-./scripts/deploy-lightsail-static.sh
-```
-
-Landscape plans are owned by the authenticated magic-link user and do not use Cloudflare Access. Booking administration is protected by Cloudflare Access and managed from the private Cloudflare OS control plane. Configure the same issuer, audience, and administrator email in both Cloudflare OS (`deployment.jsonc`) and the Spring deployment environment. The audience must match exactly.
-
-### Required inputs
-
-- `DEPLOY_HOST`
-  The SSH host or alias for the Lightsail instance.
-
-### Optional inputs
-
-- `DEPLOY_USER`
-  SSH user. If omitted, the current user is used.
-- `IMAGE_REF`
-  Container image to deploy.
-  Default: `public.ecr.aws/p0w8z2j2/personal:latest`
-- `REMOTE_APP_DIR`
-  Remote application directory for compose-based deployment.
-  Default: `~/nextcloud-aws`
-- `REMOTE_COMPOSE_FILE`
-  Compose file path relative to `REMOTE_APP_DIR`.
-  Default: `docker-compose.yml`
-- `REMOTE_COMPOSE_SERVICE`
-  Compose service to refresh.
-  Default: `personal-website`
-- `REMOTE_DEPLOY_COMMAND`
-  Exact remote shell command to run instead of the default compose rollout.
-
-## Default deployment mode
-
-If `REMOTE_DEPLOY_COMMAND` is not provided, the script assumes the server uses `docker compose` and that the compose file consumes `PERSONALWEB_IMAGE`.
-
-The default remote rollout is:
-
-```bash
-cd "$REMOTE_APP_DIR"
-docker pull "$IMAGE_REF"
-docker compose -f "$REMOTE_COMPOSE_FILE" up -d --no-deps "$REMOTE_COMPOSE_SERVICE"
-docker image prune -f
-```
-
-This matches the current `nextcloud-aws` production setup, where the `personal-website` service is pinned to `public.ecr.aws/p0w8z2j2/personal:latest` inside the compose file.
-
-## Examples
-
-Deploy the latest image to the current Lightsail host:
-
-```bash
-./scripts/deploy-lightsail-personalweb.sh
-```
-
-Deploy a specific image tag:
-
-```bash
-IMAGE_REF=public.ecr.aws/p0w8z2j2/personal:d052ba2 \
-./scripts/deploy-lightsail-personalweb.sh
-```
-
-Deploy to the current production IP directly:
-
-```bash
-DEPLOY_HOST=18.213.161.133 \
-DEPLOY_USER=ubuntu \
-./scripts/deploy-lightsail-personalweb.sh
-```
-
-Use an explicit remote command instead of compose:
-
-```bash
-DEPLOY_HOST=personal-lightsail \
-REMOTE_DEPLOY_COMMAND='sudo systemctl restart personalweb' \
-./scripts/deploy-personalweb.sh
-```
-
-## Recommended server setup
-
-For the default compose mode, keep a compose file on the Lightsail host that references the image through an environment variable:
-
-```yaml
-services:
-  personalweb:
-    image: ${PERSONALWEB_IMAGE:-public.ecr.aws/p0w8z2j2/personal:latest}
-    env_file:
-      - .env.personalweb
-```
-
-That keeps the server-side deployment stable while allowing the image tag to be overridden from the script.
-
-The PersonalWeb container must receive these runtime AI variables:
-
-```bash
-PERSONAL_BEDROCK_CHAT_MODEL=us.anthropic.claude-3-5-sonnet-20241022-v2:0
-PERSONAL_BEDROCK_TRIVIA_MODEL=us.anthropic.claude-3-5-haiku-20241022-v1:0
-PERSONAL_BEDROCK_IMAGE_MODEL=amazon.nova-canvas-v1:0
-```
-
-For production, AWS Bedrock permissions are granted by the HomeWeb CDK stack's `homeweb-personalweb-services-policy` to the `homeweb-services-user`. The container uses the AWS credentials provided by `PERSONAL_AWS_ACCESS_KEY_ID` and `PERSONAL_AWS_SECRET_ACCESS_KEY`.
-
-The current production compose file in `nextcloud-aws` does not use an image variable for the personal site. It currently references:
-
-```yaml
-personal-website:
-  image: public.ecr.aws/p0w8z2j2/personal:latest
-```
-
-That means the default deployment path here is intended for `latest`. If you want tagged-image rollouts from this repo, the remote compose file should be updated to accept a variable-driven image reference.
+The previous Lightsail host is no longer updated by this repository. It keeps running the last container image until that host is stopped.

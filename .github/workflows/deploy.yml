@@ -16,10 +16,11 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  BP_JVM_VERSION: 25
-  IMAGE_NAME: "personal"
-  ECR_REGISTRY: "public.ecr.aws/p0w8z2j2"
-  ECR_REPOSITORY: "personal"
+  AWS_REGION: us-east-1
+  AWS_DEPLOY_ROLE: arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy
+  WEB_BUCKET: personal-site-thonbecker
+  RELEASE_BUCKET: personal-site-releases-thonbecker
+  CLOUDFRONT_DISTRIBUTION_ID: EIGIJWMOZIYVW
 
 jobs:
   lint-godot:
@@ -28,10 +29,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
 
@@ -51,7 +52,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Configure Godot export templates
         run: |
@@ -70,149 +71,24 @@ jobs:
             --export-release "Web" "$GITHUB_WORKSPACE/build/tankgame/index.html"
 
       - name: Upload Godot web client
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: tankgame-web
           path: build/tankgame
-
-  build:
-    name: Build
-    needs: [export-godot, lint-godot]
-    runs-on: ubuntu-latest
-    # AWS_ROLE_TO_ASSUME comes from this environment; the role trusts only it.
-    environment: production
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Set up Java
-        uses: actions/setup-java@v6
-        with:
-          distribution: 'corretto'
-          java-version: '25'
-          cache: 'maven'
-
-      - name: Download Godot web client
-        uses: actions/download-artifact@v8
-        with:
-          name: tankgame-web
-          path: src/main/resources/static/tankgame
-
-      - name: Build design-system WebJar
-        run: mvn -B -f design-system/pom.xml clean install -DskipTests
-
-      - name: Free disk space
-        run: |
-          docker system prune -af
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
-
-      - name: Pull buildpack builder image
-        run: docker pull paketobuildpacks/builder-jammy-full
-
-      - name: Build container image
-        run: |
-          mvn spring-boot:build-image \
-            -Dspring-boot.build-image.imageName=${{ env.IMAGE_NAME }}
-        env:
-          BP_JVM_VERSION: ${{ env.BP_JVM_VERSION }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: us-east-1
-          role-session-name: personalweb-github-actions
-
-      - name: Log in to Amazon ECR Public
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | \
-            docker login --username AWS --password-stdin public.ecr.aws
-
-      - name: Tag and push container image
-        run: |
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
-          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-
-  deploy:
-    name: Deploy
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
-
-      - name: Package static site
-        run: |
-          tar -czf personal-static.tgz \
-            -C static-site . \
-            -C ../src/main/resources/static images/profile.png images/favicon.svg
-
-      - name: Upload static site archive
-        uses: appleboy/scp-action@v1.0.0
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USER }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          source: personal-static.tgz
-          target: /tmp
-
-      - name: Publish static site
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USER }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          script: |
-            sudo install -d -o $USER -g $USER /var/www/thonbecker-static
-            tar -xzf /tmp/personal-static.tgz -C /var/www/thonbecker-static
-            rm -f /tmp/personal-static.tgz
-
-      - name: Roll out PersonalWeb container
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USER }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            set -e
-            cd ~/nextcloud-aws
-            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
-            docker compose up -d --no-deps personal-website
-
-            attempts=0
-            until curl -fsS http://127.0.0.1:3003/actuator/health >/dev/null; do
-              attempts=$((attempts + 1))
-              if [ "$attempts" -ge 40 ]; then
-                docker logs personal-website --tail 100
-                exit 1
-              fi
-              sleep 3
-            done
 
   publish-static:
     name: Publish static site
     needs: export-godot
     runs-on: ubuntu-latest
-    # This role trusts the production environment subject. It is separate from
-    # AWS_ROLE_TO_ASSUME, which the container job still uses for ECR.
+    # OIDC subject is repo:SnapPetal/personal-web:environment:production.
     environment: production
-
-    env:
-      AWS_REGION: us-east-1
-      WEB_BUCKET: personal-site-thonbecker
-      CLOUDFRONT_DISTRIBUTION_ID: EIGIJWMOZIYVW
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download Godot web client
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: tankgame-web
           path: site/tankgame
@@ -229,9 +105,9 @@ jobs:
           test -f site/images/profile.png
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
         with:
-          role-to-assume: arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: personalweb-static-site
 
@@ -253,3 +129,61 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
             --paths "/*"
+
+  release:
+    name: Package and publish jar
+    needs: [export-godot, lint-godot]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Download Godot web client
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: tankgame-web
+          path: src/main/resources/static/tankgame
+
+      - name: Build design-system WebJar
+        run: mvn -B -f design-system/pom.xml install -DskipTests
+
+      # `mvn package` runs the test phase. Recent Pull Request runs of
+      # `mvn -B verify` succeed on ubuntu-latest, including Testcontainers
+      # and Playwright, so this release does not skip tests.
+      - name: Package application
+        run: mvn -B package
+
+      - name: Write release jar and checksum
+        run: |
+          set -euo pipefail
+          cp target/personal-1.0.0.jar personal-web.jar
+          sha256sum personal-web.jar > personal-web.sha256
+          cat personal-web.sha256
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: personalweb-jar-release
+
+      - name: Upload jar and checksum
+        run: |
+          set -euo pipefail
+          aws s3 cp personal-web.jar "s3://${RELEASE_BUCKET}/personal-web.jar" \
+            --content-type application/java-archive \
+            --cache-control "no-store" \
+            --only-show-errors
+          aws s3 cp personal-web.sha256 "s3://${RELEASE_BUCKET}/personal-web.sha256" \
+            --content-type text/plain \
+            --cache-control "no-store" \
+            --only-show-errors

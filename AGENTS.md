@@ -28,9 +28,6 @@ mvn spotless:check
 
 # Build production jar
 mvn clean package
-
-# Build Docker image (used by CI)
-mvn spring-boot:build-image -Dspring-boot.build-image.imageName=personal
 ```
 
 ## Local Development Setup
@@ -553,4 +550,4 @@ git push origin main
 
 ### Deployment
 
-Pushes to `main` trigger the GitHub Actions workflow (`.github/workflows/aws-deploy.yml`), which builds a Docker image using Spring Boot Buildpacks (Paketo, Java 25) and deploys to **AWS Lightsail** container service (`personal-service`). The workflow automatically cleans up old container images (keeps 5 most recent) before pushing to prevent Lightsail's image storage limit.
+Pushes to `main` trigger `.github/workflows/deploy.yml`. The workflow publishes the static site to the CloudFront web bucket and uploads `personal-web.jar` plus `personal-web.sha256` to the release bucket. The Lightsail instance `personal-web` pulls those objects and restarts. See [`docs/deploy.md`](docs/deploy.md). Production builds use Temurin 25. `java.version` and `maven.compiler.release` are already 25.
