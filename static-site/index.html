@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta content="Thon Becker — software engineer building thoughtful, reliable applications with Java, Spring, AWS, and practical AI." name="description">
-    <link href="/site.css?v=03e9a8cf7862" rel="stylesheet">
-    <script defer src="/theme.js?v=4248c5d6484a"></script>
-    <script defer src="/joke-player.js?v=app-origin-1"></script>
+    <link href="/site.css?v=565b13fb7c10" rel="stylesheet">
+    <script src="/theme.js?v=4248c5d6484a"></script>
+    <script defer src="/joke-player.js?v=0c08286f74c0"></script>
     <script>window.PERSONAL_POSTHOG_PROJECT_TOKEN = "phc_p74mNQe2UYgGaocLTsX3ZdCWqGr5X7wFecTJ2YV73o7V"; window.PERSONAL_POSTHOG_API_HOST = "https://e.thonbecker.biz";</script>
     <script defer src="/posthog.js?v=2"></script>
     <meta name="htmx-config" content='{"mode":"cors"}'>
@@ -36,7 +36,7 @@
             <h1>Building useful software with care.</h1>
             <p class="lede">I turn complex ideas into reliable, approachable applications using Java, Spring, AWS, and practical AI.</p>
             <p class="booking-note"><strong>Need a thoughtful technical partner?</strong> Book a short consultation and we’ll clarify the problem, identify practical next steps, and follow up by email with a calendar invite.</p>
-            <p class="experience-line">Bringing <span hx-get="https://app.thonbecker.biz/api/experience/count" hx-trigger="load" hx-swap="innerHTML">years of experience</span> to every project.</p>
+            <p class="experience-line">Bringing <span hx-get="https://app.thonbecker.biz/api/experience/count" hx-trigger="load" hx-swap="innerHTML" hx-indicator="this" hx-status:4xx="swap:none" hx-status:5xx="swap:none" hx-on::response:error="this.textContent='years of experience'" hx-on::error="this.textContent='years of experience'">years of experience</span> to every project.</p>
             <div class="actions">
                 <a class="button" href="https://booking.thonbecker.biz/booking">Book a meeting</a>
                 <a class="text-link" href="#apps">Explore my work <span>↓</span></a>
@@ -45,7 +45,7 @@
         <div class="portrait-wrap"><img alt="Thon Becker" class="portrait" src="/images/profile.png"></div>
     </section>
 
-    <section class="verse-card" aria-live="polite"><div><p class="section-label">A verse for today</p><h2>Faith shapes how I build.</h2></div><div hx-get="https://app.thonbecker.biz/api/bible/verse-of-day/fragment" hx-trigger="load" hx-swap="innerHTML"><p class="muted">Loading today’s verse…</p></div></section>
+    <section class="verse-card" aria-live="polite"><div><p class="section-label">A verse for today</p><h2>Faith shapes how I build.</h2></div><div hx-get="https://app.thonbecker.biz/api/bible/verse-of-day/fragment" hx-trigger="load" hx-swap="innerHTML" hx-indicator="this" hx-status:4xx="swap:none" hx-status:5xx="swap:none" hx-on::response:error="this.innerHTML='<p class=&quot;muted&quot;>The verse is unavailable right now.</p>'" hx-on::error="this.innerHTML='<p class=&quot;muted&quot;>The verse is unavailable right now.</p>'"><p class="muted htmx-indicator">Loading today’s verse…</p></div></section>
 
     <section class="section about" id="about">
         <p class="section-label">About me</p>
@@ -65,7 +65,7 @@
             <a class="card" href="https://app.thonbecker.biz/skatetricks"><span class="card-icon">◫</span><div><p class="card-kicker">Live · Computer vision</p><h3>Trick Analyzer</h3><p>Analyze skateboard footage with pose estimation and AWS Bedrock vision.</p></div><span class="arrow">↗</span></a>
             <a class="card" href="https://app.thonbecker.biz/trivia"><span class="card-icon">?</span><div><p class="card-kicker">Live · Real-time multiplayer</p><h3>AI Trivia</h3><p>Dynamic questions and live WebSocket gameplay with friends.</p></div><span class="arrow">↗</span></a>
             <a class="card" href="https://app.thonbecker.biz/foosball"><span class="card-icon">◎</span><div><p class="card-kicker">Live · Stats and tournaments</p><h3>Foosball Tracker</h3><p>Record games, follow ratings, and manage tournament brackets.</p></div><span class="arrow">↗</span></a>
-            <a class="card" href="https://app.thonbecker.biz/tankgame"><span class="card-icon">◇</span><div><p class="card-kicker">Experiment · Canvas and WebSockets</p><h3>Tank Battle</h3><p>A server-authoritative real-time multiplayer arena.</p></div><span class="arrow">↗</span></a>
+            <a class="card" href="https://app.thonbecker.biz/tankgame"><span class="card-icon">◇</span><div><p class="card-kicker">Experiment · Godot and WebSockets</p><h3>Tank Battle</h3><p>A server-authoritative real-time multiplayer arena.</p></div><span class="arrow">↗</span></a>
             <div class="card"><span class="card-icon">▣</span><div><p class="card-kicker">Future development · Personal finance</p><h3>Budget Helper</h3><p>A practical budgeting assistant for planning spending, tracking progress, and making thoughtful financial decisions.</p></div></div>
         </div>
     </section>

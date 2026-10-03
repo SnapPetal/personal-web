@@ -46,6 +46,8 @@
     --border-default: #373b3e;
     --color-brand: #8bb9fe;
     --color-primary: #8bb9fe;
+    --color-accent: #ff8a95;
+    --color-accent-soft: rgb(255 138 149 / 45%);
     --contact: #14284d;
     --warm: rgb(139 185 254 / 10%);
     --app-chip-border: rgb(139 185 254 / 30%);

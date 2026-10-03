@@ -1,9 +1,10 @@
-@import url("/design-system.css");
+@import url("/design-system.css?v=b67cd52e672e");
 * {
     box-sizing: border-box;
 }
 html {
     scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
 }
 body {
     margin: 0;
@@ -32,6 +33,10 @@ a {
 }
 .skip-link:focus {
     top: 1rem;
+}
+:root[data-theme="dark"] .skip-link,
+:root[data-theme="dark"] .button:not(.light) {
+    color: var(--button-light-text);
 }
 a:focus-visible,
 button:focus-visible {
@@ -118,6 +123,10 @@ nav a:not(.button):hover {
 }
 .button:hover {
     background: var(--green-dark);
+}
+:root[data-theme="dark"] .button:not(.light):hover {
+    background: color-mix(in srgb, var(--green) 78%, white);
+    color: var(--button-light-text);
 }
 .button.compact {
     padding: 0.58rem 0.9rem;
@@ -208,6 +217,9 @@ h3 {
     margin: 0.75rem 0 0;
     color: var(--green);
     font-weight: 700;
+}
+.htmx-request {
+    cursor: progress;
 }
 .verse-toggle {
     margin-top: 0.75rem;
@@ -310,32 +322,20 @@ h3 {
         border-color 0.2s,
         box-shadow 0.2s;
 }
-.card:hover {
+a.card:hover {
     transform: translateY(-2px);
     border-color: var(--app-chip-border);
     box-shadow: var(--shadow-md);
-}
-.card.featured {
-    grid-column: span 2;
-    min-height: 300px;
-    background: var(--paper);
-    color: var(--ink);
-}
-.card.featured .card-kicker {
-    color: var(--green);
-}
-.card.featured p {
-    color: var(--muted);
 }
 .card p {
     max-width: 650px;
     color: var(--muted);
 }
-.card-icon {
-    font-size: 1.7rem;
+.card .card-kicker {
     color: var(--green);
 }
-.card.featured .card-icon {
+.card-icon {
+    font-size: 1.7rem;
     color: var(--green);
 }
 .arrow {
@@ -387,6 +387,10 @@ h3 {
 }
 .button.light {
     background: var(--text-on-brand);
+    color: var(--button-light-text);
+}
+.button.light:hover {
+    background: color-mix(in srgb, var(--text-on-brand) 86%, var(--button-light-text));
     color: var(--button-light-text);
 }
 .light-link {
@@ -462,8 +466,8 @@ footer {
     .app-grid {
         grid-template-columns: 1fr;
     }
-    .card.featured {
-        grid-column: auto;
+    main.essay {
+        width: min(100% - 1.5rem, 900px);
     }
     .section {
         padding-block: 5rem;
@@ -487,7 +491,12 @@ footer {
     }
 }
 .essay {
-    max-width: 900px;
+    width: min(900px, calc(100% - 2.5rem));
+    margin-inline: auto;
+}
+main.essay > section {
+    width: auto;
+    margin-inline: 0;
 }
 .essay-hero {
     padding: 6rem 0 5rem;
