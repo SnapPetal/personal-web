@@ -148,14 +148,25 @@ func _restart() -> void:
 func _connect_to_server() -> void:
 	websocket = WebSocketPeer.new()
 	reconnect_timer = 0.0
-	var websocket_url := "ws://127.0.0.1:8080/tankgame-ws"
-	if OS.has_feature("web"):
-		var protocol: String = JavaScriptBridge.eval("location.protocol")
-		var host: String = JavaScriptBridge.eval("location.host")
-		websocket_url = ("wss://" if protocol == "https:" else "ws://") + host + "/tankgame-ws"
-	var error := websocket.connect_to_url(websocket_url)
+	var error := websocket.connect_to_url(_websocket_url())
 	if error != OK:
 		websocket_status = "WebSocket unavailable (offline prototype still works)"
+
+
+func _websocket_url() -> String:
+	if not OS.has_feature("web"):
+		return "ws://127.0.0.1:8080/tankgame-ws"
+	var host: String = JavaScriptBridge.eval("location.host")
+	var on_app_host := (
+		host == "app.thonbecker.biz"
+		or host.begins_with("127.0.0.1")
+		or host.begins_with("localhost")
+	)
+	if on_app_host:
+		var protocol: String = JavaScriptBridge.eval("location.protocol")
+		var scheme := "wss://" if protocol == "https:" else "ws://"
+		return scheme + host + "/tankgame-ws"
+	return "wss://app.thonbecker.biz/tankgame-ws"
 
 
 func _poll_websocket(delta: float) -> void:

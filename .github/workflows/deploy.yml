@@ -193,3 +193,63 @@ jobs:
               fi
               sleep 3
             done
+
+  publish-static:
+    name: Publish static site
+    needs: export-godot
+    runs-on: ubuntu-latest
+    # This role trusts the production environment subject. It is separate from
+    # AWS_ROLE_TO_ASSUME, which the container job still uses for ECR.
+    environment: production
+
+    env:
+      AWS_REGION: us-east-1
+      WEB_BUCKET: personal-site-thonbecker
+      CLOUDFRONT_DISTRIBUTION_ID: EIGIJWMOZIYVW
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Download Godot web client
+        uses: actions/download-artifact@v8
+        with:
+          name: tankgame-web
+          path: site/tankgame
+
+      - name: Assemble static site
+        run: |
+          set -euo pipefail
+          cp -a static-site/. site/
+          mkdir -p site/images
+          cp src/main/resources/static/images/profile.png site/images/profile.png
+          cp src/main/resources/static/images/favicon.svg site/images/favicon.svg
+          test -f site/index.html
+          test -f site/tankgame/index.html
+          test -f site/images/profile.png
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: personalweb-static-site
+
+      - name: Sync static site to S3
+        run: |
+          set -euo pipefail
+          aws s3 sync site "s3://${WEB_BUCKET}" --delete --only-show-errors \
+            --cache-control "public,max-age=300,must-revalidate"
+          while IFS= read -r -d '' wasm; do
+            key="${wasm#site/}"
+            aws s3 cp "$wasm" "s3://${WEB_BUCKET}/${key}" \
+              --content-type application/wasm \
+              --cache-control "public,max-age=300,must-revalidate" \
+              --only-show-errors
+          done < <(find site/tankgame -type f -name '*.wasm' -print0)
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --paths "/*"
