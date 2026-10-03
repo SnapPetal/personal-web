@@ -155,10 +155,10 @@ mvn clean package           # Build production jar
 ### Godot tank game
 
 The tank game client lives in `godot/tankgame` and is written in GDScript. It is
-exported for the browser and served by Spring Boot from `/tankgame/`. The export
-is intentionally a small offline prototype with a raw WebSocket connection to
-`/tankgame-ws`; this validates the browser delivery and connection path before
-the authoritative multiplayer simulation is moved behind that protocol.
+exported for the browser and served from `/tankgame/` by CloudFront and by Spring
+Boot. On `app.thonbecker.biz` and localhost the client opens a WebSocket to the
+page host at `/tankgame-ws`. From the static site it opens
+`wss://app.thonbecker.biz/tankgame-ws`.
 
 When Godot export templates are installed locally, export the client with:
 
@@ -172,9 +172,9 @@ local development to match CI.
 
 ## Deployment
 
-Pushes to `main` trigger GitHub Actions, which builds a Docker image via Spring Boot Buildpacks (Paketo, Java 25) and publishes it for deployment.
+Pushes to `main` run GitHub Actions on Temurin 25. The workflow publishes the static site to CloudFront and uploads `personal-web.jar` plus `personal-web.sha256` for the Lightsail instance `personal-web`. See [`docs/deploy.md`](docs/deploy.md).
 
-For Lightsail Linux instance rollouts over SSH, use [`docs/deploy.md`](docs/deploy.md) and [`scripts/deploy-lightsail-personalweb.sh`](scripts/deploy-lightsail-personalweb.sh). Deploy the Cloudflare OS control plane separately from the `cloudflare-os-personal` repository; its booking integration must be deployed after the Spring origin and Access settings are available.
+Deploy the Cloudflare OS control plane separately from the `cloudflare-os-personal` repository. Its booking integration must be deployed after the Spring origin and Access settings are available.
 
 ## License
 
