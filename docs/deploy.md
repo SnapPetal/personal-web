@@ -5,7 +5,25 @@ The published image is:
 
 - `public.ecr.aws/p0w8z2j2/personal:latest`
 
-The GitHub Actions workflow in `.github/workflows/aws-deploy.yml` owns the PersonalWeb release. It builds and publishes the image through GitHub OIDC, uploads the static site, refreshes only the `personal-website` service in the shared Lightsail Compose stack, and verifies all three public domains. The shared Compose topology, nginx, certificates, and unrelated host services remain owned by `nextcloud-aws`.
+The GitHub Actions workflow in `.github/workflows/deploy.yml` owns the PersonalWeb release. It builds and publishes the image through GitHub OIDC, uploads the static site, refreshes only the `personal-website` service in the shared Lightsail Compose stack, and verifies all three public domains. The shared Compose topology, nginx, certificates, and unrelated host services remain owned by `nextcloud-aws`.
+
+## CloudFront static site
+
+Pushes to `main` also publish the apex static site. That job does not replace the container build or the SSH rollout, so the current Lightsail host keeps serving the site until DNS moves.
+
+The `publish-static` job in `.github/workflows/deploy.yml`:
+
+1. Collects `static-site/`, `images/profile.png`, `images/favicon.svg`, and the Godot web export.
+2. Places the Godot export under `tankgame/`, so the web bucket serves it at `/tankgame/` (`/tankgame/index.html`).
+3. Assumes `arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy` in `us-east-1` through GitHub OIDC. No static AWS keys.
+4. Runs `aws s3 sync --delete` to `s3://personal-site-thonbecker`.
+5. Invalidates CloudFront distribution `EIGIJWMOZIYVW` (`d1l03uefskyk66.cloudfront.net`) for `/*`.
+
+The homepage experience count and verse fragment, and the dad-joke player, call `https://app.thonbecker.biz`. HTMX 4 defaults to same-origin fetch mode, so the homepage sets `htmx-config` mode to `cors`. The Godot client keeps using the page host when that host is `app.thonbecker.biz` (or localhost) and otherwise opens `wss://app.thonbecker.biz/tankgame-ws`, which is what the CloudFront copy of the game needs.
+
+The job selects the `production` GitHub environment. Confirm the role trust in `personal-site-stack` before the first production run. The subject must be `repo:SnapPetal/personal-web:environment:production`. If the role instead trusts `repo:SnapPetal/personal-web:ref:refs/heads/main`, remove `environment: production` from the job.
+
+The container job still assumes `${{ secrets.AWS_ROLE_TO_ASSUME }}` for ECR. That secret is not the static-site role.
 
 ## GitHub Actions OIDC
 

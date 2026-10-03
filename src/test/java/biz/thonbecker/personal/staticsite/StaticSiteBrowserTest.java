@@ -131,6 +131,7 @@ class StaticSiteBrowserTest {
 
     private static Page newPage(final int width, final int height) {
         final var page = browser.newPage(new Browser.NewPageOptions().setViewportSize(width, height));
+        page.route(url -> url.contains("app.thonbecker.biz"), StaticSiteBrowserTest::fulfillAppRequest);
         page.route(
                 url -> url.contains("htmx.org"),
                 route -> route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
@@ -157,6 +158,32 @@ class StaticSiteBrowserTest {
         });
         page.onRequestFailed(request -> browserErrors.add("request: " + request.url()));
         return page;
+    }
+
+    private static void fulfillAppRequest(final com.microsoft.playwright.Route route) {
+        final var path = URI.create(route.request().url()).getPath();
+        if (path.equals("/api/experience/count")) {
+            route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
+                    .setStatus(200)
+                    .setContentType("text/plain; charset=UTF-8")
+                    .setBody("18+ years of experience"));
+            return;
+        }
+        if (path.equals("/api/bible/verse-of-day/fragment")) {
+            route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
+                    .setStatus(200)
+                    .setContentType("text/html; charset=UTF-8")
+                    .setBody("<p class=\"verse-text\">Test verse</p><p class=\"verse-reference\">Test 1:1</p>"));
+            return;
+        }
+        if (path.equals("/api/joke")) {
+            route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
+                    .setStatus(200)
+                    .setContentType("text/plain; charset=UTF-8")
+                    .setBody("https://example.invalid/joke.mp3"));
+            return;
+        }
+        route.abort();
     }
 
     private static void serveRequest(final HttpExchange exchange) throws IOException {

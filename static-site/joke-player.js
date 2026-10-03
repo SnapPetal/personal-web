@@ -14,7 +14,7 @@
     button.disabled = true;
     button.textContent = "…";
     try {
-      const response = await fetch("/api/joke");
+      const response = await fetch("https://app.thonbecker.biz/api/joke");
       if (!response.ok) throw new Error("Dad joke unavailable");
       audio.src = await response.text();
       await audio.play();

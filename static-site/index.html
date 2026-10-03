@@ -6,9 +6,10 @@
     <meta content="Thon Becker — software engineer building thoughtful, reliable applications with Java, Spring, AWS, and practical AI." name="description">
     <link href="/site.css?v=03e9a8cf7862" rel="stylesheet">
     <script defer src="/theme.js?v=4248c5d6484a"></script>
-    <script defer src="/joke-player.js?v=4b86fed"></script>
+    <script defer src="/joke-player.js?v=app-origin-1"></script>
     <script>window.PERSONAL_POSTHOG_PROJECT_TOKEN = "phc_p74mNQe2UYgGaocLTsX3ZdCWqGr5X7wFecTJ2YV73o7V"; window.PERSONAL_POSTHOG_API_HOST = "https://e.thonbecker.biz";</script>
     <script defer src="/posthog.js?v=2"></script>
+    <meta name="htmx-config" content='{"mode":"cors"}'>
     <script defer src="/htmx.min.js?v=4.0.0"></script>
     <link href="/images/favicon.svg" rel="icon" type="image/svg+xml">
     <link href="https://thonbecker.biz" rel="canonical">
@@ -35,7 +36,7 @@
             <h1>Building useful software with care.</h1>
             <p class="lede">I turn complex ideas into reliable, approachable applications using Java, Spring, AWS, and practical AI.</p>
             <p class="booking-note"><strong>Need a thoughtful technical partner?</strong> Book a short consultation and we’ll clarify the problem, identify practical next steps, and follow up by email with a calendar invite.</p>
-            <p class="experience-line">Bringing <span hx-get="/api/experience/count" hx-trigger="load" hx-swap="innerHTML">years of experience</span> to every project.</p>
+            <p class="experience-line">Bringing <span hx-get="https://app.thonbecker.biz/api/experience/count" hx-trigger="load" hx-swap="innerHTML">years of experience</span> to every project.</p>
             <div class="actions">
                 <a class="button" href="https://booking.thonbecker.biz/booking">Book a meeting</a>
                 <a class="text-link" href="#apps">Explore my work <span>↓</span></a>
@@ -44,7 +45,7 @@
         <div class="portrait-wrap"><img alt="Thon Becker" class="portrait" src="/images/profile.png"></div>
     </section>
 
-    <section class="verse-card" aria-live="polite"><div><p class="section-label">A verse for today</p><h2>Faith shapes how I build.</h2></div><div hx-get="/api/bible/verse-of-day/fragment" hx-trigger="load" hx-swap="innerHTML"><p class="muted">Loading today’s verse…</p></div></section>
+    <section class="verse-card" aria-live="polite"><div><p class="section-label">A verse for today</p><h2>Faith shapes how I build.</h2></div><div hx-get="https://app.thonbecker.biz/api/bible/verse-of-day/fragment" hx-trigger="load" hx-swap="innerHTML"><p class="muted">Loading today’s verse…</p></div></section>
 
     <section class="section about" id="about">
         <p class="section-label">About me</p>
