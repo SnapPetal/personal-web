@@ -183,7 +183,7 @@ This project is proprietary and confidential. All rights reserved by Thon Becker
 ## Contact
 
 - **GitHub**: [SnapPetal](https://github.com/SnapPetal)
-- **LinkedIn**: [Thon Becker](https://www.linkedin.com/in/thon-becker/)
+- **LinkedIn**: [Thon Becker](https://www.linkedin.com/in/thon-becker-66600947/)
 
 ---
 

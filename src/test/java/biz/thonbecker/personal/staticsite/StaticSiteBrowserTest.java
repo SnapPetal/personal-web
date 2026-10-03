@@ -126,6 +126,13 @@ class StaticSiteBrowserTest {
         page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Path.of("target/playwright/religious-freedom-dark.png"))
                 .setFullPage(true));
+
+        page.setViewportSize(390, 844);
+        final var menu = page.locator("[data-menu-toggle]");
+        assertTrue(menu.isVisible());
+        assertFalse(page.locator("#primary-navigation").isVisible());
+        menu.click();
+        assertTrue(page.locator("#primary-navigation").isVisible());
         assertTrue(browserErrors.isEmpty(), () -> "Browser errors: " + browserErrors);
     }
 
@@ -225,7 +232,8 @@ class StaticSiteBrowserTest {
                         ".html", "text/html; charset=UTF-8",
                         ".js", "application/javascript; charset=UTF-8",
                         ".svg", "image/svg+xml",
-                        ".png", "image/png")
+                        ".png", "image/png",
+                        ".woff2", "font/woff2")
                 .entrySet()
                 .stream()
                 .filter(entry -> file.toString().endsWith(entry.getKey()))
