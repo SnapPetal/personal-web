@@ -232,7 +232,8 @@ class StaticSiteBrowserTest {
                         ".html", "text/html; charset=UTF-8",
                         ".js", "application/javascript; charset=UTF-8",
                         ".svg", "image/svg+xml",
-                        ".png", "image/png")
+                        ".png", "image/png",
+                        ".woff2", "font/woff2")
                 .entrySet()
                 .stream()
                 .filter(entry -> file.toString().endsWith(entry.getKey()))

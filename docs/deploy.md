@@ -13,7 +13,8 @@ The `publish-static` job:
 1. Collects `static-site/`, `images/profile.png`, `images/favicon.svg`, and the Godot web export.
 2. Places the Godot export under `tankgame/`, so the site serves it at `/tankgame/index.html`.
 3. Runs `aws s3 sync --delete` to `s3://personal-site-thonbecker`.
-4. Invalidates CloudFront distribution `EIGIJWMOZIYVW` (`d1l03uefskyk66.cloudfront.net`) for `/*`.
+4. Sets `font/woff2` and `public,max-age=31536000,immutable` on `fonts/*.woff2`. The rest of the site stays at `public,max-age=300,must-revalidate`.
+5. Invalidates CloudFront distribution `EIGIJWMOZIYVW` (`d1l03uefskyk66.cloudfront.net`) for `/*`.
 
 The homepage experience count, verse fragment, and dad-joke player call `https://app.thonbecker.biz`. The Godot client uses the page host on `app.thonbecker.biz` and localhost, and `wss://app.thonbecker.biz/tankgame-ws` from the static site.
 

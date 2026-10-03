@@ -103,6 +103,8 @@ jobs:
           test -f site/index.html
           test -f site/tankgame/index.html
           test -f site/images/profile.png
+          test -f site/fonts/InterVariable.woff2
+          test -f site/fonts/LICENSE.txt
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
@@ -123,6 +125,13 @@ jobs:
               --cache-control "public,max-age=300,must-revalidate" \
               --only-show-errors
           done < <(find site/tankgame -type f -name '*.wasm' -print0)
+          while IFS= read -r -d '' font; do
+            key="${font#site/}"
+            aws s3 cp "$font" "s3://${WEB_BUCKET}/${key}" \
+              --content-type font/woff2 \
+              --cache-control "public,max-age=31536000,immutable" \
+              --only-show-errors
+          done < <(find site/fonts -type f -name '*.woff2' -print0)
 
       - name: Invalidate CloudFront
         run: |
