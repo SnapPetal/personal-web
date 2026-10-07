@@ -71,9 +71,26 @@ footer {
     backdrop-filter: blur(10px);
 }
 .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     font-weight: 700;
     font-size: 1.25rem;
     letter-spacing: 0.01em;
+}
+.brand-mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: none;
+}
+.brand-mark-dark {
+    display: none;
+}
+:root[data-theme="dark"] .brand-mark-light {
+    display: none;
+}
+:root[data-theme="dark"] .brand-mark-dark {
+    display: block;
 }
 nav {
     display: flex;

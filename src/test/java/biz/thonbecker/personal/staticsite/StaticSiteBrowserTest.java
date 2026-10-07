@@ -30,6 +30,8 @@ class StaticSiteBrowserTest {
     private static final Path STATIC_SITE = Path.of("static-site").toAbsolutePath();
     private static final Path STATIC_IMAGES =
             Path.of("src/main/resources/static/images").toAbsolutePath();
+    private static final Path CLASSPATH_STATIC =
+            Path.of("src/main/resources/static").toAbsolutePath();
     private static final List<String> browserErrors = new ArrayList<>();
     private static HttpServer server;
     private static Playwright playwright;
@@ -219,9 +221,12 @@ class StaticSiteBrowserTest {
         final var root = path.startsWith("/images/") ? STATIC_IMAGES : STATIC_SITE;
         final var relativeFile =
                 path.startsWith("/images/") ? relativePath.substring("images/".length()) : relativePath;
-        final var file = root.resolve(relativeFile).normalize();
+        var file = root.resolve(relativeFile).normalize();
         if (!file.startsWith(root) || !Files.isRegularFile(file)) {
-            return Response.notFound();
+            file = CLASSPATH_STATIC.resolve(relativeFile).normalize();
+            if (!file.startsWith(CLASSPATH_STATIC) || !Files.isRegularFile(file)) {
+                return Response.notFound();
+            }
         }
         return Response.ok(Files.readAllBytes(file), contentType(file));
     }
@@ -233,6 +238,8 @@ class StaticSiteBrowserTest {
                         ".js", "application/javascript; charset=UTF-8",
                         ".svg", "image/svg+xml",
                         ".png", "image/png",
+                        ".ico", "image/x-icon",
+                        ".webmanifest", "application/manifest+json",
                         ".woff2", "font/woff2")
                 .entrySet()
                 .stream()

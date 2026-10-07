@@ -97,12 +97,25 @@ jobs:
         run: |
           set -euo pipefail
           cp -a static-site/. site/
-          mkdir -p site/images
+          mkdir -p site/images/brand
           cp src/main/resources/static/images/profile.png site/images/profile.png
-          cp src/main/resources/static/images/favicon.svg site/images/favicon.svg
+          cp src/main/resources/static/images/brand/*.svg site/images/brand/
+          cp src/main/resources/static/favicon.svg site/favicon.svg
+          cp src/main/resources/static/favicon.ico site/favicon.ico
+          cp src/main/resources/static/favicon-16x16.png site/favicon-16x16.png
+          cp src/main/resources/static/favicon-32x32.png site/favicon-32x32.png
+          cp src/main/resources/static/apple-touch-icon.png site/apple-touch-icon.png
+          cp src/main/resources/static/android-chrome-192x192.png site/android-chrome-192x192.png
+          cp src/main/resources/static/android-chrome-512x512.png site/android-chrome-512x512.png
+          cp src/main/resources/static/site.webmanifest site/site.webmanifest
           test -f site/index.html
           test -f site/tankgame/index.html
           test -f site/images/profile.png
+          test -f site/images/brand/a1-transparent.svg
+          test -f site/images/brand/a1-transparent-dark.svg
+          test -f site/favicon.svg
+          test -f site/favicon.ico
+          test -f site/site.webmanifest
           test -f site/fonts/InterVariable.woff2
           test -f site/fonts/LICENSE.txt
 

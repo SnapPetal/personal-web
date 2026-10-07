@@ -28,11 +28,33 @@
 }
 
 .booking-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     color: var(--app-body-color);
     font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: 0.01em;
     text-decoration: none;
+}
+
+.booking-brand-mark {
+    width: 1.75rem;
+    height: 1.75rem;
+    display: block;
+    flex: none;
+}
+
+.booking-brand-mark-dark {
+    display: none;
+}
+
+[data-bs-theme="dark"] .booking-brand-mark-light {
+    display: none;
+}
+
+[data-bs-theme="dark"] .booking-brand-mark-dark {
+    display: block;
 }
 
 .booking-navigation {
