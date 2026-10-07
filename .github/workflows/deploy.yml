@@ -111,8 +111,9 @@ jobs:
           test -f site/index.html
           test -f site/tankgame/index.html
           test -f site/images/profile.png
-          test -f site/images/brand/a1-transparent.svg
-          test -f site/images/brand/a1-transparent-dark.svg
+          test -f site/images/brand/b-tile.svg
+          test -f site/images/brand/b-transparent.svg
+          test -f site/images/brand/b-transparent-dark.svg
           test -f site/favicon.svg
           test -f site/favicon.ico
           test -f site/site.webmanifest
