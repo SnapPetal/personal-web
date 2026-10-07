@@ -33,5 +33,15 @@
     <th:block th:fragment="bootstrapScripts">
         <script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
     </th:block>
+
+    <th:block th:fragment="favicons">
+        <link rel="icon" th:href="@{/favicon.ico}" sizes="any">
+        <link rel="icon" th:href="@{/favicon.svg}" type="image/svg+xml">
+        <link rel="icon" type="image/png" sizes="32x32" th:href="@{/favicon-32x32.png}">
+        <link rel="icon" type="image/png" sizes="16x16" th:href="@{/favicon-16x16.png}">
+        <link rel="apple-touch-icon" sizes="180x180" th:href="@{/apple-touch-icon.png}">
+        <link rel="manifest" th:href="@{/site.webmanifest}">
+        <meta name="theme-color" content="#1f3f77">
+    </th:block>
 </head>
 </html>

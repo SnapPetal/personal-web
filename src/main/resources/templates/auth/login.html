@@ -7,7 +7,7 @@
     <meta name="_csrf" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>Sign in - Personal</title>
-    <link rel="icon" th:href="@{/images/favicon.svg}" type="image/svg+xml">
+    <th:block th:replace="~{fragments/assets :: favicons}"></th:block>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
 </head>
 <body class="bg-light">

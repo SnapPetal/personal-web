@@ -10,7 +10,7 @@ Both AWS jobs select the `production` GitHub environment, so the OIDC subject is
 
 The `publish-static` job:
 
-1. Collects `static-site/`, `images/profile.png`, `images/favicon.svg`, and the Godot web export.
+1. Collects `static-site/`, `images/profile.png`, the brand SVGs in `images/brand/`, the favicon set (`favicon.svg`, `favicon.ico`, PNG icons, and `site.webmanifest`), and the Godot web export.
 2. Places the Godot export under `tankgame/`, so the site serves it at `/tankgame/index.html`.
 3. Runs `aws s3 sync --delete` to `s3://personal-site-thonbecker`.
 4. Sets `font/woff2` and `public,max-age=31536000,immutable` on `fonts/*.woff2`. The rest of the site stays at `public,max-age=300,must-revalidate`.
