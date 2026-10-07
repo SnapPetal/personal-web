@@ -183,8 +183,9 @@ public class LandscapeAiService {
                         .param("zone", zone.name())
                         .media(imageMedia))
                 .call()
-                .entity(SeasonalTextAnalysis.class, spec -> spec.useProviderStructuredOutput()
-                        .validateSchema());
+                .entity(
+                        SeasonalTextAnalysis.class,
+                        spec -> spec.useProviderStructuredOutput().validateSchema());
 
         return new SeasonalAnalysis(
                 toSeasonalDescription(analysis.spring()),
