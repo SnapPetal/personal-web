@@ -41,4 +41,23 @@ class BookingPageTemplateTest {
         assertTrue(styles.contains("color: #ffffff;"));
         assertTrue(theme.contains("@media (prefers-color-scheme: dark)"));
     }
+
+    @Test
+    void appStylesDeclareSelfHostedNotoFontsOnABookingHostPath() throws IOException {
+        final var theme = Files.readString(Path.of("src/main/resources/static/css/theme.css"));
+        final var assets = Files.readString(Path.of("src/main/resources/templates/fragments/assets.html"));
+
+        assertTrue(theme.contains("@font-face"));
+        assertTrue(theme.contains("font-family: \"Noto Sans\""));
+        assertTrue(theme.contains("font-family: \"Noto Serif\""));
+        assertTrue(theme.contains("--bs-font-sans-serif: \"Noto Sans\""));
+        assertTrue(theme.contains("--bs-body-font-family: var(--bs-font-sans-serif)"));
+        assertTrue(theme.contains("font-family: var(--bs-body-font-family)"));
+        assertTrue(theme.contains("url(\"/css/fonts/noto-sans-latin.woff2\")"));
+        assertTrue(theme.contains("url(\"/css/fonts/noto-serif-greek.woff2\")"));
+        assertFalse(theme.contains("url(\"/fonts/"));
+        assertTrue(assets.contains("/css/fonts/noto-sans-latin.woff2"));
+        assertTrue(Files.isRegularFile(Path.of("src/main/resources/static/css/fonts/noto-sans-latin.woff2")));
+        assertTrue(Files.isRegularFile(Path.of("src/main/resources/static/css/fonts/noto-serif-latin.woff2")));
+    }
 }
