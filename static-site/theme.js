@@ -41,6 +41,12 @@
       const text = document.querySelector(".verse-text");
       const greek = text.textContent === toggle.dataset.english;
       text.textContent = greek ? toggle.dataset.greek : toggle.dataset.english;
+      text.classList.toggle("greek", greek);
+      if (greek) {
+        text.setAttribute("lang", "grc");
+      } else {
+        text.removeAttribute("lang");
+      }
       toggle.textContent = greek ? "Show English" : "Show Greek";
     });
     const button = document.querySelector("[data-theme-toggle]");

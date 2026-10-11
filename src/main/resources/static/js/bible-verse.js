@@ -23,6 +23,20 @@ document.addEventListener("alpine:init", () => {
     toggle() {
       if (this.hasGreek) {
         this.showGreek = !this.showGreek;
+        this.syncGreekPresentation();
+      }
+    },
+
+    syncGreekPresentation() {
+      const text = this.$root?.querySelector(".verse-text");
+      if (!text) {
+        return;
+      }
+      text.classList.toggle("greek", this.showGreek);
+      if (this.showGreek) {
+        text.setAttribute("lang", "grc");
+      } else {
+        text.removeAttribute("lang");
       }
     },
 
@@ -37,6 +51,7 @@ document.addEventListener("alpine:init", () => {
           this.greekText = data.greekText || "";
           this.verseTranslation = data.translation;
           this.loading = false;
+          this.syncGreekPresentation();
         })
         .catch(() => {
           this.error = true;

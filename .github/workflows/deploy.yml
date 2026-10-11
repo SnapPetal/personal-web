@@ -117,7 +117,15 @@ jobs:
           test -f site/favicon.svg
           test -f site/favicon.ico
           test -f site/site.webmanifest
-          test -f site/fonts/InterVariable.woff2
+          test -f site/fonts/noto-sans-latin.woff2
+          test -f site/fonts/noto-sans-latin-ext.woff2
+          test -f site/fonts/noto-sans-greek.woff2
+          test -f site/fonts/noto-sans-greek-ext.woff2
+          test -f site/fonts/noto-serif-latin.woff2
+          test -f site/fonts/noto-serif-latin-ext.woff2
+          test -f site/fonts/noto-serif-greek.woff2
+          test -f site/fonts/noto-serif-greek-ext.woff2
+          test ! -e site/fonts/InterVariable.woff2
           test -f site/fonts/LICENSE.txt
 
       - name: Configure AWS credentials

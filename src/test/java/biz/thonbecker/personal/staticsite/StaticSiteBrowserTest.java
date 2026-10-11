@@ -27,6 +27,11 @@ import org.junit.jupiter.api.Test;
 
 class StaticSiteBrowserTest {
 
+    private static final String VERSE_FRAGMENT = "<p class=\"verse-text\">In the beginning was the Word. (John 1:1)</p>"
+            + "<p class=\"verse-reference\">CSB</p>"
+            + "<button class=\"verse-toggle\" type=\"button\" "
+            + "data-english=\"In the beginning was the Word. (John 1:1)\" "
+            + "data-greek=\"Ἐν ἀρχῇ ἦν ὁ λόγος. (John 1:1)\">Show Greek</button>";
     private static final Path STATIC_SITE = Path.of("static-site").toAbsolutePath();
     private static final Path STATIC_IMAGES =
             Path.of("src/main/resources/static/images").toAbsolutePath();
@@ -112,6 +117,41 @@ class StaticSiteBrowserTest {
     }
 
     @Test
+    void greekVerseUsesNotoSerifWhileUiStaysNotoSans() {
+        final var page = newPage(1280, 900);
+
+        page.navigate(baseUrl + "/", new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+        page.locator(".verse-toggle").waitFor();
+        page.waitForFunction(
+                "[...document.fonts].some(font => font.family.replaceAll('\"', '') === 'Noto Sans' && font.status === 'loaded')");
+        assertTrue(String.valueOf(page.locator("body").evaluate("element => getComputedStyle(element).fontFamily"))
+                .contains("Noto Sans"));
+        assertFalse(String.valueOf(page.locator("body").evaluate("element => getComputedStyle(element).fontFamily"))
+                .contains("Inter"));
+        assertTrue(page.locator(".brand-mark-light").getAttribute("src").endsWith("/images/brand/b-transparent.svg"));
+        assertTrue(String.valueOf(page.locator(".portrait").evaluate("element => getComputedStyle(element).clipPath"))
+                .contains("circle"));
+
+        page.locator(".verse-toggle").click();
+        page.locator(".verse-text.greek").waitFor();
+        assertTrue(Objects.equals("grc", page.locator(".verse-text").getAttribute("lang")));
+        assertTrue(page.locator(".verse-text").textContent().contains("λόγος"));
+        page.waitForFunction("document.fonts.check('16px \"Noto Serif\"', 'Ἐν ἀρχῇ ἦν ὁ λόγος')");
+        assertTrue(
+                String.valueOf(page.locator(".verse-text").evaluate("element => getComputedStyle(element).fontFamily"))
+                        .contains("Noto Serif"));
+
+        page.navigate(
+                baseUrl + "/religious-freedom",
+                new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+        page.locator(".scripture blockquote").waitFor();
+        assertTrue(String.valueOf(page.locator(".scripture blockquote")
+                        .evaluate("element => getComputedStyle(element).fontFamily"))
+                .contains("Noto Serif"));
+        assertTrue(browserErrors.isEmpty(), () -> "Browser errors: " + browserErrors);
+    }
+
+    @Test
     void reflectionPageRendersItsCitationAndTheme() {
         final var page = newPage(1280, 1000);
 
@@ -182,7 +222,7 @@ class StaticSiteBrowserTest {
             route.fulfill(new com.microsoft.playwright.Route.FulfillOptions()
                     .setStatus(200)
                     .setContentType("text/html; charset=UTF-8")
-                    .setBody("<p class=\"verse-text\">Test verse</p><p class=\"verse-reference\">Test 1:1</p>"));
+                    .setBody(VERSE_FRAGMENT));
             return;
         }
         if (path.equals("/api/joke")) {
@@ -210,9 +250,7 @@ class StaticSiteBrowserTest {
             return Response.ok("18", "text/plain; charset=UTF-8");
         }
         if (path.equals("/api/bible/verse-of-day/fragment")) {
-            return Response.ok(
-                    "<p class=\"verse-text\">Test verse</p><p class=\"verse-reference\">Test 1:1</p>",
-                    "text/html; charset=UTF-8");
+            return Response.ok(VERSE_FRAGMENT, "text/html; charset=UTF-8");
         }
 
         final var relativePath = path.equals("/")
