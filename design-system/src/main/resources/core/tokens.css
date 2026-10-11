@@ -1,5 +1,6 @@
 /* Shared design tokens. Keep component and page styles free of raw theme values. */
 :root {
+    color-scheme: light;
     --color-brand: #1f3f77;
     --color-accent: #b21f2d;
     --color-primary: #0d6efd;
@@ -58,22 +59,35 @@
     --disabled-opacity: 0.6;
 }
 
-[data-bs-theme="dark"] {
-    --surface-page: #212529;
-    --surface-card: #2b3035;
-    --surface-muted: #2b3035;
-    --text-primary: #e9ecef;
-    --text-muted: #adb5bd;
-    --border-default: #373b3e;
-    --color-brand: #8bb9fe;
-    --color-accent: #ff8a95;
-    --color-primary: #8bb9fe;
-    --color-success: #75d69c;
-    --color-danger: #ff8a95;
-    --shadow-color: rgb(0 0 0 / 24%);
-    --app-link-hover-color: #0d6efd;
-    --app-chip-bg: rgb(139 185 254 / 10%);
-    --app-chip-border: rgb(139 185 254 / 22%);
-    --app-success-soft: rgb(117 214 156 / 15%);
-    --app-danger-soft: rgb(255 138 149 / 16%);
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --surface-page: #212529;
+        --surface-card: #2b3035;
+        --surface-muted: #2b3035;
+        --text-primary: #e9ecef;
+        --text-muted: #adb5bd;
+        --border-default: #373b3e;
+        --color-brand: #8bb9fe;
+        --color-accent: #ff8a95;
+        --color-primary: #8bb9fe;
+        --color-success: #75d69c;
+        --color-danger: #ff8a95;
+        --shadow-color: rgb(0 0 0 / 24%);
+        --app-link-hover-color: #0d6efd;
+        --app-chip-bg: rgb(139 185 254 / 10%);
+        --app-chip-border: rgb(139 185 254 / 22%);
+        --app-success-soft: rgb(117 214 156 / 15%);
+        --app-danger-soft: rgb(255 138 149 / 16%);
+        --bs-body-color: #e9ecef;
+        --bs-body-bg: #212529;
+        --bs-emphasis-color: #ffffff;
+        --bs-heading-color: #ffffff;
+        --bs-secondary-color: #adb5bd;
+        --bs-secondary-bg: #2b3035;
+        --bs-tertiary-bg: #2b3035;
+        --bs-border-color: #373b3e;
+        --bs-link-color: #8bb9fe;
+        --bs-link-hover-color: #0d6efd;
+    }
 }

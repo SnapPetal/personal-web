@@ -49,12 +49,20 @@
     display: none;
 }
 
-[data-bs-theme="dark"] .booking-brand-mark-light {
-    display: none;
-}
+@media (prefers-color-scheme: dark) {
+    .booking-brand,
+    a.booking-brand,
+    .booking-hero h1 {
+        color: #ffffff;
+    }
 
-[data-bs-theme="dark"] .booking-brand-mark-dark {
-    display: block;
+    .booking-brand-mark-light {
+        display: none;
+    }
+
+    .booking-brand-mark-dark {
+        display: block;
+    }
 }
 
 .booking-navigation {
@@ -86,15 +94,6 @@
 
 .booking-admin-label {
     color: var(--app-muted-color);
-}
-
-.booking-theme-toggle {
-    border: 0;
-    background: transparent;
-    color: var(--app-body-color);
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 0.35rem 0.55rem;
 }
 
 .booking-menu-toggle {
@@ -218,9 +217,16 @@
     border-color: var(--app-chip-border);
 }
 
-[data-bs-theme="dark"] .booking-page .alert-info {
-    background-color: var(--app-chip-bg);
-    color: var(--app-body-color);
+@media (prefers-color-scheme: dark) {
+    .booking-page .alert-info {
+        background-color: var(--app-chip-bg);
+        color: var(--app-body-color);
+    }
+
+    .booking-page .booking-hero h1,
+    .booking-site-header .booking-brand {
+        color: #ffffff;
+    }
 }
 
 @media (max-width: 576px) {

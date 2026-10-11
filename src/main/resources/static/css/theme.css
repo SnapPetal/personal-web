@@ -2,111 +2,14 @@
 
 /* -----------------------------
    Bootstrap Theme Overrides
+   Dark mode follows the browser or operating system setting.
 ----------------------------- */
-[data-bs-theme="dark"] .navbar {
-    background-color: var(--app-section-bg) !important;
-    border-color: var(--app-border-color);
-}
-
-[data-bs-theme="dark"] .navbar-light .navbar-brand,
-[data-bs-theme="dark"] .navbar-light .nav-link,
-[data-bs-theme="dark"] .nav-link {
-    color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] .navbar-toggler-icon {
-    filter: brightness(0) invert(1);
-}
-
 .navbar-toggler {
     border-color: var(--app-border-color);
 }
 
 .navbar-toggler:focus {
     box-shadow: 0 0 0 0.2rem var(--app-chip-bg);
-}
-
-[data-bs-theme="dark"] .navbar-toggler {
-    border-color: var(--app-border-color);
-}
-
-[data-bs-theme="dark"] .navbar-collapse {
-    background-color: var(--app-section-bg);
-}
-
-[data-bs-theme="dark"] .card,
-[data-bs-theme="dark"] .section-bg {
-    background-color: var(--app-surface-bg);
-    border-color: var(--app-border-color);
-}
-
-[data-bs-theme="dark"] .bg-light {
-    background-color: var(--app-section-bg) !important;
-}
-
-[data-bs-theme="dark"] h1,
-[data-bs-theme="dark"] h2,
-[data-bs-theme="dark"] h3,
-[data-bs-theme="dark"] h4,
-[data-bs-theme="dark"] h5,
-[data-bs-theme="dark"] h6 {
-    color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] .text-muted {
-    color: var(--app-muted-color) !important;
-}
-
-[data-bs-theme="dark"] a:not(.btn),
-[data-bs-theme="dark"] .nav-link {
-    color: var(--app-link-color);
-}
-
-[data-bs-theme="dark"] a:hover:not(.btn),
-[data-bs-theme="dark"] .nav-link:hover {
-    color: var(--app-link-hover-color);
-}
-
-[data-bs-theme="dark"] .social-icon {
-    color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] .social-icon:hover {
-    color: var(--color-primary);
-}
-
-[data-bs-theme="dark"] .btn-outline-dark {
-    color: var(--app-body-color);
-    border-color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] .btn-outline-dark:hover {
-    background-color: var(--app-body-color);
-    color: var(--app-body-bg);
-}
-
-[data-bs-theme="dark"] .form-control {
-    background-color: var(--app-surface-bg);
-    border-color: var(--app-border-color);
-    color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] .form-control:focus {
-    background-color: var(--app-surface-bg);
-    color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] #bible-verse {
-    color: var(--app-body-color);
-}
-
-[data-bs-theme="dark"] .bible-verse-section .card {
-    background-color: var(--app-section-bg);
-}
-
-[data-bs-theme="dark"] .verse-text,
-[data-bs-theme="dark"] .verse-translation {
-    color: var(--app-body-color);
 }
 
 .verse-text,
@@ -118,36 +21,138 @@
     font-optical-sizing: auto;
 }
 
-[data-bs-theme="dark"] footer {
-    background-color: var(--app-section-bg);
-    color: var(--app-body-color);
-    border-top: 1px solid var(--app-border-color);
-}
+@media (prefers-color-scheme: dark) {
+    .navbar {
+        background-color: var(--app-section-bg) !important;
+        border-color: var(--app-border-color);
+    }
 
-[data-bs-theme="dark"] table {
-    color: var(--app-body-color);
-}
+    .navbar-light .navbar-brand,
+    .navbar-brand,
+    .booking-brand,
+    a.booking-brand,
+    h1,
+    .booking-hero h1 {
+        color: #ffffff;
+    }
 
-[data-bs-theme="dark"] .table {
-    --bs-table-color: var(--app-body-color);
-    --bs-table-bg: transparent;
-    --bs-table-border-color: var(--app-border-color);
-}
+    .navbar-toggler-icon {
+        filter: brightness(0) invert(1);
+    }
 
-[data-bs-theme="dark"] .list-group-item {
-    background-color: var(--app-section-bg);
-    color: var(--app-body-color);
-    border-color: var(--app-border-color);
-}
+    .navbar-toggler {
+        border-color: var(--app-border-color);
+    }
 
-[data-bs-theme="dark"] label {
-    color: var(--app-body-color);
-}
+    .navbar-collapse {
+        background-color: var(--app-section-bg);
+    }
 
-[data-bs-theme="dark"] #about,
-[data-bs-theme="dark"] #about p,
-[data-bs-theme="dark"] #about div,
-[data-bs-theme="dark"] .about-content p,
-[data-bs-theme="dark"] .about-content div {
-    color: var(--app-body-color) !important;
+    .card,
+    .section-bg {
+        background-color: var(--app-surface-bg);
+        border-color: var(--app-border-color);
+    }
+
+    .bg-light {
+        background-color: var(--app-section-bg) !important;
+    }
+
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--app-body-color);
+    }
+
+    .text-muted {
+        color: var(--app-muted-color) !important;
+    }
+
+    a:not(.btn):not(.booking-brand):not(.navbar-brand),
+    .nav-link {
+        color: var(--app-link-color);
+    }
+
+    a:hover:not(.btn):not(.booking-brand):not(.navbar-brand),
+    .nav-link:hover {
+        color: var(--app-link-hover-color);
+    }
+
+    .social-icon {
+        color: var(--app-body-color);
+    }
+
+    .social-icon:hover {
+        color: var(--color-primary);
+    }
+
+    .btn-outline-dark {
+        color: var(--app-body-color);
+        border-color: var(--app-body-color);
+    }
+
+    .btn-outline-dark:hover {
+        background-color: var(--app-body-color);
+        color: var(--app-body-bg);
+    }
+
+    .form-control {
+        background-color: var(--app-surface-bg);
+        border-color: var(--app-border-color);
+        color: var(--app-body-color);
+    }
+
+    .form-control:focus {
+        background-color: var(--app-surface-bg);
+        color: var(--app-body-color);
+    }
+
+    #bible-verse {
+        color: var(--app-body-color);
+    }
+
+    .bible-verse-section .card {
+        background-color: var(--app-section-bg);
+    }
+
+    .verse-text,
+    .verse-translation {
+        color: var(--app-body-color);
+    }
+
+    footer {
+        background-color: var(--app-section-bg);
+        color: var(--app-body-color);
+        border-top: 1px solid var(--app-border-color);
+    }
+
+    table {
+        color: var(--app-body-color);
+    }
+
+    .table {
+        --bs-table-color: var(--app-body-color);
+        --bs-table-bg: transparent;
+        --bs-table-border-color: var(--app-border-color);
+    }
+
+    .list-group-item {
+        background-color: var(--app-section-bg);
+        color: var(--app-body-color);
+        border-color: var(--app-border-color);
+    }
+
+    label {
+        color: var(--app-body-color);
+    }
+
+    #about,
+    #about p,
+    #about div,
+    .about-content p,
+    .about-content div {
+        color: var(--app-body-color) !important;
+    }
 }
