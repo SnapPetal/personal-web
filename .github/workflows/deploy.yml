@@ -97,6 +97,7 @@ jobs:
         run: |
           set -euo pipefail
           cp -a static-site/. site/
+          cp design-system/src/main/resources/core/site-header.css site/site-header.css
           mkdir -p site/images/brand
           cp src/main/resources/static/images/profile.png site/images/profile.png
           cp src/main/resources/static/images/brand/*.svg site/images/brand/
@@ -109,6 +110,7 @@ jobs:
           cp src/main/resources/static/android-chrome-512x512.png site/android-chrome-512x512.png
           cp src/main/resources/static/site.webmanifest site/site.webmanifest
           test -f site/index.html
+          test -f site/site-header.css
           test -f site/tankgame/index.html
           test -f site/images/profile.png
           test -f site/images/brand/b-tile.svg

@@ -5,7 +5,7 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <meta content="Thon Becker — software engineer building thoughtful, reliable applications with Java, Spring, AWS, and practical AI." name="description">
     <link rel="preload" href="/fonts/noto-sans-latin.woff2?v=dfaa2245c912" as="font" type="font/woff2" crossorigin>
-    <link href="/site.css?v=880430ad9db2" rel="stylesheet">
+    <link href="/site.css?v=bdcec50a4d2b" rel="stylesheet">
     <script src="/theme.js?v=b5702b1c27ce"></script>
     <script defer src="/joke-player.js?v=0c08286f74c0"></script>
     <script>window.PERSONAL_POSTHOG_PROJECT_TOKEN = "phc_p74mNQe2UYgGaocLTsX3ZdCWqGr5X7wFecTJ2YV73o7V"; window.PERSONAL_POSTHOG_API_HOST = "https://e.thonbecker.biz";</script>
@@ -29,9 +29,9 @@
     <a class="brand" href="#top"><img alt="" class="brand-mark brand-mark-light" height="28" src="/images/brand/b-transparent.svg" width="28"><img alt="" class="brand-mark brand-mark-dark" height="28" src="/images/brand/b-transparent-dark.svg" width="28">Thon Becker</a>
     <button aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation" class="menu-toggle" data-menu-toggle type="button"><span aria-hidden="true">☰</span> Menu</button>
     <nav aria-label="Primary navigation" id="primary-navigation">
-        <a href="#about">About</a><a href="#apps">Apps</a><a href="#projects">Projects</a><a href="#contact">Contact</a>
+        <a class="site-nav-link" href="#about">About</a><a class="site-nav-link" href="#apps">Apps</a><a class="site-nav-link" href="#projects">Projects</a><a class="site-nav-link" href="#contact">Contact</a>
         <button aria-label="Play dad joke of the day" class="joke-toggle" data-joke-toggle type="button">😂</button>
-        <a class="button compact" href="https://booking.thonbecker.biz/booking">Book a meeting</a>
+        <a class="site-nav-link" href="https://booking.thonbecker.biz/booking">Book a meeting</a>
     </nav>
 </header>
 
@@ -41,7 +41,7 @@
     <section class="hero">
         <div>
             <p class="eyebrow">Software engineer · cloud architect</p>
-            <h1>Building useful software with care.</h1>
+            <h1 class="page-title">Building useful software with care.</h1>
             <p class="lede">I turn complex ideas into reliable, approachable applications using Java, Spring, AWS, and practical AI.</p>
             <p class="booking-note"><strong>Need a thoughtful technical partner?</strong> Book a short consultation and we’ll clarify the problem, identify practical next steps, and follow up by email with a calendar invite.</p>
             <p class="experience-line">Bringing <span hx-get="https://app.thonbecker.biz/api/experience/count" hx-trigger="load" hx-swap="innerHTML" hx-indicator="this" hx-status:4xx="swap:none" hx-status:5xx="swap:none" hx-on::response:error="this.textContent='years of experience'" hx-on::error="this.textContent='years of experience'">years of experience</span> to every project.</p>

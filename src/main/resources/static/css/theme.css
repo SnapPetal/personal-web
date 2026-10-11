@@ -113,10 +113,9 @@ body {
 
     .navbar-light .navbar-brand,
     .navbar-brand,
-    .booking-brand,
-    a.booking-brand,
+    .site-header .brand,
     h1,
-    .booking-hero h1 {
+    .page-title {
         color: #ffffff;
     }
 
@@ -154,12 +153,12 @@ body {
         color: var(--app-muted-color) !important;
     }
 
-    a:not(.btn):not(.booking-brand):not(.navbar-brand),
+    a:not(.btn):not(.brand):not(.navbar-brand):not(.site-nav-link),
     .nav-link {
         color: var(--app-link-color);
     }
 
-    a:hover:not(.btn):not(.booking-brand):not(.navbar-brand),
+    a:hover:not(.btn):not(.brand):not(.navbar-brand):not(.site-nav-link),
     .nav-link:hover {
         color: var(--app-link-hover-color);
     }

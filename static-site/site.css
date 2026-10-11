@@ -1,4 +1,5 @@
 @import url("/design-system.css?v=4185ec2a4e50");
+@import url("/site-header.css?v=9dbc646f6cdd");
 @font-face {
     font-family: "Noto Sans";
     font-style: normal;
@@ -110,26 +111,12 @@ button:focus-visible {
     outline: 3px solid var(--green);
     outline-offset: 3px;
 }
-.site-header,
 main > section,
 footer {
     width: min(1160px, calc(100% - 2.5rem));
     margin-inline: auto;
 }
-.site-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    min-height: 72px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-    background: color-mix(in srgb, var(--paper) 94%, transparent);
-    border-bottom: 1px solid var(--line);
-    backdrop-filter: blur(10px);
-}
-.brand {
+footer .brand {
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
@@ -138,37 +125,11 @@ footer {
     font-size: 1.25rem;
     letter-spacing: 0.01em;
 }
-.brand-mark {
-    width: 1.75rem;
-    height: 1.75rem;
-    flex: none;
-}
-.brand-mark-dark {
-    display: none;
-}
 @media (prefers-color-scheme: dark) {
-    .brand,
+    footer .brand,
     h1 {
         color: #ffffff;
     }
-
-    .brand-mark-light {
-        display: none;
-    }
-
-    .brand-mark-dark {
-        display: block;
-    }
-}
-nav {
-    display: flex;
-    align-items: center;
-    gap: 1.6rem;
-    font-size: 0.92rem;
-    font-weight: 650;
-}
-nav a:not(.button):hover {
-    color: var(--green);
 }
 .joke-toggle {
     border: 0;
@@ -181,19 +142,6 @@ nav a:not(.button):hover {
 .joke-toggle:disabled {
     cursor: wait;
     opacity: 0.7;
-}
-.menu-toggle {
-    display: none;
-    align-items: center;
-    gap: 0.4rem;
-    border: 1px solid var(--line);
-    border-radius: 0.5rem;
-    background: var(--surface);
-    color: var(--ink);
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 700;
-    padding: 0.5rem 0.7rem;
 }
 .button {
     display: inline-flex;
@@ -214,9 +162,6 @@ nav a:not(.button):hover {
         background: color-mix(in srgb, var(--green) 78%, white);
         color: var(--button-light-text);
     }
-}
-.button.compact {
-    padding: 0.58rem 0.9rem;
 }
 .hero {
     min-height: 650px;
@@ -246,12 +191,6 @@ h3 {
     font-optical-sizing: auto;
     font-weight: 700;
     line-height: 1.12;
-}
-h1 {
-    max-width: 760px;
-    margin: 0.4rem 0 1.5rem;
-    font-size: clamp(2.75rem, 5vw, 4.35rem);
-    letter-spacing: -0.04em;
 }
 h2 {
     margin: 0.35rem 0 1.5rem;
@@ -517,46 +456,8 @@ footer {
     font-size: 0.88rem;
 }
 @media (max-width: 760px) {
-    .site-header {
-        min-height: 64px;
-        width: 100%;
-        padding-inline: 0.75rem;
-    }
-    .brand {
+    footer .brand {
         font-size: 1.1rem;
-    }
-    .menu-toggle {
-        display: flex;
-        margin-left: auto;
-    }
-    nav {
-        display: none;
-        position: absolute;
-        top: 64px;
-        left: 0.75rem;
-        right: 0.75rem;
-        align-items: stretch;
-        flex-direction: column;
-        gap: 0.15rem;
-        padding: 0.75rem;
-        border: 1px solid var(--line);
-        border-radius: 0.5rem;
-        background: var(--surface);
-        box-shadow: var(--shadow-md);
-    }
-    nav.is-open {
-        display: flex;
-    }
-    nav a,
-    nav button {
-        padding: 0.65rem 0.75rem;
-        text-align: left;
-    }
-    nav a:not(.button) {
-        display: block;
-    }
-    nav .button {
-        margin-top: 0.35rem;
     }
     .hero {
         grid-template-columns: 1fr;
