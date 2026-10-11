@@ -54,6 +54,7 @@ public class SecurityConfig {
                                 "/booking/confirmation/**",
                                 "/css/**",
                                 "/js/**",
+                                "/fonts/**",
                                 "/images/**",
                                 "/webjars/**",
                                 "/error")

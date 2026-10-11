@@ -109,6 +109,15 @@
     color: var(--app-body-color);
 }
 
+.verse-text,
+.scripture blockquote,
+.greek,
+:lang(grc),
+:lang(el) {
+    font-family: "Noto Serif", ui-serif, Georgia, serif;
+    font-optical-sizing: auto;
+}
+
 [data-bs-theme="dark"] footer {
     background-color: var(--app-section-bg);
     color: var(--app-body-color);
