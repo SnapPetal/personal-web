@@ -60,4 +60,41 @@ class BookingPageTemplateTest {
         assertTrue(Files.isRegularFile(Path.of("src/main/resources/static/css/fonts/noto-sans-latin.woff2")));
         assertTrue(Files.isRegularFile(Path.of("src/main/resources/static/css/fonts/noto-serif-latin.woff2")));
     }
+
+    @Test
+    void bookingHeaderMatchesThePublicSiteHeader() throws IOException {
+        final var navigation = Files.readString(BOOKING_NAVIGATION);
+        final var template = Files.readString(BOOKING_TEMPLATE);
+        final var styles = Files.readString(BOOKING_STYLES);
+        final var theme = Files.readString(Path.of("src/main/resources/static/css/theme.css"));
+        final var sharedHeader = Files.readString(Path.of("design-system/src/main/resources/core/site-header.css"));
+        final var designSystem = Files.readString(Path.of("design-system/src/main/resources/design-system.css"));
+        final var homepage = Files.readString(Path.of("static-site/index.html"));
+
+        assertTrue(navigation.contains("class=\"site-header\""));
+        assertTrue(navigation.contains("class=\"brand\""));
+        assertTrue(navigation.contains("class=\"brand-mark brand-mark-light\""));
+        assertTrue(navigation.contains("class=\"brand-mark brand-mark-dark\""));
+        assertTrue(navigation.contains("data-menu-toggle"));
+        assertTrue(navigation.contains("id=\"primary-navigation\""));
+        assertTrue(navigation.contains("class=\"site-nav-link\""));
+        assertFalse(navigation.contains("booking-site-header"));
+        assertFalse(navigation.contains("booking-brand"));
+        assertFalse(navigation.contains("navbar-toggler"));
+        assertTrue(template.contains("class=\"page-title\""));
+        assertTrue(homepage.contains("class=\"site-header\""));
+        assertTrue(homepage.contains("class=\"page-title\""));
+        assertTrue(homepage.contains("class=\"site-nav-link\""));
+        assertFalse(homepage.contains("button compact"));
+        assertTrue(designSystem.contains("site-header.css"));
+        assertTrue(sharedHeader.contains("color: var(--text-primary);"));
+        assertTrue(sharedHeader.contains("color: #ffffff;"));
+        assertTrue(sharedHeader.contains("font-size: clamp(2.75rem, 5vw, 4.35rem);"));
+        assertTrue(sharedHeader.contains("text-decoration: underline;"));
+        assertFalse(sharedHeader.contains("--app-link-color"));
+        assertFalse(styles.contains("booking-primary-nav"));
+        assertFalse(styles.contains(".booking-hero h1"));
+        assertTrue(theme.contains(":not(.site-nav-link)"));
+        assertTrue(Files.readString(Path.of(".github/workflows/deploy.yml")).contains("site/site-header.css"));
+    }
 }

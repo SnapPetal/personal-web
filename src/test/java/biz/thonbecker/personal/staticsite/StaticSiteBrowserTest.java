@@ -85,6 +85,7 @@ class StaticSiteBrowserTest {
 
         page.navigate(baseUrl + "/", new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
         page.locator("h1").waitFor();
+        assertHeaderUsesTextColor(page, "rgb(33, 37, 41)");
         page.waitForFunction("document.querySelector('.experience-line span')?.textContent.includes('18')");
         assertTrue(page.locator(".experience-line span").textContent().contains("18"));
         assertTrue(page.locator("#primary-navigation").isVisible());
@@ -111,11 +112,7 @@ class StaticSiteBrowserTest {
         page.locator("h1").waitFor();
         assertTrue(page.locator("[data-theme-toggle]").count() == 0);
         assertTrue(page.locator("html").getAttribute("data-theme") == null);
-        assertTrue(Objects.equals(
-                page.locator(".site-header .brand").evaluate("element => getComputedStyle(element).color"),
-                "rgb(255, 255, 255)"));
-        assertTrue(Objects.equals(
-                page.locator("h1").evaluate("element => getComputedStyle(element).color"), "rgb(255, 255, 255)"));
+        assertHeaderUsesTextColor(page, "rgb(255, 255, 255)");
         page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Path.of("target/playwright/homepage-dark.png"))
                 .setFullPage(true));
@@ -172,9 +169,7 @@ class StaticSiteBrowserTest {
         page.emulateMedia(new Page.EmulateMediaOptions().setColorScheme(ColorScheme.DARK));
         assertTrue(page.locator("[data-theme-toggle]").count() == 0);
         assertTrue(page.locator("html").getAttribute("data-theme") == null);
-        assertTrue(Objects.equals(
-                page.locator(".site-header .brand").evaluate("element => getComputedStyle(element).color"),
-                "rgb(255, 255, 255)"));
+        assertHeaderUsesTextColor(page, "rgb(255, 255, 255)");
         page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Path.of("target/playwright/religious-freedom-dark.png"))
                 .setFullPage(true));
@@ -186,6 +181,19 @@ class StaticSiteBrowserTest {
         menu.click();
         assertTrue(page.locator("#primary-navigation").isVisible());
         assertTrue(browserErrors.isEmpty(), () -> "Browser errors: " + browserErrors);
+    }
+
+    private static void assertHeaderUsesTextColor(final Page page, final String color) {
+        assertTrue(Objects.equals(
+                page.locator(".site-header .brand").evaluate("element => getComputedStyle(element).color"), color));
+        assertTrue(Objects.equals(
+                page.locator("#primary-navigation a.site-nav-link")
+                        .last()
+                        .evaluate("element => getComputedStyle(element).color"),
+                color));
+        assertTrue(Objects.equals(
+                page.locator("h1.page-title").evaluate("element => getComputedStyle(element).color"), color));
+        assertTrue(page.locator("#primary-navigation a.button").count() == 0);
     }
 
     private static Page newPage(final int width, final int height) {
@@ -261,6 +269,11 @@ class StaticSiteBrowserTest {
         }
         if (path.equals("/api/bible/verse-of-day/fragment")) {
             return Response.ok(VERSE_FRAGMENT, "text/html; charset=UTF-8");
+        }
+        if (path.equals("/site-header.css")) {
+            return Response.ok(
+                    Files.readAllBytes(Path.of("design-system/src/main/resources/core/site-header.css")),
+                    "text/css; charset=UTF-8");
         }
 
         final var relativePath = path.equals("/")
