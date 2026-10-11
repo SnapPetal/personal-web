@@ -292,8 +292,8 @@
     font-size: 3rem;
 }
 
-/* Dark mode support */
-[data-bs-theme="dark"] {
+/* Dark mode follows the browser or operating system setting. */
+@media (prefers-color-scheme: dark) {
     .foosball-page {
         background-color: #1a202c;
         color: #e2e8f0;

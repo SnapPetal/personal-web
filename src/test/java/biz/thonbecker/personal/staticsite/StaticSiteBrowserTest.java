@@ -7,6 +7,7 @@ import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.options.ColorScheme;
 import com.microsoft.playwright.options.WaitUntilState;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -106,10 +107,15 @@ class StaticSiteBrowserTest {
                 .setPath(Path.of("target/playwright/homepage-mobile.png"))
                 .setFullPage(true));
 
-        menu.click();
-        page.locator("[data-theme-toggle]").click();
-        assertTrue(Objects.equals(page.locator("html").getAttribute("data-theme"), "dark"));
-        menu.click();
+        page.emulateMedia(new Page.EmulateMediaOptions().setColorScheme(ColorScheme.DARK));
+        page.locator("h1").waitFor();
+        assertTrue(page.locator("[data-theme-toggle]").count() == 0);
+        assertTrue(page.locator("html").getAttribute("data-theme") == null);
+        assertTrue(Objects.equals(
+                page.locator(".site-header .brand").evaluate("element => getComputedStyle(element).color"),
+                "rgb(255, 255, 255)"));
+        assertTrue(Objects.equals(
+                page.locator("h1").evaluate("element => getComputedStyle(element).color"), "rgb(255, 255, 255)"));
         page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Path.of("target/playwright/homepage-dark.png"))
                 .setFullPage(true));
@@ -163,8 +169,12 @@ class StaticSiteBrowserTest {
         assertTrue(citation.count() == 1);
         assertTrue(citation.textContent().contains("Galatians 5:13"));
         assertTrue(Objects.equals(citation.evaluate("element => getComputedStyle(element).display"), "block"));
-        page.locator("[data-theme-toggle]").click();
-        assertTrue(Objects.equals(page.locator("html").getAttribute("data-theme"), "dark"));
+        page.emulateMedia(new Page.EmulateMediaOptions().setColorScheme(ColorScheme.DARK));
+        assertTrue(page.locator("[data-theme-toggle]").count() == 0);
+        assertTrue(page.locator("html").getAttribute("data-theme") == null);
+        assertTrue(Objects.equals(
+                page.locator(".site-header .brand").evaluate("element => getComputedStyle(element).color"),
+                "rgb(255, 255, 255)"));
         page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Path.of("target/playwright/religious-freedom-dark.png"))
                 .setFullPage(true));
@@ -201,7 +211,7 @@ class StaticSiteBrowserTest {
                         .setContentType("application/javascript")
                         .setBody("")));
         page.onConsoleMessage(message -> {
-            if (message.type().equals("error") && !message.text().contains("PERSONALWEB_THEME")) {
+            if (message.type().equals("error")) {
                 browserErrors.add("console: " + message.text());
             }
         });

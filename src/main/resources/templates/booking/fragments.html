@@ -19,10 +19,6 @@
                 <a aria-current="page" th:href="@{/booking}" hx-boost="true" hx-preload="mouseenter">Book a meeting</a>
                 <a th:if="${page == 'admin'}" th:href="@{/booking}" hx-boost="true" hx-preload="mouseenter">Public booking page</a>
                 <span class="booking-admin-label" th:if="${page == 'admin'}">Administrator</span>
-                <button aria-label="Toggle dark mode" class="booking-theme-toggle" type="button"
-                        x-data="themeToggle()" x-on:click="toggle()" x-bind:aria-label="isDark ? 'Use light mode' : 'Use dark mode'">
-                    <i aria-hidden="true" x-bind:class="iconClass"></i>
-                </button>
             </nav>
         </div>
     </div>

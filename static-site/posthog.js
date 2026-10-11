@@ -54,9 +54,6 @@
     });
 
     document.addEventListener("click", (event) => {
-      if (event.target.closest("[data-theme-toggle]")) {
-        capture("static_site_theme_toggled");
-      }
       if (event.target.closest("[data-joke-toggle]")) {
         capture("static_site_joke_toggled");
       }
