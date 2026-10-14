@@ -1,0 +1,43 @@
+"$schema" = "./node_modules/wrangler/config-schema.json"
+name = "family-quest"
+main = "src/index.ts"
+compatibility_date = "2026-10-14"
+compatibility_flags = ["nodejs_compat"]
+upload_source_maps = true
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+
+[ai]
+binding = "AI"
+
+[assets]
+directory = "./public"
+
+# Intended hostname: quest.thonbecker.biz
+# Leave this commented until the DNS record exists in the thonbecker.biz zone.
+# Uncommenting it attaches a Workers custom domain on the next deploy.
+# [[routes]]
+# pattern = "quest.thonbecker.biz"
+# custom_domain = true
+
+[vars]
+AI_DAILY_CAP = "40"
+AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+AI_MODEL_FALLBACK = "@cf/meta/llama-3.1-8b-instruct-fast"
+TTS_MODEL = "@cf/myshell-ai/melotts"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "family-quest"
+# Placeholder. Replace with the id printed by `npx wrangler d1 create family-quest`.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
