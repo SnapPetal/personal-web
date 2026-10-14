@@ -52,13 +52,12 @@ public class MatchResult {
     public void calculateRewards() {
         // XP Calculation
         int baseXp = 50;
-        int placementXp =
-                switch (placement) {
-                    case 1 -> 100;
-                    case 2 -> 60;
-                    case 3 -> 30;
-                    default -> 10;
-                };
+        int placementXp = switch (placement) {
+            case 1 -> 100;
+            case 2 -> 60;
+            case 3 -> 30;
+            default -> 10;
+        };
         int killXp = kills * 20;
         int survivalBonus = placement <= 2 ? 50 : 0;
 
@@ -66,13 +65,12 @@ public class MatchResult {
 
         // Coins Calculation
         int baseCoins = 10;
-        int placementCoins =
-                switch (placement) {
-                    case 1 -> 50;
-                    case 2 -> 30;
-                    case 3 -> 15;
-                    default -> 5;
-                };
+        int placementCoins = switch (placement) {
+            case 1 -> 50;
+            case 2 -> 30;
+            case 3 -> 15;
+            default -> 5;
+        };
         int killCoins = kills * 5;
 
         this.coinsEarned = baseCoins + placementCoins + killCoins;
