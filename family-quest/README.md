@@ -30,7 +30,7 @@ Workers AI includes **10,000 neurons per day** on the free allocation. That rese
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `AI_DAILY_CAP` | `40` | Successful AI attempts (story, critter choices, and narrator audio) per UTC day |
+| `AI_DAILY_CAP` | `40` | AI turns per UTC day (story, critter choices, and narrator audio). A turn counts when the app is allowed to call Workers AI, including a turn whose models all fail |
 | `AI_MODEL` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | Dungeon master |
 | `AI_MODEL_FALLBACK` | `@cf/meta/llama-3.1-8b-instruct-fast` | Used when the 70B model errors or returns nothing |
 | `TTS_MODEL` | `@cf/myshell-ai/melotts` | Narrator audio |
