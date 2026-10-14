@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
  * @param bookingTypeName Type of booking
  * @param startTime Scheduled start time
  * @param endTime Scheduled end time
+ * @param visitorDistinctId PostHog distinct id for the visitor who cancelled the booking, when known
  */
 public record BookingCancelledEvent(
         Long bookingId,
@@ -23,4 +24,5 @@ public record BookingCancelledEvent(
         String attendeeName,
         String bookingTypeName,
         LocalDateTime startTime,
-        LocalDateTime endTime) {}
+        LocalDateTime endTime,
+        String visitorDistinctId) {}

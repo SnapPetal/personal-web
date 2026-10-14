@@ -101,11 +101,10 @@ public class FoosballService {
                         foosballDataService.createPlayer(game.getBlackTeam().getPlayer2()));
 
         // Convert GameResult to TeamColor
-        final var winner =
-                switch (game.getResult()) {
-                    case WHITE_TEAM_WIN -> biz.thonbecker.personal.foosball.platform.persistence.Game.TeamColor.WHITE;
-                    case BLACK_TEAM_WIN -> biz.thonbecker.personal.foosball.platform.persistence.Game.TeamColor.BLACK;
-                };
+        final var winner = switch (game.getResult()) {
+            case WHITE_TEAM_WIN -> biz.thonbecker.personal.foosball.platform.persistence.Game.TeamColor.WHITE;
+            case BLACK_TEAM_WIN -> biz.thonbecker.personal.foosball.platform.persistence.Game.TeamColor.BLACK;
+        };
 
         final var createdGame =
                 foosballDataService.recordGame(whitePlayer1, whitePlayer2, blackPlayer1, blackPlayer2, winner);

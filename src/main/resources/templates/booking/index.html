@@ -267,6 +267,18 @@
         };
     }
 
+    function posthogDistinctId() {
+        try {
+            if (window.posthog && typeof window.posthog.get_distinct_id === 'function') {
+                const id = window.posthog.get_distinct_id();
+                if (typeof id === 'string' && id) return id;
+            }
+        } catch (error) {
+            return '';
+        }
+        return '';
+    }
+
     function bookingForm() {
         return {
             selectedBookingTypeId: null,
@@ -280,12 +292,36 @@
             showBookingForm: false,
             showTimeSlots: false,
             showAttendeeForm: false,
+            bookingStarted: false,
 
             init() {
                 window.selectTimeSlot = (button) => this.selectTimeSlot(button);
+                document.body.addEventListener('htmx:configRequest', (event) => {
+                    const distinctId = posthogDistinctId();
+                    if (distinctId && event.detail && event.detail.headers) {
+                        event.detail.headers['X-PostHog-Distinct-Id'] = distinctId;
+                    }
+                });
+            },
+
+            recordBookingStarted() {
+                if (this.bookingStarted) return;
+                this.bookingStarted = true;
+                const headers = {
+                    'X-XSRF-TOKEN': this.getCsrfToken(),
+                    Accept: 'application/json',
+                };
+                const distinctId = posthogDistinctId();
+                if (distinctId) headers['X-PostHog-Distinct-Id'] = distinctId;
+                fetch('/booking/started', {
+                    method: 'POST',
+                    headers,
+                    credentials: 'same-origin',
+                }).catch(() => undefined);
             },
 
             selectBookingType(button) {
+                this.recordBookingStarted();
                 this.selectedBookingTypeId = button.getAttribute('data-type-id');
                 this.selectedBookingTypeName = button.getAttribute('data-type-name');
                 this.$refs.bookingDate.setAttribute(
@@ -345,12 +381,16 @@
                     message: this.attendeeMessage.trim() || null
                 };
 
+                const bookHeaders = {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': this.getCsrfToken()
+                };
+                const distinctId = posthogDistinctId();
+                if (distinctId) bookHeaders['X-PostHog-Distinct-Id'] = distinctId;
+
                 fetch('/booking/book', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-XSRF-TOKEN': this.getCsrfToken()
-                    },
+                    headers: bookHeaders,
                     body: JSON.stringify(bookingData)
                 })
                 .then(response => {

@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
  * @param startTime Scheduled start time
  * @param endTime Scheduled end time
  * @param message Optional message from attendee
+ * @param visitorDistinctId PostHog distinct id for the visitor who created the booking, when known
  */
 public record BookingCreatedEvent(
         Long bookingId,
@@ -27,4 +28,5 @@ public record BookingCreatedEvent(
         String bookingTypeName,
         LocalDateTime startTime,
         LocalDateTime endTime,
-        String message) {}
+        String message,
+        String visitorDistinctId) {}

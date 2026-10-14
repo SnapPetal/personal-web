@@ -15,6 +15,15 @@ class BookingPageTemplateTest {
     private static final Path BOOKING_STYLES = Path.of("src/main/resources/static/css/pages/booking.css");
 
     @Test
+    void recordsBookingStartFromTheMeetingTypeChoice() throws IOException {
+        final var template = Files.readString(BOOKING_TEMPLATE);
+
+        assertTrue(template.contains("fetch('/booking/started'"));
+        assertTrue(template.contains("recordBookingStarted()"));
+        assertFalse(template.contains("booking-anonymous"));
+    }
+
+    @Test
     void keepsTheAssistantSeparateFromTheMeetingTypeSection() throws IOException {
         final var template = Files.readString(BOOKING_TEMPLATE);
         final var styles = Files.readString(BOOKING_STYLES);

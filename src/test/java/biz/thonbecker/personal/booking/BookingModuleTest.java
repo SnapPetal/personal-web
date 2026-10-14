@@ -40,7 +40,8 @@ class BookingModuleTest {
                         "john@example.com",
                         "555-1234",
                         startTime,
-                        "Looking forward to it"))
+                        "Looking forward to it",
+                        null))
                 .andWaitForEventOfType(BookingCreatedEvent.class)
                 .toArriveAndVerify(event -> {
                     assertThat(event.attendeeName()).isEqualTo("John Doe");
@@ -65,8 +66,8 @@ class BookingModuleTest {
         bookingService.createAvailabilitySlot(dayAfterTomorrow.atTime(9, 0), dayAfterTomorrow.atTime(17, 0));
 
         final var startTime = dayAfterTomorrow.atTime(14, 0);
-        final var booking =
-                bookingService.createBooking(bookingType.id(), "Jane Smith", "jane@example.com", null, startTime, null);
+        final var booking = bookingService.createBooking(
+                bookingType.id(), "Jane Smith", "jane@example.com", null, startTime, null, null);
 
         scenario.stimulate(() -> bookingService.cancelBooking(booking.id()))
                 .andWaitForEventOfType(BookingCancelledEvent.class)
@@ -96,7 +97,8 @@ class BookingModuleTest {
                         "test@example.com",
                         "555-9999",
                         startTime,
-                        "Please call me first"))
+                        "Please call me first",
+                        null))
                 .andWaitForEventOfType(BookingCreatedEvent.class)
                 .toArriveAndVerify(event -> {
                     // Verify all fields that EmailNotificationService and CalendarService need

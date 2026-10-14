@@ -120,12 +120,13 @@ class CalendarEventListenerTest {
                 "Consultation",
                 start,
                 start.plusHours(1),
-                "hello");
+                "hello",
+                null);
     }
 
     private static BookingCancelledEvent bookingCancelledEvent() {
         final var start = LocalDateTime.of(2026, 6, 12, 10, 0);
         return new BookingCancelledEvent(
-                42L, "ABC123", "attendee@example.com", "Attendee", "Consultation", start, start.plusHours(1));
+                42L, "ABC123", "attendee@example.com", "Attendee", "Consultation", start, start.plusHours(1), null);
     }
 }

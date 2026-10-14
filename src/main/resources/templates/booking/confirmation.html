@@ -141,5 +141,19 @@
     </div>
 </main>
 
+<script>
+    document.body.addEventListener('htmx:configRequest', (event) => {
+        try {
+            if (!window.posthog || typeof window.posthog.get_distinct_id !== 'function') return;
+            const id = window.posthog.get_distinct_id();
+            if (typeof id === 'string' && id && event.detail && event.detail.headers) {
+                event.detail.headers['X-PostHog-Distinct-Id'] = id;
+            }
+        } catch (error) {
+            /* cancellation still proceeds; the server also reads the PostHog cookie */
+        }
+    });
+</script>
+
 </body>
 </html>

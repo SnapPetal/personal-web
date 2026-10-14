@@ -38,26 +38,32 @@ class PostHogEventListener {
 
     private final PostHogAnalyticsService postHogAnalyticsService;
 
+    /**
+     * Plain {@link EventListener}, not an application-module listener. Booking starts are not written to
+     * the Modulith event publication registry, so a failed capture is not replayed on restart.
+     */
     @EventListener
     @Async
     void onBookingStarted(final BookingStartedEvent event) {
-        postHogAnalyticsService.capture(event.distinctId(), "booking_started", Map.of());
+        captureVisitor(event.distinctId(), PostHogEventNames.BOOKING_STARTED, Map.of());
     }
 
     @EventListener
     @Async
     void onBookingAvailabilityViewed(final BookingAvailabilityViewedEvent event) {
-        postHogAnalyticsService.capture(
+        captureVisitor(
                 event.distinctId(),
-                "booking_availability_viewed",
+                PostHogEventNames.BOOKING_AVAILABILITY_VIEWED,
                 Map.of("booking_type_id", event.bookingTypeId(), "available_slot_count", event.availableSlotCount()));
     }
 
     @EventListener
     @Async
     void onBookingSubmitted(final BookingSubmittedEvent event) {
-        postHogAnalyticsService.capture(
-                event.distinctId(), "booking_submitted", Map.of("booking_type_id", event.bookingTypeId()));
+        captureVisitor(
+                event.distinctId(),
+                PostHogEventNames.BOOKING_SUBMITTED,
+                Map.of("booking_type_id", event.bookingTypeId()));
     }
 
     @EventListener
@@ -185,7 +191,7 @@ class PostHogEventListener {
     @Async
     void onBookingCreated(final BookingCreatedEvent event) {
         postHogAnalyticsService.capture(
-                "booking-" + event.bookingId(),
+                visitorOrBooking(event.visitorDistinctId(), event.bookingId()),
                 PostHogEventNames.BOOKING_CONFIRMED,
                 Map.of(
                         "booking_id",
@@ -201,7 +207,7 @@ class PostHogEventListener {
     @Async
     void onBookingCancelled(final BookingCancelledEvent event) {
         postHogAnalyticsService.capture(
-                "booking-" + event.bookingId(),
+                visitorOrBooking(event.visitorDistinctId(), event.bookingId()),
                 PostHogEventNames.BOOKING_CANCELLED,
                 Map.of(
                         "booking_id", event.bookingId(),
@@ -264,5 +270,23 @@ class PostHogEventListener {
                 event.playerId(),
                 "player_created",
                 Map.of("created_at", event.createdAt().toString()));
+    }
+
+    private void captureVisitor(final String distinctId, final String eventName, final Map<String, Object> properties) {
+        if (!isLinkableDistinctId(distinctId)) {
+            return;
+        }
+        postHogAnalyticsService.capture(distinctId, eventName, properties);
+    }
+
+    private String visitorOrBooking(final String visitorDistinctId, final Long bookingId) {
+        if (isLinkableDistinctId(visitorDistinctId)) {
+            return visitorDistinctId;
+        }
+        return "booking-" + bookingId;
+    }
+
+    private boolean isLinkableDistinctId(final String distinctId) {
+        return distinctId != null && !distinctId.isBlank() && !"booking-anonymous".equals(distinctId);
     }
 }
