@@ -63,6 +63,7 @@ class CalendarEventPublicationRegistryTest {
                 "Consultation",
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(0),
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(30),
+                null,
                 null);
 
         scenario.publish(event).andWaitForStateChange(() -> outstandingPublicationCount() > before);

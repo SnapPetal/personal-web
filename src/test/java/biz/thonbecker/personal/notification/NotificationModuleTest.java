@@ -30,7 +30,8 @@ class NotificationModuleTest {
                 "30 Minute Consultation",
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(0),
                 LocalDateTime.now().plusDays(1).withHour(10).withMinute(30),
-                "I have a question about your services");
+                "I have a question about your services",
+                null);
 
         assertThatNoException().isThrownBy(() -> scenario.publish(event).andWaitForStateChange(() -> true));
     }
@@ -44,7 +45,8 @@ class NotificationModuleTest {
                 "Cancel User",
                 "1 Hour Technical Discussion",
                 LocalDateTime.now().plusDays(2).withHour(14).withMinute(0),
-                LocalDateTime.now().plusDays(2).withHour(15).withMinute(0));
+                LocalDateTime.now().plusDays(2).withHour(15).withMinute(0),
+                null);
 
         assertThatNoException().isThrownBy(() -> scenario.publish(event).andWaitForStateChange(() -> true));
     }
@@ -61,6 +63,7 @@ class NotificationModuleTest {
                 "Project Discovery Call",
                 LocalDateTime.now().plusDays(3).withHour(9).withMinute(0),
                 LocalDateTime.now().plusDays(3).withHour(9).withMinute(45),
+                null,
                 null);
 
         assertThatNoException().isThrownBy(() -> scenario.publish(event).andWaitForStateChange(() -> true));

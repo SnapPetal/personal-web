@@ -108,7 +108,8 @@ public class BookingService {
             final String attendeeEmail,
             final String attendeePhone,
             final LocalDateTime startTime,
-            final String message) {
+            final String message,
+            final String visitorDistinctId) {
 
         log.info("Creating booking for type {} at {}", bookingTypeId, startTime);
 
@@ -178,7 +179,8 @@ public class BookingService {
                 savedBooking.getBookingType().getName(),
                 savedBooking.getStartTime(),
                 savedBooking.getEndTime(),
-                savedBooking.getMessage());
+                savedBooking.getMessage(),
+                visitorDistinctId);
         eventPublisher.publishEvent(event);
 
         return convertBookingToDomain(savedBooking);
@@ -203,6 +205,11 @@ public class BookingService {
 
     @Transactional
     public void cancelBooking(final Long bookingId) {
+        cancelBooking(bookingId, null);
+    }
+
+    @Transactional
+    public void cancelBooking(final Long bookingId, final String visitorDistinctId) {
         log.info("Cancelling booking {}", bookingId);
 
         final var booking =
@@ -224,7 +231,8 @@ public class BookingService {
                 booking.getAttendeeName(),
                 booking.getBookingType().getName(),
                 booking.getStartTime(),
-                booking.getEndTime());
+                booking.getEndTime(),
+                visitorDistinctId);
         eventPublisher.publishEvent(event);
 
         log.info("Successfully cancelled booking {}", bookingId);
