@@ -2,7 +2,9 @@ import { ANCESTRIES, CLASSES, PREMISES, levelUpReady } from "./classes";
 import type { CapResult } from "./cost";
 import { capMessage } from "./cost";
 import type { Combatant, EncounterState } from "./encounter";
+import type { MonsterStat } from "./bestiary";
 import type { CampaignRecord, CharacterRecord, MessageRecord } from "./repo";
+import { SRD_ATTRIBUTION } from "./attribution";
 import { escapeHtml } from "./text";
 
 export function layout(input: {
@@ -29,10 +31,13 @@ export function layout(input: {
   <header class="border-bottom">
     <div class="container py-3 d-flex justify-content-between align-items-center gap-3">
       <a class="text-decoration-none" href="/"><span class="fq-mark">Family Quest</span></a>
-      ${input.csrf ? `<form method="post" action="/logout">${csrfInput(input.csrf)}<button class="btn btn-sm btn-outline-secondary" type="submit">Lock</button></form>` : ""}
+      <nav class="d-flex gap-3 align-items-center">
+        ${input.csrf ? `<a href="/bestiary">Bestiary</a><a href="/library">Library</a><form method="post" action="/logout">${csrfInput(input.csrf)}<button class="btn btn-sm btn-outline-secondary" type="submit">Lock</button></form>` : ""}
+      </nav>
     </div>
   </header>
   <main class="container py-4">${input.body}</main>
+  <footer class="container pb-4 small text-secondary">${escapeHtml(SRD_ATTRIBUTION)} <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</footer>
   <script src="/js/table.js" defer></script>
   <script src="/vendor/htmx.min.js" defer></script>
   <script src="/vendor/alpine.min.js" defer></script>
@@ -96,6 +101,7 @@ export function homePage(campaigns: CampaignRecord[], csrf: string): string {
         <h1 class="h2 mb-0">Pick up the story</h1>
       </div>
       <a class="btn btn-success" href="/quests/new">Start a new quest</a>
+      <a class="btn btn-outline-success" href="/bestiary">Bestiary</a>
     </div>
     ${cards}`,
   });
@@ -160,6 +166,7 @@ export function playPage(input: {
   characters: CharacterRecord[];
   messages: MessageRecord[];
   encounter: { id: string; state: EncounterState } | null;
+  suggested: MonsterStat[];
   csrf: string;
   cap: CapResult;
   error: string | null;
@@ -181,6 +188,7 @@ function questRoot(input: {
   characters: CharacterRecord[];
   messages: MessageRecord[];
   encounter: { id: string; state: EncounterState } | null;
+  suggested: MonsterStat[];
   csrf: string;
   cap: CapResult;
   error: string | null;
@@ -335,14 +343,33 @@ function encounterPanel(input: {
   campaign: CampaignRecord;
   characters: CharacterRecord[];
   encounter: { id: string; state: EncounterState } | null;
+  suggested: MonsterStat[];
   csrf: string;
 }): string {
   const state = input.encounter?.state;
   if (!input.encounter || !state || state.dismissed) {
+    const options = input.suggested
+      .map(
+        (monster) =>
+          `<option value="${escapeHtml(monster.id)}">${escapeHtml(monster.name)} · CR ${escapeHtml(monster.crLabel)} · AC ${monster.ac} · HP ${monster.hp}</option>`,
+      )
+      .join("");
+    const picker = options
+      ? `<form class="mb-3" method="post" action="/quests/${escapeHtml(input.campaign.id)}/encounter" hx-post="/quests/${escapeHtml(input.campaign.id)}/encounter" hx-target="#quest-page" hx-swap="outerHTML">
+      ${csrfInput(input.csrf)}
+      <label class="form-label small" for="monster_id">Or face a known critter</label>
+      <div class="row g-2">
+        <div class="col-8"><select class="form-select" id="monster_id" name="monster_id">${options}</select></div>
+        <div class="col-4"><input class="form-control" name="count" type="number" min="1" max="4" value="1" aria-label="How many"></div>
+      </div>
+      <button class="btn btn-outline-success mt-2" type="submit">Use the stat block</button>
+    </form>`
+      : "";
     return `<form class="mb-3" method="post" action="/quests/${escapeHtml(input.campaign.id)}/encounter" hx-post="/quests/${escapeHtml(input.campaign.id)}/encounter" hx-target="#quest-page" hx-swap="outerHTML">
       ${csrfInput(input.csrf)}
-      <button class="btn btn-outline-success" type="submit">Look for a gentle challenge</button>
-    </form>`;
+      <button class="btn btn-outline-success" type="submit">Ask the Dungeon Master for a gentle challenge</button>
+    </form>
+    ${picker}`;
   }
   const current = state.status === "active" ? state.combatants.find((combatant) => combatant.id === state.order[state.turnIndex] && combatant.out === "none") : null;
   const rows = state.order
@@ -445,7 +472,7 @@ function hpBar(hp: number, max: number): string {
   return `<div class="progress" role="progressbar" aria-valuenow="${Math.max(0, hp)}" aria-valuemin="0" aria-valuemax="${safeMax}" aria-label="Hit points"><div class="progress-bar bg-${tone}" style="width: ${pct}%"></div></div>`;
 }
 
-function csrfInput(csrf: string): string {
+export function csrfInput(csrf: string): string {
   return `<input type="hidden" name="csrf" value="${escapeHtml(csrf)}">`;
 }
 

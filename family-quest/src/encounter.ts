@@ -1,9 +1,15 @@
-import { abilityModifier, describeRoll, parseDice, rollDie, rollExpression, type RandomSource } from "./dice";
+import { abilityModifier, describeRoll, rollDamage, rollDie, rollExpression, type RandomSource } from "./dice";
 import { clipText } from "./text";
 
 export type Side = "party" | "enemy";
 export type EncounterStatus = "active" | "victory" | "defeat" | "fled";
 export type Condition = "dodging" | "helped" | "frightened";
+
+export interface AttackOption {
+  name: string;
+  bonus: number;
+  damage: string[];
+}
 
 export interface Combatant {
   id: string;
@@ -16,6 +22,9 @@ export interface Combatant {
   initiativeBonus: number;
   attackBonus: number;
   damage: string;
+  attacks: AttackOption[];
+  multiattack: string[];
+  packTactics: boolean;
   heal: string | null;
   conditions: Condition[];
   out: "none" | "down" | "fled";
@@ -61,6 +70,9 @@ export interface EnemyBlueprint {
   attackBonus: number;
   damage: string;
   initiativeBonus: number;
+  attacks?: AttackOption[];
+  multiattack?: string[];
+  packTactics?: boolean;
 }
 
 export type PlayerAction =
@@ -110,6 +122,9 @@ export function startEncounter(input: {
       initiativeBonus: bonus,
       attackBonus: hero.attackBonus,
       damage: hero.damage,
+      attacks: [{ name: "Attack", bonus: hero.attackBonus, damage: [hero.damage] }],
+      multiattack: [],
+      packTactics: false,
       heal: hero.heal,
       conditions: [],
       out: hero.hp > 0 ? "none" : "down",
@@ -120,6 +135,11 @@ export function startEncounter(input: {
 
   input.enemies.forEach((enemy, index) => {
     const face = rollDie(20, input.random);
+    const attacks =
+      enemy.attacks && enemy.attacks.length > 0
+        ? enemy.attacks
+        : [{ name: "Attack", bonus: enemy.attackBonus, damage: [enemy.damage] }];
+    const first = attacks[0];
     combatants.push({
       id: `enemy-${index + 1}`,
       name: enemy.name,
@@ -129,8 +149,11 @@ export function startEncounter(input: {
       ac: enemy.ac,
       initiative: face + enemy.initiativeBonus,
       initiativeBonus: enemy.initiativeBonus,
-      attackBonus: enemy.attackBonus,
-      damage: enemy.damage,
+      attackBonus: first?.bonus ?? enemy.attackBonus,
+      damage: first?.damage.join("+") || enemy.damage,
+      attacks,
+      multiattack: enemy.multiattack ?? [],
+      packTactics: Boolean(enemy.packTactics),
       heal: null,
       conditions: [],
       out: "none",
@@ -258,7 +281,7 @@ export function applyPlayerAction(
   if (!target || target.side !== "enemy" || target.out !== "none") {
     return { state, error: "Choose a critter that is still in the scene." };
   }
-  performAttack(next, current, target, random, "");
+  strike(next, current, target, random, "");
   afterAction(next);
   return { state: next, error: null };
 }
@@ -308,7 +331,7 @@ export function applyEnemyChoice(
     afterAction(next);
     return { state: next, error: null };
   }
-  performAttack(next, current, target, random, choice.flavor);
+  strike(next, current, target, random, choice.flavor);
   afterAction(next);
   return { state: next, error: null };
 }
@@ -324,35 +347,31 @@ export function parseEnemyChoice(raw: unknown): EnemyChoice {
   };
 }
 
-export function sanitizeEnemy(raw: unknown, index: number): EnemyBlueprint {
-  const record = asRecord(raw) ?? {};
-  const name = clipText(record.name, 40);
-  return {
-    name: name || `Critter ${index + 1}`,
-    hp: clampInt(record.hp, 1, 30, 6),
-    ac: clampInt(record.ac, 8, 18, 12),
-    attackBonus: clampInt(record.attackBonus, 0, 6, 2),
-    damage: sanitizeDamage(record.damage),
-    initiativeBonus: clampInt(record.initiativeBonus, -1, 4, 0),
-  };
+export interface EncounterPick {
+  title: string;
+  picks: { name: string; count: number }[];
+  loot: string[];
 }
 
-export function sanitizeEncounterProposal(raw: unknown): {
-  title: string;
-  enemies: EnemyBlueprint[];
-  loot: string[];
-  xp: number;
-} | null {
+export function parseEncounterPicks(raw: unknown): EncounterPick | null {
   const record = asRecord(raw);
-  if (!record || !Array.isArray(record.enemies) || record.enemies.length === 0) return null;
-  const title = clipText(record.title, 60) || "A gentle challenge";
+  const listed = Array.isArray(record?.monsters) ? record.monsters : Array.isArray(record?.enemies) ? record.enemies : null;
+  if (!record || !listed || listed.length === 0) return null;
+  const picks: { name: string; count: number }[] = [];
+  let total = 0;
+  for (const entry of listed) {
+    if (picks.length >= 3 || total >= 6) break;
+    const item = asRecord(entry) ?? {};
+    const name = clipText(item.name, 80);
+    if (!name) continue;
+    const count = Math.min(4, 6 - total, clampInt(item.count, 1, 4, 1));
+    if (count < 1) break;
+    picks.push({ name, count });
+    total += count;
+  }
+  if (picks.length === 0) return null;
   const loot = record.loot instanceof Array ? record.loot.map((item) => clipText(item, 60)).filter(Boolean).slice(0, 4) : [];
-  return {
-    title,
-    enemies: record.enemies.slice(0, 4).map((enemy, index) => sanitizeEnemy(enemy, index)),
-    loot,
-    xp: clampInt(record.xp, 5, 100, 25),
-  };
+  return { title: clipText(record.title, 60) || "A gentle challenge", picks, loot };
 }
 
 export function dismissEncounter(state: EncounterState): EncounterState {
@@ -376,42 +395,66 @@ export function partyIds(state: EncounterState): string[] {
   return state.combatants.filter((combatant) => combatant.side === "party").map((combatant) => combatant.id);
 }
 
+function strike(state: EncounterState, attacker: Combatant, target: Combatant, random: RandomSource, flavor: string): void {
+  if (flavor) pushLog(state, flavor);
+  const attacks = attacksOf(attacker);
+  const multi = attacker.multiattack ?? [];
+  const sequence = multi.length > 0 ? multi : [attacks[0]?.name ?? "Attack"];
+  const pack =
+    attacker.packTactics &&
+    state.combatants.some((combatant) => combatant.side === "enemy" && combatant.id !== attacker.id && combatant.out === "none");
+  if (pack) pushLog(state, `${attacker.name} fights harder with a friend nearby.`);
+  for (const name of sequence) {
+    const live = byId(state, target.id);
+    if (!live || live.out !== "none") break;
+    const attack = attacks.find((option) => option.name === name) ?? attacks[0];
+    if (!attack) break;
+    performAttack(state, attacker, live, random, attack, pack);
+  }
+}
+
 function performAttack(
   state: EncounterState,
   attacker: Combatant,
   target: Combatant,
   random: RandomSource,
-  flavor: string,
+  attack: AttackOption,
+  pack: boolean,
 ): void {
-  const mode = attackMode(attacker, target);
-  const roll = rollExpression(`1d20${signed(attacker.attackBonus)}`, random, mode);
+  const mode = attackMode(attacker, target, pack);
+  const roll = rollExpression(`1d20${signed(attack.bonus)}`, random, mode);
   attacker.conditions = attacker.conditions.filter((condition) => condition !== "helped");
-  if (flavor) pushLog(state, flavor);
 
   const missed = roll.fumble || (!roll.critical && roll.total < target.ac);
   if (missed) {
-    pushLog(state, `${attacker.name} attacks ${target.name}: ${describeRoll(roll)} vs AC ${target.ac}. Miss.`);
+    pushLog(state, `${attacker.name} uses ${attack.name} against ${target.name}: ${describeRoll(roll)} vs AC ${target.ac}. Miss.`);
     return;
   }
 
-  const expression = roll.critical ? doubleDice(attacker.damage) : attacker.damage;
-  const damage = rollExpression(expression, random);
-  const harm = Math.max(0, damage.total);
+  const damage = attack.damage.length > 0 ? rollDamage(attack.damage, random, roll.critical) : null;
+  const harm = damage ? Math.max(0, damage.total) : 0;
   target.hp = Math.max(0, target.hp - harm);
-  if (target.hp === 0) {
+  if (target.hp === 0 && harm > 0) {
     target.out = "down";
     target.conditions = [];
   }
   const crit = roll.critical ? " Critical hit." : "";
-  const health = target.out === "down" ? ` ${target.name} is knocked out, safe but out of the scene.` : ` ${target.name} has ${target.hp} HP.`;
+  const harmText = damage ? ` Damage ${damage.text}.` : " No hit point damage.";
+  const health =
+    target.out === "down" ? ` ${target.name} is knocked out, safe but out of the scene.` : ` ${target.name} has ${target.hp} HP.`;
   pushLog(
     state,
-    `${attacker.name} attacks ${target.name}: ${describeRoll(roll)} vs AC ${target.ac}. Hit.${crit} Damage ${describeRoll(damage)}.${health}`,
+    `${attacker.name} uses ${attack.name} against ${target.name}: ${describeRoll(roll)} vs AC ${target.ac}. Hit.${crit}${harmText}${health}`,
   );
 }
 
-function attackMode(attacker: Combatant, target: Combatant): "normal" | "advantage" | "disadvantage" {
-  const advantage = attacker.conditions.includes("helped");
+function attacksOf(combatant: Combatant): AttackOption[] {
+  if (combatant.attacks && combatant.attacks.length > 0) return combatant.attacks;
+  return [{ name: "Attack", bonus: combatant.attackBonus, damage: combatant.damage ? [combatant.damage] : [] }];
+}
+
+function attackMode(attacker: Combatant, target: Combatant, pack: boolean): "normal" | "advantage" | "disadvantage" {
+  const advantage = pack || attacker.conditions.includes("helped");
   const disadvantage = attacker.conditions.includes("frightened") || target.conditions.includes("dodging");
   if (advantage === disadvantage) return "normal";
   return advantage ? "advantage" : "disadvantage";
@@ -495,25 +538,6 @@ function lowestHp(combatants: Combatant[]): Combatant | null {
 
 function addCondition(combatant: Combatant, condition: Condition): void {
   if (!combatant.conditions.includes(condition)) combatant.conditions.push(condition);
-}
-
-function sanitizeDamage(value: unknown): string {
-  const fallback = "1d6+1";
-  if (typeof value !== "string") return fallback;
-  try {
-    const parsed = parseDice(value);
-    if (parsed.count < 1 || parsed.count > 2) return fallback;
-    if (parsed.sides !== 4 && parsed.sides !== 6 && parsed.sides !== 8 && parsed.sides !== 10) return fallback;
-    if (parsed.modifier < 0 || parsed.modifier > 4) return fallback;
-    return `${parsed.count}d${parsed.sides}${parsed.modifier > 0 ? `+${parsed.modifier}` : ""}`;
-  } catch {
-    return fallback;
-  }
-}
-
-function doubleDice(expression: string): string {
-  const parsed = parseDice(expression);
-  return `${parsed.count * 2}d${parsed.sides}${parsed.modifier === 0 ? "" : parsed.modifier > 0 ? `+${parsed.modifier}` : `${parsed.modifier}`}`;
 }
 
 function signed(modifier: number): string {

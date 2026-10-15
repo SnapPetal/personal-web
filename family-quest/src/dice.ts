@@ -158,6 +158,28 @@ export function critExpression(expression: string): string {
   return formatNotation(parsed.count * 2, parsed.sides, parsed.modifier, "normal");
 }
 
+export function rollDamage(
+  parts: readonly string[],
+  random: RandomSource,
+  critical: boolean,
+): { total: number; text: string } {
+  let total = 0;
+  const notes: string[] = [];
+  for (const part of parts) {
+    if (/^\d+$/.test(part)) {
+      const flat = Number(part);
+      total += flat;
+      notes.push(String(flat));
+      continue;
+    }
+    const expression = critical ? critExpression(part) : part;
+    const roll = rollExpression(expression, random);
+    total += roll.total;
+    notes.push(describeRoll(roll));
+  }
+  return { total, text: notes.join(" + ") };
+}
+
 export function formatNotation(count: number, sides: number, modifier: number, mode: RollMode): string {
   const base = `${count}d${sides}`;
   const mod = modifier === 0 ? "" : modifier > 0 ? `+${modifier}` : `${modifier}`;

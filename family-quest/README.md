@@ -24,16 +24,37 @@ Classes: Brave Knight, Forest Ranger, Kind Healer, Spark Wizard, Sneaky Scout, S
 
 Ready-made premises: The Lost Picnic, The Birthday Dragon, The Library of Living Books, and Rainbow Bridge Repair.
 
+`@cf/baai/bge-small-en-v1.5` embeds the library. It costs about 1,841 neurons per million input tokens and returns 384 dimensions, which keeps Vectorize inside the free stored-dimension quota. `@cf/deepgram/aura-1` is still not used.
+
+## Bestiary
+
+The bestiary is the D&D Systems Reference Document 5.1 monster list, 334 stat blocks, loaded into D1 by `migrations/0002_srd.sql`. The Dungeon Master may only start a fight with names from that table (or a family critter) at a challenge rating that fits the party's level. The server copies hit points, armor class, attack bonus, and damage dice from the row. It rolls those dice. Save-based riders such as poison and breath weapons stay on the stat block and are not applied automatically.
+
+Family critters are created from the Bestiary page. SRD rows are not editable.
+
+Monster stat blocks and rules text are from the Dungeons & Dragons Systems Reference Document 5.1, copyright Wizards of the Coast LLC, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The structured JSON is the SRD compilation in [5e-bits/5e-database](https://github.com/5e-bits/5e-database) (MIT), commit `a6212beb4b278917c2cff41c2b04c4ef4f3e0d6f`. Only those SRD files are imported. The madness, disease, and poison chapters are left out of the family library. No non-SRD books are included.
+
+Rebuild the committed data, if you ever need to, with `node scripts/build-srd.mjs`. `npm test` checks the committed files without downloading them again.
+
+## Library
+
+Rules snippets and family notes live in D1. Notes are also stored in R2. Before the Dungeon Master answers a rules or lore question, the Worker embeds the question and asks Vectorize for the nearest snippets. If the index is missing, it falls back to a text search in D1, so the table still works before you create Vectorize.
+
+Vectorize's current intro says the product is on the Workers Free and Paid plans, with a free quota of 5 million stored dimensions and 30 million queried dimensions per month. The pricing page also still says Vectorize is Workers Paid only, next to that same free quota. This app is sized for the free quota (about 360,000 stored dimensions for the SRD library). If an account cannot create the index without a paid plan, skip that command. Text search and the bestiary still work, and nothing else in the app calls a paid API.
+
+Index the library from the Library page. Each click embeds up to 32 snippets and uses one daily AI turn. The full SRD set is a few hundred neurons, spread across those clicks so it stays inside the free neuron day.
+
 ## Cost and model limits
 
 Workers AI includes **10,000 neurons per day** on the free allocation. That resets at 00:00 UTC. Past that, Cloudflare bills neurons, so this app stops itself first.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `AI_DAILY_CAP` | `40` | AI turns per UTC day (story, critter choices, and narrator audio). A turn counts when the app is allowed to call Workers AI, including a turn whose models all fail |
+| `AI_DAILY_CAP` | `40` | AI turns per UTC day (story, critter choices, narrator audio, and library indexing). A turn counts when the app is allowed to call Workers AI, including a turn whose models all fail |
 | `AI_MODEL` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | Dungeon master |
 | `AI_MODEL_FALLBACK` | `@cf/meta/llama-3.1-8b-instruct-fast` | Used when the 70B model errors or returns nothing |
 | `TTS_MODEL` | `@cf/myshell-ai/melotts` | Narrator audio |
+| `EMBED_MODEL` | `@cf/baai/bge-small-en-v1.5` | Library embeddings, 384 dimensions |
 
 `@cf/meta/llama-3.3-70b-instruct-fp8-fast` is listed at about 26,668 neurons per million input tokens and 204,805 neurons per million output tokens ([Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)). A normal turn is on the order of a couple thousand input tokens and a few hundred output tokens, roughly 100–200 neurons. Forty turns stay under the free 10,000-neuron day for ordinary family play. The smaller fallback model is cheaper when the primary call fails. A failed primary call may try the fallback; that still counts as one family turn in D1, but it can spend neurons twice.
 
@@ -41,7 +62,7 @@ Narration uses `@cf/myshell-ai/melotts`, which is Cloudflare-hosted (about $0.00
 
 If MeloTTS fails, the daily cap is spent, or the browser blocks autoplay, the page falls back to `speechSynthesis`. Speaking an action uses the browser `SpeechRecognition` API only. Some browsers, especially iOS Safari and Firefox, do not implement speech recognition; the microphone button says so and typing still works. Auto-play can also be blocked until a click, so each Dungeon Master line has its own Read aloud button.
 
-The system prompt requires a PG, family-friendly tone: cozy trouble, no gore, no romance, and no real harm. A small server-side word check replaces a reply that slips past the prompt. Knockouts wake up safe with 1 HP. Critter stats proposed by the model are clamped before they touch the encounter.
+The system prompt requires a PG, family-friendly tone: cozy trouble, no gore, no romance, and no real harm. A small server-side word check replaces a reply that slips past the prompt. Knockouts wake up safe with 1 HP. Combat numbers come from the bestiary, not from the model.
 
 ## Local setup
 
@@ -77,6 +98,8 @@ Copy the printed `database_id` into `wrangler.toml`, replacing `00000000-0000-00
 
 ```bash
 npx wrangler d1 migrations apply family-quest --remote
+npx wrangler vectorize create family-quest-lore --dimensions=384 --metric=cosine
+npx wrangler r2 bucket create family-quest-notes
 printf '%s' 'your-family-passcode' | npx wrangler secret put FAMILY_PASSCODE
 printf '%s' "$(openssl rand -base64 32)" | npx wrangler secret put SESSION_SECRET
 npx wrangler deploy
@@ -105,7 +128,7 @@ npm test
 npm run typecheck
 ```
 
-Vitest covers the dice roller (including unbiased sampling, advantage, and disadvantage), the encounter engine (initiative, hits, misses, crits, conditions, victory, loot, XP, defeat, and clamped enemy stats), and the daily AI cap. GitHub Actions runs both checks for changes under `family-quest/`.
+Vitest covers the dice roller (including unbiased sampling, advantage, and disadvantage), the encounter engine (initiative, hits, misses, crits, conditions, victory, loot, XP, and defeat), the bestiary (real stat blocks, challenge-rating caps, and family critters), the library text search helpers, and the daily AI cap. `npm test` also checks the committed SRD files. GitHub Actions runs both checks for changes under `family-quest/`.
 
 ## Project map
 
@@ -115,5 +138,6 @@ Vitest covers the dice roller (including unbiased sampling, advantage, and disad
 - `src/dm.ts` — PG system prompt and JSON parsing
 - `src/ai.ts` — Workers AI text and MeloTTS audio
 - `src/auth.ts` — passcode check and HMAC session cookie
-- `migrations/0001_init.sql` — D1 schema
+- `migrations/0001_init.sql` — quests, heroes, messages
+- `migrations/0002_srd.sql` — SRD bestiary and rules library
 - `public/` — vendored Bootstrap, Alpine, htmx, Noto Sans, and app CSS/JS

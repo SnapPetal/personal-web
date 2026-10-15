@@ -29,11 +29,20 @@ directory = "./public"
 # pattern = "quest.thonbecker.biz"
 # custom_domain = true
 
+[[vectorize]]
+binding = "LORE"
+index_name = "family-quest-lore"
+
+[[r2_buckets]]
+binding = "NOTES"
+bucket_name = "family-quest-notes"
+
 [vars]
 AI_DAILY_CAP = "40"
 AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 AI_MODEL_FALLBACK = "@cf/meta/llama-3.1-8b-instruct-fast"
 TTS_MODEL = "@cf/myshell-ai/melotts"
+EMBED_MODEL = "@cf/baai/bge-small-en-v1.5"
 
 [[d1_databases]]
 binding = "DB"

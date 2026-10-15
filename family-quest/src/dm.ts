@@ -40,6 +40,8 @@ Safety rules, always:
 - Ask for a dice roll when the outcome is uncertain. Never invent the number on the die. The family rolls, and the server rolls during combat.
 - During a combat scene, do not declare hits, misses, or damage. The server does that math.
 - Stay consistent with the running summary and the party sheet.
+- When library snippets are provided, use them for rules and lore. Explain them in PG language. Do not quote graphic examples.
+- Critters in a challenge must be chosen by exact name from the allowed list. Never invent hit points, armor class, attack bonuses, or damage.
 
 Reply with one JSON object and nothing else:
 {
@@ -50,8 +52,8 @@ Reply with one JSON object and nothing else:
   "encounter": null
 }
 Set rollRequest to null when no roll is needed. Set encounter to null unless a turn-by-turn challenge is starting right now. If it is starting, encounter looks like:
-{"title":"short title","enemies":[{"name":"Garden Sprite","hp":8,"ac":12,"attackBonus":3,"damage":"1d6+1","initiativeBonus":1}],"loot":["a jar of fireflies"],"xp":25}
-Use at most 3 enemies. Keep them small.`;
+{"title":"short title","monsters":[{"name":"Goblin","count":2}],"loot":["a jar of fireflies"]}
+Use at most 3 kinds of monster, and at most 2 of each. Names must match the allowed list exactly.`;
 
 export const ENEMY_SYSTEM_PROMPT = `You choose one action for a single critter in a family-friendly PG combat scene.
 The critter is mischievous, not cruel. Nobody is really hurt when they reach 0 HP; they are knocked out and safe.
@@ -68,13 +70,17 @@ export function storyMessages(input: {
   speaker: string;
   action: string;
   encounter: string;
+  library?: string;
+  bestiary?: string;
 }): ChatMessage[] {
   const summary = input.summary.trim() || "The quest is just beginning.";
+  const library = input.library?.trim() ? `\n\n${input.library.trim()}` : "";
+  const bestiary = input.bestiary?.trim() ? `\n\nAllowed critters:\n${input.bestiary.trim()}` : "";
   return [
     { role: "system", content: SYSTEM_PROMPT },
     {
       role: "user",
-      content: `Premise:\n${input.premise}\n\nRunning summary:\n${summary}\n\nParty:\n${input.party}\n\nRecent log:\n${input.recent || "(no earlier lines)"}\n\nScene status:\n${input.encounter}\n\n${input.speaker} now does: ${input.action}`,
+      content: `Premise:\n${input.premise}\n\nRunning summary:\n${summary}\n\nParty:\n${input.party}\n\nRecent log:\n${input.recent || "(no earlier lines)"}\n\nScene status:\n${input.encounter}${bestiary}${library}\n\n${input.speaker} now does: ${input.action}`,
     },
   ];
 }

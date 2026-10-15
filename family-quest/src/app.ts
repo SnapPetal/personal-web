@@ -1,4 +1,13 @@
-import { narrate, synthesizeSpeech, type AiBinding } from "./ai";
+import { embedTexts, narrate, synthesizeSpeech, type AiBinding } from "./ai";
+import {
+  bestiaryPrompt,
+  challengeCap,
+  draftHomebrew,
+  materializeEncounter,
+  partyLevel,
+  readEncounterChoice,
+} from "./bestiary";
+import { chunkNote, libraryPrompt, rankChunks, wantsLore } from "./lore";
 import {
   clearSessionCookie,
   createSession,
@@ -29,7 +38,6 @@ import {
   dismissEncounter,
   parseEnemyChoice,
   partyIds,
-  sanitizeEncounterProposal,
   shareXp,
   startEncounter,
   type EncounterState,
@@ -39,17 +47,32 @@ import {
 import {
   addMessage,
   awardXp,
+  chunksByIds,
   consumeDailyCap,
   createQuest,
   deleteCampaign,
+  deleteMonster,
+  deleteNote,
   getCampaign,
+  getMonster,
   insertEncounter,
+  insertNote,
   latestEncounter,
   levelCharacter,
   listCampaigns,
   listCharacters,
   listMessages,
+  listMonsters,
+  listNotes,
+  listSuitableMonsters,
+  loreCounts,
+  markChunksIndexed,
+  monsterNameTaken,
+  nextUnindexedChunks,
+  noteChunkIds,
   saveEncounter,
+  saveMonster,
+  searchLoreText,
   syncParty,
   touchCampaign,
   updateCharacter,
@@ -60,6 +83,7 @@ import {
 } from "./repo";
 import { clipText } from "./text";
 import { homePage, layout, loginPage, newQuestPage, playPage, setupPage } from "./view";
+import { bestiaryPage, libraryPage, monsterPage, newMonsterPage } from "./pages";
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -85,6 +109,20 @@ export async function handle(request: Request, env: Env): Promise<Response> {
 
   if (path === "/quests/new" && request.method === "GET") return page(newQuestPage(session.csrf, null));
   if (path === "/quests" && request.method === "POST") return openQuest(request, env, session.csrf);
+  if (path === "/bestiary" && request.method === "GET") return showBestiary(request, env, session.csrf);
+  if (path === "/bestiary/new" && request.method === "GET") return page(newMonsterPage(session.csrf, null));
+  if (path === "/bestiary" && request.method === "POST") return createMonster(request, env, session.csrf);
+  if (path === "/library" && request.method === "GET") return showLibrary(request, env, session.csrf);
+  if (path === "/library/notes" && request.method === "POST") return saveNote(request, env, session.csrf);
+  if (path === "/library/index" && request.method === "POST") return indexLibrary(request, env, session.csrf);
+
+  const libraryNote = path.match(/^\/library\/notes\/([0-9a-f-]{36})\/delete$/);
+  if (libraryNote && request.method === "POST") return removeNote(request, env, libraryNote[1] ?? "", session.csrf);
+  const bestiaryEdit = path.match(/^\/bestiary\/([a-z0-9-]{1,80})$/);
+  if (bestiaryEdit && request.method === "GET") return showMonster(env, bestiaryEdit[1] ?? "", session.csrf);
+  if (bestiaryEdit && request.method === "POST") return updateMonster(request, env, bestiaryEdit[1] ?? "", session.csrf);
+  const bestiaryDelete = path.match(/^\/bestiary\/([a-z0-9-]{1,80})\/delete$/);
+  if (bestiaryDelete && request.method === "POST") return removeMonster(request, env, bestiaryDelete[1] ?? "", session.csrf);
 
   const parts = path.split("/").filter(Boolean);
   if (parts[0] !== "quests" || !parts[1] || !ID.test(parts[1])) return missing(session.csrf);
@@ -225,6 +263,7 @@ async function act(request: Request, env: Env, campaignId: string, csrf: string)
   let speakText: string | null = null;
   try {
     const messages = await listMessages(env.DB, campaignId);
+    const context = await tableContext(env, loaded.characters.map((character) => character.level), action, false);
     const result = await narrate(
       binding(env),
       models(env),
@@ -236,6 +275,8 @@ async function act(request: Request, env: Env, campaignId: string, csrf: string)
         speaker,
         action,
         encounter: encounter ? `Combat is active: ${encounter.state.title}, round ${encounter.state.round}.` : "No combat is active.",
+        library: context.library,
+        bestiary: encounter ? "" : context.bestiary,
       }),
       800,
     );
@@ -271,8 +312,24 @@ async function act(request: Request, env: Env, campaignId: string, csrf: string)
       });
     }
     await touchCampaign(env.DB, campaignId, stamp, reply.summary);
-    const proposal = encounter ? null : sanitizeEncounterProposal(reply.encounter);
-    if (proposal) await persistNewEncounter(env, campaignId, loaded.characters, proposal);
+    if (!encounter) {
+      const choice = readEncounterChoice(reply.encounter);
+      if (choice) {
+        const built = materializeEncounter(choice, context.catalog, context.maxCr);
+        if ("error" in built) {
+          await addMessage(env.DB, {
+            id: crypto.randomUUID(),
+            campaignId,
+            role: "system",
+            speaker: "Family Quest",
+            content: built.error,
+            createdAt: new Date().toISOString(),
+          });
+        } else {
+          await persistNewEncounter(env, campaignId, loaded.characters, built);
+        }
+      }
+    }
     speakText = [reply.narration, ...reply.npcLines.map((line) => `${line.name}: ${line.line}`)].join(" ");
     console.log(JSON.stringify({ event: "dm_reply", campaignId, model: result.model }));
   } catch (error) {
@@ -329,9 +386,25 @@ async function seekEncounter(request: Request, env: Env, campaignId: string, csr
   if (activeEncounter(loaded.encounter)) {
     return renderQuest(request, env, campaignId, csrf, { error: "Finish or tuck away the current challenge first." });
   }
+  const monsterId = clipText(form.get("monster_id"), 80);
+  if (monsterId) {
+    const monster = await getMonster(env.DB, monsterId);
+    const count = Math.min(4, Math.max(1, Number(form.get("count")) || 1));
+    if (!monster) return renderQuest(request, env, campaignId, csrf, { error: "That critter is not in the bestiary." });
+    const maxCr = challengeCap(partyLevel(loaded.characters.map((character) => character.level)), true);
+    const built = materializeEncounter(
+      { title: `Facing ${monster.name}`, picks: [{ name: monster.name, count }], loot: [] },
+      [monster],
+      maxCr,
+    );
+    if ("error" in built) return renderQuest(request, env, campaignId, csrf, { error: built.error });
+    await persistNewEncounter(env, campaignId, loaded.characters, built);
+    return renderQuest(request, env, campaignId, csrf, {});
+  }
   const spend = await consumeDailyCap(env.DB, utcDay(new Date()), readCap(env.AI_DAILY_CAP));
   if (!spend.allowed) return renderQuest(request, env, campaignId, csrf, { error: capMessage(spend.cap) });
   try {
+    const context = await tableContext(env, loaded.characters.map((character) => character.level), "a gentle challenge", true);
     const result = await narrate(
       binding(env),
       models(env),
@@ -341,8 +414,9 @@ async function seekEncounter(request: Request, env: Env, campaignId: string, csr
         party: loaded.characters.map(characterLine).join("\n"),
         recent: transcript(loaded.messages),
         speaker: "Party",
-        action: "The party looks for a small, kind challenge that fits the story. Include an encounter object now.",
+        action: "The party looks for a small, kind challenge that fits the story. Include an encounter object now, using only the allowed critter names.",
         encounter: "No combat is active.",
+        bestiary: context.bestiary,
       }),
       800,
     );
@@ -356,15 +430,16 @@ async function seekEncounter(request: Request, env: Env, campaignId: string, csr
       createdAt: new Date().toISOString(),
     });
     await touchCampaign(env.DB, campaignId, new Date().toISOString(), reply.summary);
-    const proposal = sanitizeEncounterProposal(reply.encounter);
-    if (proposal) await persistNewEncounter(env, campaignId, loaded.characters, proposal);
+    const choice = readEncounterChoice(reply.encounter);
+    const built = choice ? materializeEncounter(choice, context.catalog, context.maxCr) : null;
+    if (built && !("error" in built)) await persistNewEncounter(env, campaignId, loaded.characters, built);
     else {
       await addMessage(env.DB, {
         id: crypto.randomUUID(),
         campaignId,
         role: "system",
         speaker: "Family Quest",
-        content: "The path stays peaceful for now. Try again when the story is ready for a challenge.",
+        content: built && "error" in built ? built.error : "The path stays peaceful for now. Try again when the story is ready for a challenge.",
         createdAt: new Date().toISOString(),
       });
     }
@@ -567,7 +642,7 @@ async function persistNewEncounter(
   env: Env,
   campaignId: string,
   characters: CharacterRecord[],
-  proposal: NonNullable<ReturnType<typeof sanitizeEncounterProposal>>,
+  proposal: { title: string; enemies: Parameters<typeof startEncounter>[0]["enemies"]; loot: string[]; xp: number },
 ): Promise<void> {
   const state = startEncounter({
     title: proposal.title,
@@ -591,11 +666,16 @@ async function renderQuest(
   const loaded = await loadQuest(env, campaignId);
   if (!loaded) return missing(csrf);
   const cap = await currentCap(env);
+  const suggested = await listSuitableMonsters(
+    env.DB,
+    challengeCap(partyLevel(loaded.characters.map((character) => character.level)), true),
+  );
   const html = playPage({
     campaign: loaded.campaign,
     characters: loaded.characters,
     messages: loaded.messages,
     encounter: loaded.encounter,
+    suggested,
     csrf,
     cap,
     error: options.error ?? null,
@@ -740,6 +820,169 @@ async function readForm(request: Request): Promise<FormData | null> {
   } catch {
     return null;
   }
+}
+
+async function tableContext(env: Env, levels: number[], action: string, gentle: boolean) {
+  const maxCr = challengeCap(partyLevel(levels), gentle);
+  const catalog = await listSuitableMonsters(env.DB, maxCr);
+  const library = wantsLore(action) ? await retrieveLore(env, action) : "";
+  return { maxCr, catalog, library, bestiary: bestiaryPrompt(catalog) };
+}
+
+async function retrieveLore(env: Env, query: string): Promise<string> {
+  try {
+    const [vector] = await embedTexts(binding(env), env.EMBED_MODEL, [query.slice(0, 1000)]);
+    if (vector) {
+      const matches = await env.LORE.query(vector, { topK: 4, returnMetadata: "none" });
+      const ids = matches.matches.map((match) => match.id).filter((id) => id.length > 0);
+      const rows = await chunksByIds(env.DB, ids);
+      const order = new Map(ids.map((id, index) => [id, index]));
+      rows.sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0));
+      if (rows.length > 0) {
+        return libraryPrompt(rows.map((row) => ({ id: row.id, title: row.title, body: row.body, source: row.source })));
+      }
+    }
+  } catch (error) {
+    console.error(JSON.stringify({ event: "lore_vector_failed", error: errorText(error) }));
+  }
+  const words = query.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 2);
+  const rows = await searchLoreText(env.DB, words);
+  const ranked = rankChunks(
+    query,
+    rows.map((row) => ({ id: row.id, title: row.title, body: row.body, source: row.source })),
+  );
+  return libraryPrompt(ranked);
+}
+
+async function showBestiary(request: Request, env: Env, csrf: string): Promise<Response> {
+  const url = new URL(request.url);
+  const query = clipText(url.searchParams.get("q"), 40);
+  const showAll = url.searchParams.get("all") === "1" && !query;
+  const monsters = await listMonsters(env.DB, query, showAll || query ? null : 2, showAll ? 400 : 80);
+  return page(bestiaryPage({ csrf, monsters, query, showAll: showAll || Boolean(query), error: null }));
+}
+
+async function showMonster(env: Env, id: string, csrf: string): Promise<Response> {
+  const monster = await getMonster(env.DB, id);
+  if (!monster) return missing(csrf);
+  return page(monsterPage(monster, csrf, null));
+}
+
+async function createMonster(request: Request, env: Env, csrf: string): Promise<Response> {
+  const form = await requireForm(request, csrf);
+  if (form instanceof Response) return form;
+  const drafted = draftHomebrew(form, `h-${crypto.randomUUID()}`);
+  if (!drafted.ok) return page(newMonsterPage(csrf, drafted.error), 400);
+  if (await monsterNameTaken(env.DB, drafted.monster.nameKey, drafted.monster.id)) {
+    return page(newMonsterPage(csrf, "A critter already uses that name."), 400);
+  }
+  await saveMonster(env.DB, drafted.monster, new Date().toISOString());
+  return redirect(`/bestiary/${drafted.monster.id}`);
+}
+
+async function updateMonster(request: Request, env: Env, id: string, csrf: string): Promise<Response> {
+  const form = await requireForm(request, csrf);
+  if (form instanceof Response) return form;
+  const existing = await getMonster(env.DB, id);
+  if (!existing) return missing(csrf);
+  if (existing.source !== "homebrew") return page(monsterPage(existing, csrf, "SRD stat blocks stay as published."), 400);
+  const drafted = draftHomebrew(form, id);
+  if (!drafted.ok) return page(monsterPage(existing, csrf, drafted.error), 400);
+  if (await monsterNameTaken(env.DB, drafted.monster.nameKey, id)) {
+    return page(monsterPage(existing, csrf, "A critter already uses that name."), 400);
+  }
+  await saveMonster(env.DB, drafted.monster, new Date().toISOString());
+  return redirect(`/bestiary/${id}`);
+}
+
+async function removeMonster(request: Request, env: Env, id: string, csrf: string): Promise<Response> {
+  const form = await requireForm(request, csrf);
+  if (form instanceof Response) return form;
+  if (form.get("confirm") !== "yes") {
+    const monster = await getMonster(env.DB, id);
+    if (!monster) return missing(csrf);
+    return page(monsterPage(monster, csrf, "Check the box to delete this critter."), 400);
+  }
+  const removed = await deleteMonster(env.DB, id);
+  if (!removed) return page(bestiaryPage({ csrf, monsters: await listMonsters(env.DB, "", 2), query: "", showAll: false, error: "That critter was not removed." }), 400);
+  return redirect("/bestiary");
+}
+
+async function showLibrary(request: Request, env: Env, csrf: string): Promise<Response> {
+  const url = new URL(request.url);
+  const query = clipText(url.searchParams.get("q"), 80);
+  const [notes, counts] = await Promise.all([listNotes(env.DB), loreCounts(env.DB)]);
+  const words = query.toLowerCase().split(/[^a-z0-9]+/).filter((word) => word.length > 2);
+  const preview = query ? await searchLoreText(env.DB, words) : [];
+  return page(libraryPage({ csrf, notes, total: counts.total, indexed: counts.indexed, preview: preview.slice(0, 6), error: null, notice: null }));
+}
+
+async function saveNote(request: Request, env: Env, csrf: string): Promise<Response> {
+  const form = await requireForm(request, csrf);
+  if (form instanceof Response) return form;
+  const title = clipText(form.get("title"), 80);
+  const body = clipText(form.get("body"), 80_000);
+  if (!title || !body) return showLibraryMessage(env, csrf, "A note needs a title and some text.", null);
+  const id = crypto.randomUUID();
+  const chunks = chunkNote(`note-${id}`, title, body);
+  const key = `notes/${id}.md`;
+  try {
+    await env.NOTES.put(key, body, { httpMetadata: { contentType: "text/markdown; charset=utf-8" } });
+  } catch (error) {
+    console.error(JSON.stringify({ event: "note_store_failed", error: errorText(error) }));
+    return showLibraryMessage(env, csrf, "The note could not be stored. Create the R2 bucket named in wrangler.toml, then try again.", null);
+  }
+  await insertNote(env.DB, { id, title, r2_key: key, bytes: new TextEncoder().encode(body).length, created_at: new Date().toISOString() }, chunks);
+  return showLibraryMessage(env, csrf, null, "Note saved. Index the library when you want the Dungeon Master to search it by meaning.");
+}
+
+async function removeNote(request: Request, env: Env, id: string, csrf: string): Promise<Response> {
+  const form = await requireForm(request, csrf);
+  if (form instanceof Response) return form;
+  const ids = await noteChunkIds(env.DB, id);
+  const note = await deleteNote(env.DB, id);
+  if (!note) return missing(csrf);
+  try {
+    await env.NOTES.delete(note.r2_key);
+    if (ids.length > 0) await env.LORE.deleteByIds(ids);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "note_delete_failed", error: errorText(error) }));
+  }
+  return redirect("/library");
+}
+
+async function indexLibrary(request: Request, env: Env, csrf: string): Promise<Response> {
+  const form = await requireForm(request, csrf);
+  if (form instanceof Response) return form;
+  const pending = await nextUnindexedChunks(env.DB, 32);
+  if (pending.length === 0) return showLibraryMessage(env, csrf, null, "Every snippet is already in the vector index.");
+  const spend = await consumeDailyCap(env.DB, utcDay(new Date()), readCap(env.AI_DAILY_CAP));
+  if (!spend.allowed) return showLibraryMessage(env, csrf, capMessage(spend.cap), null);
+  try {
+    const vectors = await embedTexts(binding(env), env.EMBED_MODEL, pending.map((chunk) => `${chunk.title}\n${chunk.body}`.slice(0, 1400)));
+    await env.LORE.upsert(
+      pending.map((chunk, index) => ({
+        id: chunk.id,
+        values: vectors[index] ?? [],
+        metadata: { source: chunk.source, title: chunk.title.slice(0, 64) },
+      })),
+    );
+    await markChunksIndexed(env.DB, pending.map((chunk) => chunk.id));
+    return showLibraryMessage(env, csrf, null, `Indexed ${pending.length} snippets.`);
+  } catch (error) {
+    console.error(JSON.stringify({ event: "lore_index_failed", error: errorText(error) }));
+    return showLibraryMessage(
+      env,
+      csrf,
+      "The vector index is not ready. Create it with the wrangler vectorize command in the README, then try again. Text search still works.",
+      null,
+    );
+  }
+}
+
+async function showLibraryMessage(env: Env, csrf: string, error: string | null, notice: string | null): Promise<Response> {
+  const [notes, counts] = await Promise.all([listNotes(env.DB), loreCounts(env.DB)]);
+  return page(libraryPage({ csrf, notes, total: counts.total, indexed: counts.indexed, preview: [], error, notice }), error ? 400 : 200);
 }
 
 function secretsReady(env: Env): boolean {

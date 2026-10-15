@@ -1,5 +1,6 @@
 import type { CapResult } from "./cost";
 import type { EncounterState } from "./encounter";
+import type { MonsterStat } from "./bestiary";
 
 export interface CampaignRecord {
   id: string;
@@ -300,4 +301,254 @@ export async function usageCount(db: D1Database, day: string): Promise<number> {
     .bind(day)
     .first<{ used: number }>();
   return row?.used ?? 0;
+}
+
+export interface MonsterRow {
+  id: string;
+  name: string;
+  name_key: string;
+  source: string;
+  cr_label: string;
+  cr_value: number;
+  xp: number;
+  size: string;
+  creature_type: string;
+  ac: number;
+  hp: number;
+  hit_dice: string;
+  dexterity: number;
+  attacks_json: string;
+  multiattack_json: string;
+  pack_tactics: number;
+  note: string;
+}
+
+export async function listMonsters(db: D1Database, query: string, maxCr: number | null, limit = 80): Promise<MonsterStat[]> {
+  const needle = `%${query.trim().toLowerCase().replace(/[%_]/g, "")}%`;
+  const sql =
+    maxCr === null
+      ? `SELECT * FROM monsters WHERE name_key LIKE ?1 ORDER BY cr_value, name LIMIT ?2`
+      : `SELECT * FROM monsters WHERE name_key LIKE ?1 AND cr_value <= ?2 ORDER BY cr_value, name LIMIT ?3`;
+  const statement = db.prepare(sql);
+  const result =
+    maxCr === null ? await statement.bind(needle, limit).all<MonsterRow>() : await statement.bind(needle, maxCr, limit).all<MonsterRow>();
+  return (result.results ?? []).map(monsterFromRow);
+}
+
+export async function listSuitableMonsters(db: D1Database, maxCr: number): Promise<MonsterStat[]> {
+  const result = await db
+    .prepare(
+      `SELECT * FROM (
+         SELECT * FROM monsters WHERE cr_value <= ?1 AND source = 'homebrew'
+         UNION ALL
+         SELECT * FROM monsters WHERE cr_value <= ?1 AND source = 'srd'
+       ) AS picked
+       ORDER BY CASE source WHEN 'homebrew' THEN 0 ELSE 1 END, cr_value DESC, name
+       LIMIT 24`,
+    )
+    .bind(maxCr)
+    .all<MonsterRow>();
+  return (result.results ?? []).map(monsterFromRow);
+}
+
+export async function getMonster(db: D1Database, id: string): Promise<MonsterStat | null> {
+  const row = await db.prepare("SELECT * FROM monsters WHERE id = ?").bind(id).first<MonsterRow>();
+  return row ? monsterFromRow(row) : null;
+}
+
+export async function monsterNameTaken(db: D1Database, nameKey: string, exceptId: string): Promise<boolean> {
+  const row = await db
+    .prepare("SELECT id FROM monsters WHERE name_key = ? AND id != ?")
+    .bind(nameKey, exceptId)
+    .first<{ id: string }>();
+  return Boolean(row);
+}
+
+export async function saveMonster(db: D1Database, monster: MonsterStat, createdAt: string): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO monsters (id, name, name_key, source, cr_label, cr_value, xp, size, creature_type, ac, hp, hit_dice, dexterity, attacks_json, multiattack_json, pack_tactics, note, created_at)
+       VALUES (?1, ?2, ?3, 'homebrew', ?4, ?5, ?6, ?7, ?8, ?9, ?10, '', ?11, ?12, ?13, ?14, ?15, ?16)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         name_key = excluded.name_key,
+         cr_label = excluded.cr_label,
+         cr_value = excluded.cr_value,
+         xp = excluded.xp,
+         ac = excluded.ac,
+         hp = excluded.hp,
+         dexterity = excluded.dexterity,
+         attacks_json = excluded.attacks_json,
+         multiattack_json = excluded.multiattack_json,
+         pack_tactics = excluded.pack_tactics,
+         note = excluded.note
+       WHERE monsters.source = 'homebrew'`,
+    )
+    .bind(
+      monster.id,
+      monster.name,
+      monster.nameKey,
+      monster.crLabel,
+      monster.crValue,
+      monster.xp,
+      monster.size,
+      monster.type,
+      monster.ac,
+      monster.hp,
+      monster.dexterity,
+      JSON.stringify(monster.attacks),
+      JSON.stringify(monster.multiattack),
+      monster.packTactics ? 1 : 0,
+      monster.note,
+      createdAt,
+    )
+    .run();
+}
+
+export async function deleteMonster(db: D1Database, id: string): Promise<boolean> {
+  const result = await db.prepare("DELETE FROM monsters WHERE id = ? AND source = 'homebrew'").bind(id).run();
+  return (result.meta.changes ?? 0) > 0;
+}
+
+export interface LoreRow {
+  id: string;
+  source: string;
+  note_id: string | null;
+  title: string;
+  body: string;
+  indexed: number;
+}
+
+export interface NoteRow {
+  id: string;
+  title: string;
+  r2_key: string;
+  bytes: number;
+  created_at: string;
+}
+
+export async function loreCounts(db: D1Database): Promise<{ total: number; indexed: number }> {
+  const row = await db
+    .prepare("SELECT COUNT(*) AS total, COALESCE(SUM(indexed), 0) AS indexed FROM lore_chunks")
+    .first<{ total: number; indexed: number }>();
+  return { total: row?.total ?? 0, indexed: row?.indexed ?? 0 };
+}
+
+export async function listNotes(db: D1Database): Promise<NoteRow[]> {
+  const result = await db.prepare("SELECT * FROM lore_notes ORDER BY created_at DESC LIMIT 40").all<NoteRow>();
+  return result.results ?? [];
+}
+
+export async function insertNote(db: D1Database, note: NoteRow, chunks: { id: string; title: string; body: string }[]): Promise<void> {
+  const statements = [
+    db.prepare("INSERT INTO lore_notes (id, title, r2_key, bytes, created_at) VALUES (?, ?, ?, ?, ?)").bind(
+      note.id,
+      note.title,
+      note.r2_key,
+      note.bytes,
+      note.created_at,
+    ),
+    ...chunks.map((chunk) =>
+      db
+        .prepare("INSERT INTO lore_chunks (id, source, note_id, title, body, indexed) VALUES (?, 'note', ?, ?, ?, 0)")
+        .bind(chunk.id, note.id, chunk.title, chunk.body),
+    ),
+  ];
+  await db.batch(statements);
+}
+
+export async function deleteNote(db: D1Database, id: string): Promise<NoteRow | null> {
+  const note = await db.prepare("SELECT * FROM lore_notes WHERE id = ?").bind(id).first<NoteRow>();
+  if (!note) return null;
+  await db.batch([
+    db.prepare("DELETE FROM lore_chunks WHERE note_id = ?").bind(id),
+    db.prepare("DELETE FROM lore_notes WHERE id = ?").bind(id),
+  ]);
+  return note;
+}
+
+export async function noteChunkIds(db: D1Database, noteId: string): Promise<string[]> {
+  const result = await db.prepare("SELECT id FROM lore_chunks WHERE note_id = ?").bind(noteId).all<{ id: string }>();
+  return (result.results ?? []).map((row) => row.id);
+}
+
+export async function nextUnindexedChunks(db: D1Database, limit: number): Promise<LoreRow[]> {
+  const result = await db
+    .prepare("SELECT * FROM lore_chunks WHERE indexed = 0 ORDER BY source, id LIMIT ?")
+    .bind(limit)
+    .all<LoreRow>();
+  return result.results ?? [];
+}
+
+export async function markChunksIndexed(db: D1Database, ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const marks = ids.map(() => "?").join(", ");
+  await db.prepare(`UPDATE lore_chunks SET indexed = 1 WHERE id IN (${marks})`).bind(...ids).run();
+}
+
+export async function chunksByIds(db: D1Database, ids: string[]): Promise<LoreRow[]> {
+  if (ids.length === 0) return [];
+  const marks = ids.map(() => "?").join(", ");
+  const result = await db.prepare(`SELECT * FROM lore_chunks WHERE id IN (${marks})`).bind(...ids).all<LoreRow>();
+  return result.results ?? [];
+}
+
+export async function searchLoreText(db: D1Database, words: string[]): Promise<LoreRow[]> {
+  const usable = words.filter((word) => word.length > 2).slice(0, 6);
+  if (usable.length === 0) return [];
+  const clauses = usable.map(() => "(title LIKE ? OR body LIKE ?)").join(" OR ");
+  const binds = usable.flatMap((word) => {
+    const needle = `%${word.replace(/[%_]/g, "")}%`;
+    return [needle, needle];
+  });
+  const result = await db.prepare(`SELECT * FROM lore_chunks WHERE ${clauses} LIMIT 40`).bind(...binds).all<LoreRow>();
+  return result.results ?? [];
+}
+
+function monsterFromRow(row: MonsterRow): MonsterStat {
+  return {
+    id: row.id,
+    name: row.name,
+    nameKey: row.name_key,
+    source: row.source === "homebrew" ? "homebrew" : "srd",
+    crLabel: row.cr_label,
+    crValue: row.cr_value,
+    xp: row.xp,
+    size: row.size,
+    type: row.creature_type,
+    ac: row.ac,
+    hp: row.hp,
+    hitDice: row.hit_dice,
+    dexterity: row.dexterity,
+    attacks: parseJsonArray(row.attacks_json),
+    multiattack: parseStringArray(row.multiattack_json),
+    packTactics: row.pack_tactics === 1,
+    note: row.note,
+  };
+}
+
+function parseJsonArray(value: string): MonsterStat["attacks"] {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((entry) => {
+      if (!entry || typeof entry !== "object") return [];
+      const record = entry as { name?: unknown; bonus?: unknown; damage?: unknown };
+      const name = typeof record.name === "string" ? record.name : "";
+      const bonus = typeof record.bonus === "number" ? record.bonus : 0;
+      const damage = Array.isArray(record.damage) ? record.damage.filter((part): part is string => typeof part === "string") : [];
+      return name ? [{ name, bonus, damage }] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function parseStringArray(value: string): string[] {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
 }

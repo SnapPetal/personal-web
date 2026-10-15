@@ -7,8 +7,7 @@ import {
   currentCombatant,
   dismissEncounter,
   parseEnemyChoice,
-  sanitizeEncounterProposal,
-  sanitizeEnemy,
+  parseEncounterPicks,
   shareXp,
   startEncounter,
   type EnemyBlueprint,
@@ -244,22 +243,23 @@ describe("encounter engine", () => {
     expect(result.state.combatants.find((combatant) => combatant.id === "maya")?.hp).toBe(10);
   });
 
-  it("clamps wild encounter proposals", () => {
-    const enemy = sanitizeEnemy({ name: "Dragon", hp: "999", ac: 3, attackBonus: 40, damage: "9d20+99" }, 0);
-    expect(enemy.hp).toBe(30);
-    expect(enemy.ac).toBe(8);
-    expect(enemy.attackBonus).toBe(6);
-    expect(enemy.damage).toBe("1d6+1");
-    const proposal = sanitizeEncounterProposal({
+  it("reads monster names from a proposal and ignores invented stats", () => {
+    const proposal = parseEncounterPicks({
       title: "Too many",
       xp: 5000,
-      enemies: [{ name: "One" }, { name: "Two" }, { name: "Three" }, { name: "Four" }, { name: "Five" }],
+      monsters: [
+        { name: "Goblin", count: 2, hp: 999, ac: 3, damage: "9d20+99" },
+        { name: "Wolf", count: 9 },
+        { name: "Boar" },
+        { name: "Owl" },
+      ],
       loot: ["a", "b", "c", "d", "e"],
     });
-    expect(proposal?.enemies).toHaveLength(4);
+    expect(proposal?.picks.map((pick) => `${pick.name}:${pick.count}`)).toEqual(["Goblin:2", "Wolf:4"]);
     expect(proposal?.loot).toHaveLength(4);
-    expect(proposal?.xp).toBe(100);
-    expect(sanitizeEncounterProposal({ enemies: [] })).toBeNull();
+    expect(proposal?.picks.some((pick) => "hp" in pick)).toBe(false);
+    expect(parseEncounterPicks({ enemies: [] })).toBeNull();
+    expect(parseEncounterPicks({ enemies: [{ name: "Goblin", hp: 4 }] })?.picks[0]?.name).toBe("Goblin");
   });
 
   it("shares XP, levels a hero, and can dismiss a finished scene", () => {

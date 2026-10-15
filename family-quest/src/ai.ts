@@ -1,4 +1,5 @@
 import type { ChatMessage } from "./dm";
+import { extractEmbeddings } from "./lore";
 
 export interface AiBinding {
   run(model: string, input: Record<string, unknown>): Promise<unknown>;
@@ -38,6 +39,15 @@ export async function narrate(
     }
   }
   throw new Error(lastError);
+}
+
+export async function embedTexts(ai: AiBinding, model: string, texts: string[]): Promise<number[][]> {
+  const result = await ai.run(model, { text: texts });
+  const rows = extractEmbeddings(result);
+  if (rows.length !== texts.length || rows.some((row) => row.length !== 384)) {
+    throw new Error("The embedding model did not return 384-dimension vectors.");
+  }
+  return rows;
 }
 
 export function extractModelText(result: unknown): string {
