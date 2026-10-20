@@ -495,12 +495,12 @@ The `notification` module is **fully event-driven** with no public service API. 
 notification:
   email:
     enabled: true
-    sender: thon.becker@gmail.com
-    admin: thon.becker@gmail.com
+    sender: ${NOTIFICATION_EMAIL_SENDER:bookings@thonbecker.biz}
+    admin: ${NOTIFICATION_EMAIL_ADMIN:thon@thonbecker.biz}
 ```
 
 **AWS SES prerequisites:**
-- Sender email (`thon.becker@gmail.com`) must be verified in SES
+- Sender email (`bookings@thonbecker.biz` by default, override with `NOTIFICATION_EMAIL_SENDER`) must be a verified SES identity on the apex domain `thonbecker.biz`
 - SES must be in production mode (not sandbox) to send to unverified recipients
 - Uses existing AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID` / `PERSONAL_AWS_SECRET_ACCESS_KEY`)
 - `SesClient` bean configured in `AwsConfig`

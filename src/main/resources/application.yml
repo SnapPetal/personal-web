@@ -169,8 +169,8 @@ trivia:
 notification:
   email:
     enabled: true
-    sender: verify@mail.thonbecker.biz
-    admin: verify@mail.thonbecker.biz
+    sender: ${NOTIFICATION_EMAIL_SENDER:bookings@thonbecker.biz}
+    admin: ${NOTIFICATION_EMAIL_ADMIN:thon@thonbecker.biz}
 
 # Calendar Integration (Nextcloud CalDAV)
 calendar:
