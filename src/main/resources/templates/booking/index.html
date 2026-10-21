@@ -151,7 +151,7 @@
                                     <div class="col-md-6">
                                         <label for="attendeeEmail" class="form-label">Email *</label>
                                         <input type="email" class="form-control" id="attendeeEmail"
-                                               x-model="attendeeEmail" required>
+                                               x-model="attendeeEmail" x-ref="attendeeEmail" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="attendeePhone" class="form-label">Phone (Optional)</label>
@@ -385,6 +385,13 @@
                 if (!name || !email) {
                     this.captureBookingFailure('validation');
                     alert('Please fill in all required fields');
+                    return;
+                }
+
+                // The button click is not a form submit, so the browser never checks type="email".
+                if (!this.$refs.attendeeEmail.checkValidity()) {
+                    this.captureBookingFailure('email_invalid');
+                    alert('Please enter a valid email address');
                     return;
                 }
 

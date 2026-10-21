@@ -25,6 +25,15 @@ class BookingPageTemplateTest {
     }
 
     @Test
+    void checksTheEmailBeforeTheBookingRequest() throws IOException {
+        final var template = Files.readString(BOOKING_TEMPLATE);
+
+        assertTrue(template.contains("x-ref=\"attendeeEmail\""));
+        assertTrue(template.contains("this.$refs.attendeeEmail.checkValidity()"));
+        assertTrue(template.indexOf("checkValidity()") < template.indexOf("fetch('/booking/book'"));
+    }
+
+    @Test
     void recordsBookingStartFromTheMeetingTypeChoice() throws IOException {
         final var template = Files.readString(BOOKING_TEMPLATE);
 
