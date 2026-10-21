@@ -16,10 +16,10 @@ flowchart LR
     biz_thonbecker_personal_booking_api_BookingSubmittedEvent["BookingSubmittedEvent<br/>booking.api"]
   end
   subgraph Calendar_Integration["Calendar Integration"]
+    biz_thonbecker_personal_calendar_platform_CalDavService["CalDavService<br/>calendar.platform"]
     biz_thonbecker_personal_calendar_platform_CalendarEventListener["CalendarEventListener<br/>calendar.platform"]
     biz_thonbecker_personal_calendar_platform_CalendarSyncScheduler["CalendarSyncScheduler<br/>calendar.platform"]
     biz_thonbecker_personal_calendar_platform_IcsGenerator["IcsGenerator<br/>calendar.platform"]
-    biz_thonbecker_personal_calendar_platform_NextcloudCalDavService["NextcloudCalDavService<br/>calendar.platform"]
   end
   subgraph Foosball["Foosball"]
     biz_thonbecker_personal_foosball_api_GameRecordedEvent["GameRecordedEvent<br/>foosball.api"]
@@ -81,11 +81,11 @@ flowchart LR
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_user_api_UserLoginEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_user_api_UserProfileUpdatedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_user_api_UserRegisteredEvent
+  biz_thonbecker_personal_calendar_platform_CalDavService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
   biz_thonbecker_personal_calendar_platform_CalendarEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_booking_api_BookingCancelledEvent
   biz_thonbecker_personal_calendar_platform_CalendarEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
   biz_thonbecker_personal_calendar_platform_CalendarSyncScheduler -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCancellationRequestedEvent
   biz_thonbecker_personal_calendar_platform_IcsGenerator -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
-  biz_thonbecker_personal_calendar_platform_NextcloudCalDavService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
   biz_thonbecker_personal_notification_platform_CalendarService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
   biz_thonbecker_personal_notification_platform_EmailNotificationService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCancelledEvent
   biz_thonbecker_personal_notification_platform_EmailNotificationService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent

@@ -43,7 +43,7 @@ A modular monolith personal portfolio and interactive applications platform buil
 git clone https://github.com/SnapPetal/personal-web.git
 cd personal-web
 cp .env.example .env
-# Edit .env with your AWS and Nextcloud credentials
+# Edit .env with your AWS credentials
 mvn -f design-system/pom.xml install -DskipTests
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
@@ -122,7 +122,7 @@ src/main/java/biz/thonbecker/personal/
 ├── booking/        # Appointment scheduling with auto-availability
 ├── tankgame/       # Tank game progression and raw WebSocket prototype
 ├── user/           # User management
-├── calendar/       # Nextcloud CalDAV integration with calendar sync
+├── calendar/       # CalDAV integration with calendar sync
 ├── notification/   # Event-driven email notifications via AWS SES
 ├── content/        # Bible verse, Dad jokes (Polly TTS + S3)
 └── shared/         # Infrastructure configuration (Security, Cache, AWS, WebSocket)

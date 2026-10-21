@@ -32,7 +32,7 @@ mvn clean package
 
 ## Local Development Setup
 
-1. Copy `.env.example` to `.env` and fill in AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, `PERSONAL_AWS_REGION`) and Nextcloud credentials (`PERSONAL_NEXTCLOUD_USERNAME`, `PERSONAL_NEXTCLOUD_APP_PASSWORD`).
+1. Copy `.env.example` to `.env` and fill in AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, `PERSONAL_AWS_REGION`). CalDAV is disabled in the dev profile. When it is enabled, the password is loaded from AWS Secrets Manager (`opencloud/calendar-app-tokens`, JSON field `booking_app_token`, us-east-1) using those AWS credentials.
 2. Spring Boot Docker Compose integration auto-starts PostgreSQL from `docker-compose.yml` when running locally—no manual `docker-compose up` needed.
 3. The `dev` profile (`application-dev.yml`) overrides the datasource to `localhost:5432/dbmaster` with user `dbmasteruser` and no password.
 4. **Hot Reload**: Spring Boot DevTools is enabled in the `dev` profile for automatic restart when files change:
@@ -55,8 +55,6 @@ Cognito is no longer used for application identity. Landscape plans are owned by
 **GitHub Secrets (for production):**
 
 ```bash
-PERSONAL_NEXTCLOUD_USERNAME
-PERSONAL_NEXTCLOUD_APP_PASSWORD
 PERSONAL_CF_ACCESS_ISSUER
 PERSONAL_CF_ACCESS_AUDIENCE
 PERSONAL_CF_ACCESS_ADMIN_EMAIL
@@ -89,7 +87,7 @@ Each module follows this internal package convention:
 | `booking`      | `BookingService`     | Appointment scheduling with auto-availability, event publishing        |
 | `tankgame`     | _(self-contained)_   | Godot tank game prototype with player progression                      |
 | `user`         | `UserService`        | User management                                                        |
-| `calendar`     | _(event-driven)_     | Nextcloud CalDAV integration, calendar sync for bookings               |
+| `calendar`     | _(event-driven)_     | CalDAV integration, calendar sync for bookings                         |
 | `notification` | _(event-driven)_     | Email notifications via AWS SES (zero coupling to other modules)       |
 | `content`      | _(self-contained)_   | Bible verse, Dad jokes (AWS Polly TTS + S3), experience counter        |
 | `shared`       | _(config only)_      | Infrastructure configuration classes (Security, Cache, AWS, WebSocket) |
@@ -410,7 +408,7 @@ The `booking` module provides appointment scheduling with event-driven notificat
 
 **Architecture:**
 - **Event-Driven** — publishes `BookingCreatedEvent` and `BookingCancelledEvent` from `booking.api`; notification module sends emails, calendar module creates CalDAV events
-- **Cancellation via Events** — listens for `BookingCancellationRequestedEvent` (published by the calendar module when a Nextcloud calendar event is deleted) to cancel bookings. The `BookingCancellationListener` handles this in `booking.platform`.
+- **Cancellation via Events** — listens for `BookingCancellationRequestedEvent` (published by the calendar module when a CalDAV event is deleted) to cancel bookings. The `BookingCancellationListener` handles this in `booking.platform`.
 - **Event Publication Registry** — `spring-modulith-starter-jpa` persists events to `event_publication` table for guaranteed delivery and replay
 - **Automatic Availability Generation** — `AvailabilityScheduler` creates recurring weekly slots (Monday-Friday, 11 AM-12 PM and 6-9 PM) for 4 weeks ahead
 - **iCal4j Library** — generates RFC-compliant `.ics` calendar files with Central Time (America/Chicago) timezone
@@ -429,48 +427,49 @@ The `booking` module provides appointment scheduling with event-driven notificat
 
 #### Calendar Module
 
-The `calendar` module provides **Nextcloud CalDAV integration** for automatic calendar management. It is fully event-driven.
+The `calendar` module provides **CalDAV integration** for automatic calendar management. It is fully event-driven. The bookings collection is addressed directly; there is no provider-specific principal discovery.
 
 **Architecture:**
 - **Event-Driven** — listens for `BookingCreatedEvent` and `BookingCancelledEvent` to create/delete CalDAV events
-- **Calendar Sync** — `CalendarSyncScheduler` polls Nextcloud every 5 minutes (ShedLock-protected) for deleted events; publishes `BookingCancellationRequestedEvent` when a deletion is detected
-- **CalDAV via WebClient** — uses `WebClient` for CalDAV HTTP methods (PROPFIND, PUT, DELETE, MKCALENDAR). No dedicated CalDAV library.
-- **Conditional** — all CalDAV beans are `@ConditionalOnProperty(name = "calendar.nextcloud.enabled")`, disabled in dev/test
+- **Calendar Sync** — `CalendarSyncScheduler` polls the collection every 5 minutes (ShedLock-protected) for deleted events; publishes `BookingCancellationRequestedEvent` when a deletion is detected
+- **CalDAV via WebClient** — uses `WebClient` for CalDAV HTTP methods (PROPFIND, PUT, DELETE) against the configured collection URL. No dedicated CalDAV library.
+- **Conditional** — CalDAV beans are `@ConditionalOnProperty(name = "calendar.caldav.enabled")`, disabled in dev/test
+- **Credentials** — HTTP Basic username comes from `calendar.caldav.username`. The password is the `booking_app_token` field of AWS Secrets Manager secret `opencloud/calendar-app-tokens` in `us-east-1`, read with the application's AWS credentials.
 
 **Key classes:**
-- `CalendarEventListener` — handles `BookingCreatedEvent` (creates CalDAV event + stores mapping) and `BookingCancelledEvent` (deletes CalDAV event) with `@TransactionalEventListener`
-- `NextcloudCalDavService` — CalDAV HTTP client (MKCALENDAR, PUT, DELETE, PROPFIND)
+- `CalendarEventListener` — handles `BookingCreatedEvent` (creates CalDAV event + stores mapping) and `BookingCancelledEvent` (deletes CalDAV event) with `@ApplicationModuleListener`
+- `CalDavService` — CalDAV HTTP client (PROPFIND, PUT, DELETE)
+- `CalDavAppTokenProvider` — loads the Basic password from Secrets Manager
 - `CalendarSyncScheduler` — polls for deleted events, publishes `BookingCancellationRequestedEvent`
-- `IcsGenerator` — generates `.ics` content with deterministic UIDs (`booking-{code}@thonbecker.biz`)
+- `IcsGenerator` — generates `.ics` content with deterministic UIDs (`booking-{confirmationCode}`)
 - `CalendarEventMappingEntity` — persists booking-to-CalDAV-UID mapping in `booking.calendar_event_mappings` table
 
 **Configuration** (`application.yml`):
 
 ```yaml
 calendar:
-  nextcloud:
+  caldav:
     enabled: true
-    base-url: https://cloud.thonbecker.biz
-    username: ${PERSONAL_NEXTCLOUD_USERNAME}
-    password: ${PERSONAL_NEXTCLOUD_APP_PASSWORD}
-    calendar-name: bookings
+    base-url: https://files.thonbecker.biz/caldav/
+    calendar-url: https://files.thonbecker.biz/caldav/eced1100-d041-41c1-b707-1ec59bc1a016/bookings/
+    username: thonbecker
+    secret-id: opencloud/calendar-app-tokens
+    secret-json-field: booking_app_token
+    region: us-east-1
     organizer-email: thon.becker@gmail.com
     sync-cron: "0 */5 * * * *"
 ```
 
-**Environment variables:**
-- `PERSONAL_NEXTCLOUD_USERNAME` — Nextcloud username
-- `PERSONAL_NEXTCLOUD_APP_PASSWORD` — Nextcloud app password (generate in Settings > Security > App passwords)
+**CalDAV collection:** `https://files.thonbecker.biz/caldav/eced1100-d041-41c1-b707-1ec59bc1a016/bookings/`
 
-**CalDAV URL pattern:** `https://cloud.thonbecker.biz/remote.php/dav/calendars/{username}/bookings/`
+Event resources are `{calendar-url}booking-{confirmationCode}.ics`.
 
-**Cancellation flow when calendar event deleted from Nextcloud:**
-1. `CalendarSyncScheduler` detects missing UID via PROPFIND
-2. Deletes mapping from `calendar_event_mappings`
-3. Publishes `BookingCancellationRequestedEvent`
-4. `BookingCancellationListener` (booking module) cancels the booking
-5. `BookingCancelledEvent` fires → notification sends cancellation email
-6. Calendar module's `CalendarEventListener` tries to delete CalDAV event → mapping already gone, skips
+**Cancellation flow when a calendar event is deleted from the collection:**
+1. `CalendarSyncScheduler` detects the missing UID via PROPFIND
+2. Publishes `BookingCancellationRequestedEvent`
+3. `BookingCancellationListener` (booking module) cancels the booking
+4. `BookingCancelledEvent` fires → notification sends cancellation email
+5. Calendar module's `CalendarEventListener` deletes the CalDAV event if it is still present, then removes the mapping
 
 #### Notification Module
 

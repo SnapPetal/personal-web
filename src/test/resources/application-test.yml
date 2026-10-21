@@ -35,12 +35,14 @@ notification:
     admin: test@test.com
 
 calendar:
-  nextcloud:
+  caldav:
     enabled: false
-    base-url: https://localhost
-    username: test
-    password: test
-    calendar-name: bookings
+    base-url: https://files.example.test/caldav/
+    calendar-url: https://files.example.test/caldav/collection/bookings/
+    username: thonbecker
+    secret-id: opencloud/calendar-app-tokens
+    secret-json-field: booking_app_token
+    region: us-east-1
     organizer-email: test@test.com
 
 personal:
