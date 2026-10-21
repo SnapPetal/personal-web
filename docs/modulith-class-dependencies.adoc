@@ -47,6 +47,13 @@ No direct cross-module class dependencies.
 |`biz.thonbecker.personal.shared.api`
 |`DEFAULT`
 
+|`BookingRequestExceptionHandler`
+|`biz.thonbecker.personal.booking.platform.web`
+|Shared Infrastructure
+|`ServerExceptionReportedEvent`
+|`biz.thonbecker.personal.shared.api`
+|`DEFAULT`
+
 |===
 
 == Analytics
