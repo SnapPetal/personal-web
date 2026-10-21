@@ -23,7 +23,7 @@ notification:
     enabled: false
 
 calendar:
-  nextcloud:
+  caldav:
     enabled: false
 
 skatetricks:

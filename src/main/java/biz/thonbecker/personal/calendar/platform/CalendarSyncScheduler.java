@@ -13,36 +13,35 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Polls the Nextcloud Bookings calendar for deleted events.
+ * Polls the configured CalDAV collection for deleted events.
  *
- * <p>When a calendar event is deleted from Nextcloud (e.g., via the web UI or a calendar app),
- * this scheduler detects it and publishes a {@link BookingCancellationRequestedEvent} so the
- * booking module can cancel the corresponding booking.
+ * <p>When a calendar event is deleted from the collection, this scheduler detects it and publishes a
+ * {@link BookingCancellationRequestedEvent} so the booking module can cancel the corresponding booking.
  */
 @Service
-@ConditionalOnProperty(name = "calendar.nextcloud.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "calendar.caldav.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 class CalendarSyncScheduler {
 
-    private final NextcloudCalDavService calDavService;
+    private final CalDavService calDavService;
     private final CalendarEventMappingRepository mappingRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @PostConstruct
     void init() {
         try {
-            calDavService.ensureCalendarExists();
-        } catch (final Exception e) {
-            log.warn("Failed to ensure Nextcloud calendar exists on startup: {}", e.getMessage());
+            calDavService.verifyCalendarCollection();
+        } catch (final Exception exception) {
+            log.warn("Failed to verify CalDAV collection on startup: {}", exception.getMessage());
         }
     }
 
-    @Scheduled(cron = "${calendar.nextcloud.sync-cron:0 */5 * * * *}")
-    @SchedulerLock(name = "syncNextcloudCalendar", lockAtLeastFor = "PT1M", lockAtMostFor = "PT5M")
+    @Scheduled(cron = "${calendar.caldav.sync-cron:0 */5 * * * *}")
+    @SchedulerLock(name = "syncCalDavCalendar", lockAtLeastFor = "PT1M", lockAtMostFor = "PT5M")
     @Transactional
     public void syncCalendarDeletions() {
-        log.debug("Checking Nextcloud calendar for deleted events...");
+        log.debug("Checking CalDAV collection for deleted events...");
 
         try {
             final var existingUids = calDavService.listEventResources();
@@ -52,7 +51,7 @@ class CalendarSyncScheduler {
             for (final var mapping : allMappings) {
                 if (!existingUids.contains(mapping.getCalendarUid())) {
                     log.info(
-                            "Calendar event {} deleted from Nextcloud, requesting cancellation for booking {}",
+                            "Calendar event {} deleted from CalDAV, requesting cancellation for booking {}",
                             mapping.getCalendarUid(),
                             mapping.getBookingId());
 
@@ -66,8 +65,8 @@ class CalendarSyncScheduler {
             } else {
                 log.debug("No deleted calendar events detected");
             }
-        } catch (final Exception e) {
-            log.error("Failed to sync Nextcloud calendar: {}", e.getMessage(), e);
+        } catch (final Exception exception) {
+            log.error("Failed to sync CalDAV collection: {}", exception.getMessage(), exception);
         }
     }
 }

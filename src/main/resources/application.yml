@@ -172,14 +172,16 @@ notification:
     sender: ${NOTIFICATION_EMAIL_SENDER:bookings@thonbecker.biz}
     admin: ${NOTIFICATION_EMAIL_ADMIN:thon@thonbecker.biz}
 
-# Calendar Integration (Nextcloud CalDAV)
+# Calendar Integration (CalDAV)
 calendar:
-  nextcloud:
+  caldav:
     enabled: true
-    base-url: https://cloud.thonbecker.biz
-    username: ${PERSONAL_NEXTCLOUD_USERNAME}
-    password: ${PERSONAL_NEXTCLOUD_APP_PASSWORD}
-    calendar-name: bookings
+    base-url: https://files.thonbecker.biz/caldav/
+    calendar-url: https://files.thonbecker.biz/caldav/eced1100-d041-41c1-b707-1ec59bc1a016/bookings/
+    username: thonbecker
+    secret-id: opencloud/calendar-app-tokens
+    secret-json-field: booking_app_token
+    region: us-east-1
     organizer-email: thon.becker@gmail.com
     sync-cron: "0 */5 * * * *"
 

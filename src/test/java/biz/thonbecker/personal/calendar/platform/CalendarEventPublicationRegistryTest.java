@@ -9,25 +9,31 @@ import biz.thonbecker.personal.booking.api.BookingCreatedEvent;
 import java.time.LocalDateTime;
 import java.util.Set;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.test.Scenario;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @IntegrationTest
-@Import(CalendarEventPublicationRegistryTest.FailingCalDavConfig.class)
-@TestPropertySource(properties = "calendar.nextcloud.enabled=true")
+@TestPropertySource(properties = "calendar.caldav.enabled=true")
 class CalendarEventPublicationRegistryTest {
 
     private final JdbcTemplate jdbcTemplate;
 
+    @MockitoBean
+    private CalDavService calDavService;
+
     CalendarEventPublicationRegistryTest(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+    @BeforeEach
+    void stubCalDavFailure() {
+        doThrow(new IllegalStateException("Simulated CalDAV failure"))
+                .when(calDavService)
+                .createEvent(any());
     }
 
     @Test
@@ -77,19 +83,5 @@ class CalendarEventPublicationRegistryTest {
                 from event_publication
                 where completion_date is null
                 """, Integer.class);
-    }
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class FailingCalDavConfig {
-
-        @Bean
-        @Primary
-        NextcloudCalDavService nextcloudCalDavService() {
-            final var service = Mockito.mock(NextcloudCalDavService.class);
-            doThrow(new IllegalStateException("Simulated CalDAV failure"))
-                    .when(service)
-                    .createEvent(any());
-            return service;
-        }
     }
 }
