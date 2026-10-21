@@ -9,11 +9,13 @@ import biz.thonbecker.personal.booking.api.BookingCancelledEvent;
 import biz.thonbecker.personal.booking.api.BookingCreatedEvent;
 import biz.thonbecker.personal.calendar.platform.persistence.CalendarEventMappingEntity;
 import biz.thonbecker.personal.calendar.platform.persistence.CalendarEventMappingRepository;
+import biz.thonbecker.personal.shared.api.ServerExceptionReportedEvent;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
 
 class CalendarEventListenerTest {
 
@@ -21,8 +23,7 @@ class CalendarEventListenerTest {
     void persistsMappingWhenCalDavEventAlreadyExists() {
         final var calDavService = Mockito.mock(CalDavService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener =
-                new CalendarEventListener(objectProvider(calDavService), mappingRepository, calendarProperties(true));
+        final var listener = listener(calDavService, mappingRepository, true);
 
         final var event = bookingCreatedEvent();
 
@@ -42,8 +43,7 @@ class CalendarEventListenerTest {
     void deletesDeterministicUidWhenMappingIsMissing() {
         final var calDavService = Mockito.mock(CalDavService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener =
-                new CalendarEventListener(objectProvider(calDavService), mappingRepository, calendarProperties(true));
+        final var listener = listener(calDavService, mappingRepository, true);
 
         final var event = bookingCancelledEvent();
         when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.empty());
@@ -58,8 +58,7 @@ class CalendarEventListenerTest {
     void leavesMappingInPlaceWhenCalendarDeletionFails() {
         final var calDavService = Mockito.mock(CalDavService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener =
-                new CalendarEventListener(objectProvider(calDavService), mappingRepository, calendarProperties(true));
+        final var listener = listener(calDavService, mappingRepository, true);
 
         final var event = bookingCancelledEvent();
         final var mapping = new CalendarEventMappingEntity();
@@ -80,13 +79,49 @@ class CalendarEventListenerTest {
     void skipsCreationWhenCalDavIsDisabled() {
         final var calDavService = Mockito.mock(CalDavService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener =
-                new CalendarEventListener(objectProvider(calDavService), mappingRepository, calendarProperties(false));
+        final var listener = listener(calDavService, mappingRepository, false);
 
         listener.onBookingCreated(bookingCreatedEvent());
 
         verify(calDavService, never()).createEvent(Mockito.any());
         verify(mappingRepository, never()).save(Mockito.any());
+    }
+
+    @Test
+    void reportsCalDavCreateFailuresAndRethrows() {
+        final var calDavService = Mockito.mock(CalDavService.class);
+        final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
+        final var eventPublisher = Mockito.mock(ApplicationEventPublisher.class);
+        final var listener = listener(calDavService, mappingRepository, true, eventPublisher);
+        final var event = bookingCreatedEvent();
+        when(calDavService.createEvent(event))
+                .thenThrow(new IllegalStateException("Radicale rejected attendee@example.com"));
+
+        assertThrows(IllegalStateException.class, () -> listener.onBookingCreated(event));
+
+        verify(mappingRepository, never()).save(Mockito.any());
+        verify(eventPublisher)
+                .publishEvent(
+                        Mockito.<Object>argThat(published -> published instanceof ServerExceptionReportedEvent reported
+                                && "calendar.booking-created".equals(reported.source())
+                                && reported.message().contains("[redacted-email]")
+                                && !reported.message().contains("attendee@example.com")));
+    }
+
+    private static CalendarEventListener listener(
+            final CalDavService calDavService,
+            final CalendarEventMappingRepository mappingRepository,
+            final boolean enabled) {
+        return listener(calDavService, mappingRepository, enabled, Mockito.mock(ApplicationEventPublisher.class));
+    }
+
+    private static CalendarEventListener listener(
+            final CalDavService calDavService,
+            final CalendarEventMappingRepository mappingRepository,
+            final boolean enabled,
+            final ApplicationEventPublisher eventPublisher) {
+        return new CalendarEventListener(
+                objectProvider(calDavService), mappingRepository, calendarProperties(enabled), eventPublisher);
     }
 
     private static ObjectProvider<CalDavService> objectProvider(final CalDavService service) {

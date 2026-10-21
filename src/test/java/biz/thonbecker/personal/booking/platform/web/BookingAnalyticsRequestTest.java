@@ -2,6 +2,7 @@ package biz.thonbecker.personal.booking.platform.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
@@ -15,8 +16,13 @@ import biz.thonbecker.personal.booking.api.BookingStartedEvent;
 import biz.thonbecker.personal.booking.api.BookingStatus;
 import biz.thonbecker.personal.booking.api.BookingSubmittedEvent;
 import biz.thonbecker.personal.booking.api.BookingType;
+import biz.thonbecker.personal.booking.domain.exceptions.BookingTypeNotFoundException;
+import biz.thonbecker.personal.booking.domain.exceptions.InvalidBookingException;
+import biz.thonbecker.personal.booking.domain.exceptions.SlotNotAvailableException;
 import biz.thonbecker.personal.booking.platform.BookingService;
+import biz.thonbecker.personal.booking.platform.web.model.BookingErrorResponse;
 import biz.thonbecker.personal.booking.platform.web.model.CreateBookingRequest;
+import biz.thonbecker.personal.shared.api.ServerExceptionReportedEvent;
 import jakarta.servlet.http.Cookie;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
@@ -204,6 +212,66 @@ class BookingAnalyticsRequestTest {
 
         verify(eventPublisher).publishEvent(new BookingSubmittedEvent("visitor-9", 3L));
         verify(bookingService).createBooking(3L, "Ada", "ada@example.com", null, start, "hello", "visitor-9");
+    }
+
+    @Test
+    void unavailableSlotIsAConflictWithTheServerMessage() {
+        final var response =
+                failedCreate(new SlotNotAvailableException("No availability slot exists for the selected time"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody())
+                .isEqualTo(new BookingErrorResponse("No availability slot exists for the selected time"));
+        verifyReportedException("No availability slot exists for the selected time");
+    }
+
+    @Test
+    void invalidBookingIsABadRequestWithTheServerMessage() {
+        final var response = failedCreate(new InvalidBookingException("Cannot book time slots in the past"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isEqualTo(new BookingErrorResponse("Cannot book time slots in the past"));
+    }
+
+    @Test
+    void missingBookingTypeIsABadRequestWithTheServerMessage() {
+        final var response = failedCreate(new BookingTypeNotFoundException(3L));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isEqualTo(new BookingErrorResponse("Booking type not found: 3"));
+    }
+
+    @Test
+    void unexpectedCreateFailureIsAGenericServerError() {
+        final var response = failedCreate(new IllegalStateException("token attendee@example.com"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getBody())
+                .isEqualTo(new BookingErrorResponse("Failed to create booking. Please try again."));
+        verify(eventPublisher)
+                .publishEvent(argThat((Object event) -> event instanceof ServerExceptionReportedEvent reported
+                        && "booking.create".equals(reported.source())
+                        && reported.message().contains("[redacted-email]")
+                        && !reported.message().contains("attendee@example.com")));
+    }
+
+    private ResponseEntity<?> failedCreate(final RuntimeException failure) {
+        final var request = browserRequest("POST", "/booking/book");
+        request.addHeader(VisitorDistinctIdResolver.HEADER_NAME, "visitor-9");
+        final var start = LocalDateTime.of(2026, 10, 21, 11, 0);
+        when(bookingService.createBooking(
+                        eq(3L), eq("Ada"), eq("ada@example.com"), isNull(), eq(start), eq("hello"), eq("visitor-9")))
+                .thenThrow(failure);
+
+        return controller.createBooking(
+                new CreateBookingRequest(3L, "Ada", "ada@example.com", null, start, "hello"), request);
+    }
+
+    private void verifyReportedException(final String message) {
+        verify(eventPublisher)
+                .publishEvent(argThat((Object event) -> event instanceof ServerExceptionReportedEvent reported
+                        && "booking.create".equals(reported.source())
+                        && message.equals(reported.message())));
     }
 
     private MockHttpServletRequest browserRequest(final String method, final String path) {

@@ -15,6 +15,16 @@ class BookingPageTemplateTest {
     private static final Path BOOKING_STYLES = Path.of("src/main/resources/static/css/pages/booking.css");
 
     @Test
+    void bookingFailureShowsTheServerMessage() throws IOException {
+        final var template = Files.readString(BOOKING_TEMPLATE);
+
+        assertTrue(template.contains("function bookingErrorMessage"));
+        assertTrue(template.contains("parsed.message"));
+        assertTrue(template.contains("error.bookingMessage"));
+        assertTrue(template.contains("alert(error.bookingMessage)"));
+    }
+
+    @Test
     void recordsBookingStartFromTheMeetingTypeChoice() throws IOException {
         final var template = Files.readString(BOOKING_TEMPLATE);
 

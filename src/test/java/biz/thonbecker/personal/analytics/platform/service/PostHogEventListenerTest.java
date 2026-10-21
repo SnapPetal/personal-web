@@ -8,8 +8,10 @@ import biz.thonbecker.personal.analytics.api.PostHogEventNames;
 import biz.thonbecker.personal.booking.api.BookingCancelledEvent;
 import biz.thonbecker.personal.booking.api.BookingCreatedEvent;
 import biz.thonbecker.personal.booking.api.BookingStartedEvent;
+import biz.thonbecker.personal.shared.api.ServerExceptionReportedEvent;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -76,6 +78,31 @@ class PostHogEventListenerTest {
 
         verify(postHogAnalyticsService)
                 .capture(Mockito.eq("visitor-9"), Mockito.eq(PostHogEventNames.BOOKING_CANCELLED), Mockito.anyMap());
+    }
+
+    @Test
+    void serverExceptionIsCapturedForErrorTracking() {
+        listener.onServerException(ServerExceptionReportedEvent.from(
+                "calendar.booking-created", new IllegalStateException("Radicale rejected attendee@example.com")));
+
+        verify(postHogAnalyticsService)
+                .capture(Mockito.eq("server"), Mockito.eq("$exception"), Mockito.argThat(properties -> {
+                    if (!"calendar.booking-created".equals(properties.get("source"))) {
+                        return false;
+                    }
+                    if (!"error".equals(properties.get("$exception_level"))) {
+                        return false;
+                    }
+                    if (!(properties.get("$exception_list") instanceof List<?> exceptions)
+                            || exceptions.isEmpty()
+                            || !(exceptions.getFirst() instanceof Map<?, ?> exception)) {
+                        return false;
+                    }
+                    return exception.get("value").toString().contains("[redacted-email]")
+                            && !exception.get("value").toString().contains("attendee@example.com")
+                            && exception.get("stacktrace") instanceof Map<?, ?> stacktrace
+                            && "raw".equals(stacktrace.get("type"));
+                }));
     }
 
     @Test

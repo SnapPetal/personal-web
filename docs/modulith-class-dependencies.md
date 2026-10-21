@@ -11,6 +11,7 @@ flowchart LR
     biz_thonbecker_personal_booking_api_BookingAvailabilityViewedEvent["BookingAvailabilityViewedEvent<br/>booking.api"]
     biz_thonbecker_personal_booking_api_BookingCancellationRequestedEvent["BookingCancellationRequestedEvent<br/>booking.api"]
     biz_thonbecker_personal_booking_api_BookingCancelledEvent["BookingCancelledEvent<br/>booking.api"]
+    biz_thonbecker_personal_booking_platform_web_BookingController["BookingController<br/>booking.platform.web"]
     biz_thonbecker_personal_booking_api_BookingCreatedEvent["BookingCreatedEvent<br/>booking.api"]
     biz_thonbecker_personal_booking_api_BookingStartedEvent["BookingStartedEvent<br/>booking.api"]
     biz_thonbecker_personal_booking_api_BookingSubmittedEvent["BookingSubmittedEvent<br/>booking.api"]
@@ -37,6 +38,10 @@ flowchart LR
     biz_thonbecker_personal_notification_api_EventLoggingListener["EventLoggingListener<br/>notification.api"]
     biz_thonbecker_personal_notification_api_NotificationEventListener["NotificationEventListener<br/>notification.api"]
   end
+  subgraph Shared_Infrastructure["Shared Infrastructure"]
+    biz_thonbecker_personal_shared_api_Frame["Frame<br/>shared.api"]
+    biz_thonbecker_personal_shared_api_ServerExceptionReportedEvent["ServerExceptionReportedEvent<br/>shared.api"]
+  end
   subgraph Skateboard_Trick_Analyzer["Skateboard Trick Analyzer"]
     biz_thonbecker_personal_skatetricks_api_SkatetricksAnalysisCompletedEvent["SkatetricksAnalysisCompletedEvent<br/>skatetricks.api"]
     biz_thonbecker_personal_skatetricks_api_SkatetricksAnalysisStartedEvent["SkatetricksAnalysisStartedEvent<br/>skatetricks.api"]
@@ -57,6 +62,7 @@ flowchart LR
     biz_thonbecker_personal_user_api_UserProfileUpdatedEvent["UserProfileUpdatedEvent<br/>user.api"]
     biz_thonbecker_personal_user_api_UserRegisteredEvent["UserRegisteredEvent<br/>user.api"]
   end
+  biz_thonbecker_personal_booking_platform_web_BookingController -->|"DEFAULT"| biz_thonbecker_personal_shared_api_ServerExceptionReportedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_booking_api_BookingAvailabilityViewedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_booking_api_BookingCancelledEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
@@ -68,6 +74,8 @@ flowchart LR
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_landscape_api_LandscapePlanSavedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_landscape_api_LandscapePlantAddedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_landscape_api_LandscapePreviewGeneratedEvent
+  biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT"| biz_thonbecker_personal_shared_api_Frame
+  biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_shared_api_ServerExceptionReportedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_skatetricks_api_SkatetricksAnalysisCompletedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_skatetricks_api_SkatetricksAnalysisStartedEvent
   biz_thonbecker_personal_analytics_platform_service_PostHogEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_skatetricks_api_SkatetricksAttemptVerifiedEvent
@@ -86,6 +94,7 @@ flowchart LR
   biz_thonbecker_personal_calendar_platform_CalendarEventListener -->|"DEFAULT, EVENT_LISTENER"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
   biz_thonbecker_personal_calendar_platform_CalendarSyncScheduler -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCancellationRequestedEvent
   biz_thonbecker_personal_calendar_platform_IcsGenerator -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
+  biz_thonbecker_personal_calendar_platform_CalendarEventListener -->|"DEFAULT"| biz_thonbecker_personal_shared_api_ServerExceptionReportedEvent
   biz_thonbecker_personal_notification_platform_CalendarService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent
   biz_thonbecker_personal_notification_platform_EmailNotificationService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCancelledEvent
   biz_thonbecker_personal_notification_platform_EmailNotificationService -->|"DEFAULT"| biz_thonbecker_personal_booking_api_BookingCreatedEvent

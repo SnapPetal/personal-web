@@ -12,6 +12,7 @@ import biz.thonbecker.personal.landscape.api.LandscapeAnalysisCompletedEvent;
 import biz.thonbecker.personal.landscape.api.LandscapePlanSavedEvent;
 import biz.thonbecker.personal.landscape.api.LandscapePlantAddedEvent;
 import biz.thonbecker.personal.landscape.api.LandscapePreviewGeneratedEvent;
+import biz.thonbecker.personal.shared.api.ServerExceptionReportedEvent;
 import biz.thonbecker.personal.skatetricks.api.SkatetricksAnalysisCompletedEvent;
 import biz.thonbecker.personal.skatetricks.api.SkatetricksAnalysisStartedEvent;
 import biz.thonbecker.personal.skatetricks.api.SkatetricksAttemptVerifiedEvent;
@@ -25,7 +26,9 @@ import biz.thonbecker.personal.user.api.LoginRequestedEvent;
 import biz.thonbecker.personal.user.api.UserLoginEvent;
 import biz.thonbecker.personal.user.api.UserProfileUpdatedEvent;
 import biz.thonbecker.personal.user.api.UserRegisteredEvent;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -270,6 +273,38 @@ class PostHogEventListener {
                 event.playerId(),
                 "player_created",
                 Map.of("created_at", event.createdAt().toString()));
+    }
+
+    /**
+     * Plain {@link EventListener}. Error reports are diagnostic and are not replayed from the Modulith registry.
+     */
+    @EventListener
+    @Async
+    void onServerException(final ServerExceptionReportedEvent event) {
+        final var exception = new LinkedHashMap<String, Object>();
+        exception.put("type", event.exceptionType());
+        exception.put("value", event.message());
+        exception.put("mechanism", Map.of("handled", true, "synthetic", false));
+        if (!event.frames().isEmpty()) {
+            final var frames = new ArrayList<Map<String, Object>>();
+            for (final var frame : event.frames()) {
+                final var encoded = new LinkedHashMap<String, Object>();
+                encoded.put("platform", "custom");
+                encoded.put("lang", "java");
+                encoded.put("function", frame.function());
+                encoded.put("filename", frame.filename());
+                encoded.put("lineno", frame.line());
+                encoded.put("in_app", frame.inApp());
+                frames.add(encoded);
+            }
+            exception.put("stacktrace", Map.of("type", "raw", "frames", frames));
+        }
+
+        final var properties = new LinkedHashMap<String, Object>();
+        properties.put("$exception_list", List.of(exception));
+        properties.put("$exception_level", "error");
+        properties.put("source", event.source());
+        postHogAnalyticsService.capture("server", "$exception", properties);
     }
 
     private void captureVisitor(final String distinctId, final String eventName, final Map<String, Object> properties) {

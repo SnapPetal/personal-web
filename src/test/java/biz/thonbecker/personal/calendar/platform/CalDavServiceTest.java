@@ -45,6 +45,43 @@ class CalDavServiceTest {
         assertThat(request.headers().getFirst(HttpHeaders.AUTHORIZATION)).isEqualTo(basicAuth());
         assertThat(request.headers().getFirst(HttpHeaders.IF_NONE_MATCH)).isEqualTo("*");
         assertThat(request.headers().getFirst(HttpHeaders.CONTENT_TYPE)).contains("text/calendar");
+        assertThat(Integer.parseInt(request.headers().getFirst(HttpHeaders.CONTENT_LENGTH)))
+                .isPositive();
+    }
+
+    @Test
+    void doesNotCopyCalendarCredentialsOntoTheSharedBuilder() {
+        final var requests = new ArrayList<ClientRequest>();
+        final var followUp = new ArrayList<ClientRequest>();
+        final ExchangeFunction exchange = Mockito.mock(ExchangeFunction.class);
+        when(exchange.exchange(any())).thenAnswer(invocation -> {
+            final ClientRequest request = invocation.getArgument(0);
+            requests.add(request);
+            return Mono.just(ClientResponse.create(HttpStatus.CREATED).build());
+        });
+        final var tokenProvider = Mockito.mock(CalDavAppTokenProvider.class);
+        when(tokenProvider.bookingAppToken()).thenReturn("app-token");
+        final var builder = WebClient.builder().exchangeFunction(exchange);
+        final var service = new CalDavService(new IcsGenerator(), properties(), builder, tokenProvider);
+
+        service.createEvent(bookingCreatedEvent());
+
+        builder.exchangeFunction(request -> {
+                    followUp.add(request);
+                    return Mono.just(ClientResponse.create(HttpStatus.OK).build());
+                })
+                .build()
+                .get()
+                .uri("/health")
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        assertThat(followUp).hasSize(1);
+        assertThat(followUp.getFirst().url().toString()).doesNotContain("caldav");
+        assertThat(followUp.getFirst().headers().getFirst(HttpHeaders.AUTHORIZATION))
+                .isNull();
+        assertThat(requests).hasSize(1);
     }
 
     @Test

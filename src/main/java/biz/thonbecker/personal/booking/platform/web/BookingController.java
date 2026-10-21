@@ -1,15 +1,18 @@
 package biz.thonbecker.personal.booking.platform.web;
 
-import biz.thonbecker.personal.booking.api.Booking;
 import biz.thonbecker.personal.booking.api.BookingAvailabilityViewedEvent;
 import biz.thonbecker.personal.booking.api.BookingStartedEvent;
 import biz.thonbecker.personal.booking.api.BookingSubmittedEvent;
 import biz.thonbecker.personal.booking.api.BookingType;
 import biz.thonbecker.personal.booking.domain.exceptions.BookingTypeNotFoundException;
+import biz.thonbecker.personal.booking.domain.exceptions.InvalidBookingException;
+import biz.thonbecker.personal.booking.domain.exceptions.SlotNotAvailableException;
 import biz.thonbecker.personal.booking.platform.BookingService;
+import biz.thonbecker.personal.booking.platform.web.model.BookingErrorResponse;
 import biz.thonbecker.personal.booking.platform.web.model.CreateBookingRequest;
 import biz.thonbecker.personal.booking.platform.web.model.PublicAvailabilityResponse;
 import biz.thonbecker.personal.booking.platform.web.model.PublicAvailabilitySlot;
+import biz.thonbecker.personal.shared.api.ServerExceptionReportedEvent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -29,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -223,7 +227,7 @@ public class BookingController {
      */
     @PostMapping("/book")
     @ResponseBody
-    public ResponseEntity<Booking> createBooking(
+    public ResponseEntity<?> createBooking(
             @Valid @RequestBody final CreateBookingRequest request, final HttpServletRequest httpRequest) {
 
         try {
@@ -244,10 +248,25 @@ public class BookingController {
             log.info("Successfully created booking with confirmation code: {}", booking.confirmationCode());
             return ResponseEntity.ok(booking);
 
-        } catch (final Exception e) {
-            log.error("Failed to create booking: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().build();
+        } catch (final SlotNotAvailableException exception) {
+            return bookingFailure(exception, HttpStatus.CONFLICT, exception.getMessage());
+        } catch (final InvalidBookingException | BookingTypeNotFoundException exception) {
+            return bookingFailure(exception, HttpStatus.BAD_REQUEST, exception.getMessage());
+        } catch (final Exception exception) {
+            return bookingFailure(
+                    exception, HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create booking. Please try again.");
         }
+    }
+
+    private ResponseEntity<BookingErrorResponse> bookingFailure(
+            final Exception exception, final HttpStatus status, final String message) {
+        log.error("Failed to create booking", exception);
+        try {
+            eventPublisher.publishEvent(ServerExceptionReportedEvent.from("booking.create", exception));
+        } catch (final RuntimeException reportingFailure) {
+            log.warn("Failed to report booking exception", reportingFailure);
+        }
+        return ResponseEntity.status(status).body(new BookingErrorResponse(message));
     }
 
     /**

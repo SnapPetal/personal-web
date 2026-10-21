@@ -10,6 +10,7 @@
         displayName = "Analytics",
         allowedDependencies = {
             "shared",
+            "shared :: api",
             "booking :: api",
             "foosball :: api",
             "landscape :: api",
