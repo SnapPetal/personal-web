@@ -22,6 +22,9 @@ class BookingPageTemplateTest {
         assertTrue(template.contains("parsed.message"));
         assertTrue(template.contains("error.bookingMessage"));
         assertTrue(template.contains("alert(error.bookingMessage)"));
+        assertTrue(template.contains("emailInput.checkValidity()"));
+        assertTrue(template.contains("properties.response_body"));
+        assertTrue(template.contains("captureBookingFailure('server', response.status, message, text)"));
     }
 
     @Test
