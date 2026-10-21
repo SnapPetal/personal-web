@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,8 +28,6 @@ import tools.jackson.core.JacksonException;
 @Slf4j
 class BookingRequestExceptionHandler {
 
-    static final String UNREADABLE_MESSAGE = "We could not read the booking details. Please try again.";
-
     private final ApplicationEventPublisher eventPublisher;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -38,12 +37,11 @@ class BookingRequestExceptionHandler {
                 .map(error -> error.getField() + " (" + error.getCode() + ")")
                 .collect(Collectors.joining(", "));
         final var message = fieldErrors.stream()
-                .map(error -> error.getDefaultMessage())
+                .map(FieldError::getDefaultMessage)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse("Please check the booking details and try again.");
 
-        log.warn("Rejected booking request: {}", violations);
         report(exception, "Booking request failed validation: " + violations);
         return ResponseEntity.badRequest().body(new BookingErrorResponse(message));
     }
@@ -58,12 +56,13 @@ class BookingRequestExceptionHandler {
                 : "";
         final var detail = field.isEmpty() ? "body" : field;
 
-        log.warn("Unreadable booking request: {}", detail);
         report(exception, "Booking request could not be read: " + detail);
-        return ResponseEntity.badRequest().body(new BookingErrorResponse(UNREADABLE_MESSAGE));
+        return ResponseEntity.badRequest()
+                .body(new BookingErrorResponse("We could not read the booking details. Please try again."));
     }
 
     private void report(final Exception exception, final String safeMessage) {
+        log.warn(safeMessage);
         try {
             final var reported = ServerExceptionReportedEvent.from("booking.create", exception);
             eventPublisher.publishEvent(new ServerExceptionReportedEvent(

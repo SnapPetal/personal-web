@@ -69,7 +69,7 @@ class BookingRequestRejectionTest {
         mockMvc.perform(book("{\"bookingTypeId\":1,\"attendeeName\":\"Ada\",\"attendeeEmail\":\"ada@example.com\","
                         + "\"startTime\":\"10/21/2026\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value(BookingRequestExceptionHandler.UNREADABLE_MESSAGE));
+                .andExpect(jsonPath("$.message").value("We could not read the booking details. Please try again."));
 
         final var reported = reportedException();
         assertThat(reported.message()).isEqualTo("Booking request could not be read: startTime");
@@ -84,12 +84,8 @@ class BookingRequestRejectionTest {
     }
 
     private ServerExceptionReportedEvent reportedException() {
-        final var captor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, Mockito.atLeastOnce()).publishEvent(captor.capture());
-        return captor.getAllValues().stream()
-                .filter(ServerExceptionReportedEvent.class::isInstance)
-                .map(ServerExceptionReportedEvent.class::cast)
-                .findFirst()
-                .orElseThrow();
+        final var captor = ArgumentCaptor.forClass(ServerExceptionReportedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        return captor.getValue();
     }
 }
