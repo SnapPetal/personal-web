@@ -76,12 +76,14 @@ class CalDavService {
         final var icsContent = icsGenerator.generate(event, properties.organizerEmail(), calendarUid);
         final var eventUri = calendarCollection.resolve(calendarUid + ".ics");
 
+        final var body = icsContent.getBytes(StandardCharsets.UTF_8);
         try {
             client().put()
                     .uri(eventUri)
                     .header(HttpHeaders.CONTENT_TYPE, "text/calendar; charset=utf-8")
+                    .header(HttpHeaders.CONTENT_LENGTH, Integer.toString(body.length))
                     .header(HttpHeaders.IF_NONE_MATCH, "*")
-                    .bodyValue(icsContent.getBytes(StandardCharsets.UTF_8))
+                    .bodyValue(body)
                     .retrieve()
                     .toBodilessEntity()
                     .block();
@@ -172,6 +174,7 @@ class CalDavService {
             final var authHeader = "Basic "
                     + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
             webClient = webClientBuilder
+                    .clone()
                     .baseUrl(withTrailingSlash(properties.baseUrl()))
                     .defaultHeader(HttpHeaders.AUTHORIZATION, authHeader)
                     .build();

@@ -20,6 +20,7 @@
 * `b.t.p.t.api.PlayerJoinedQuizEvent` (async) 
 * `b.t.p.t.api.QuizCompletedEvent` (async) 
 * `b.t.p.t.api.QuizStartedEvent` (async) 
+* `b.t.p.s.api.ServerExceptionReportedEvent` (async) 
 * `b.t.p.s.api.SkatetricksAnalysisCompletedEvent` (async) 
 * `b.t.p.s.api.SkatetricksAnalysisStartedEvent` (async) 
 * `b.t.p.s.api.SkatetricksAttemptVerifiedEvent` (async) 

@@ -267,6 +267,28 @@
         };
     }
 
+    function bookingErrorMessage(text) {
+        const fallback = 'Failed to create booking. Please try again.';
+        if (!text) return fallback;
+
+        try {
+            const parsed = JSON.parse(text);
+            if (parsed && typeof parsed.message === 'string' && parsed.message.trim()) {
+                return parsed.message.trim();
+            }
+            if (parsed && typeof parsed.detail === 'string' && parsed.detail.trim()) {
+                return parsed.detail.trim();
+            }
+        } catch (error) {
+            const trimmed = text.trim();
+            if (trimmed && !trimmed.startsWith('<')) {
+                return trimmed.slice(0, 300);
+            }
+        }
+
+        return fallback;
+    }
+
     function posthogDistinctId() {
         try {
             if (window.posthog && typeof window.posthog.get_distinct_id === 'function') {
@@ -396,9 +418,12 @@
                 .then(response => {
                     if (!response.ok) {
                         return response.text().then(text => {
+                            const message = bookingErrorMessage(text);
                             console.error('Booking error:', response.status, text);
-                            this.captureBookingFailure('server', response.status);
-                            throw new Error('Booking failed: ' + response.status);
+                            this.captureBookingFailure('server', response.status, message);
+                            const error = new Error(message);
+                            error.bookingMessage = message;
+                            throw error;
                         });
                     }
                     return response.json();
@@ -407,15 +432,17 @@
                     window.location.href = `/booking/confirmation/${booking.confirmationCode}`;
                 })
                 .catch(error => {
-                    if (!error.message.startsWith('Booking failed:')) {
-                        this.captureBookingFailure('network');
+                    if (error.bookingMessage) {
+                        alert(error.bookingMessage);
+                        return;
                     }
+                    this.captureBookingFailure('network');
                     alert('Failed to create booking. Please try again.');
                     console.error(error);
                 });
             },
 
-            captureBookingFailure(stage, statusCode = null) {
+            captureBookingFailure(stage, statusCode = null, message = null) {
                 if (!window.personalPostHog?.capture) return;
 
                 const properties = {
@@ -423,6 +450,7 @@
                     booking_type_id: this.selectedBookingTypeId,
                 };
                 if (statusCode) properties.status_code = statusCode;
+                if (message) properties.error_message = message;
                 window.personalPostHog.capture('booking_failed', properties);
             },
 

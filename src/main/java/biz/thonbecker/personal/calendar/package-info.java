@@ -15,6 +15,6 @@
  */
 @org.springframework.modulith.ApplicationModule(
         displayName = "Calendar Integration",
-        allowedDependencies = {"shared", "booking :: api"})
+        allowedDependencies = {"shared", "shared :: api", "booking :: api"})
 @org.jspecify.annotations.NullMarked
 package biz.thonbecker.personal.calendar;

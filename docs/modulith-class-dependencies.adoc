@@ -2,10 +2,6 @@
 
 This report is generated from Spring Modulith and ArchUnit metadata. It lists concrete classes that connect one application module to another.
 
-== Booking
-
-No direct cross-module class dependencies.
-
 == Content Services
 
 No direct cross-module class dependencies.
@@ -37,6 +33,21 @@ No direct cross-module class dependencies.
 == User Management
 
 No direct cross-module class dependencies.
+
+== Booking
+
+[%autowidth.stretch, cols="1,2,1,1,2,1"]
+|===
+|Source class |Source package |Target module |Target class |Target package |Dependency types
+
+|`BookingController`
+|`biz.thonbecker.personal.booking.platform.web`
+|Shared Infrastructure
+|`ServerExceptionReportedEvent`
+|`biz.thonbecker.personal.shared.api`
+|`DEFAULT`
+
+|===
 
 == Analytics
 
@@ -119,6 +130,20 @@ No direct cross-module class dependencies.
 |Landscape Planning
 |`LandscapePreviewGeneratedEvent`
 |`biz.thonbecker.personal.landscape.api`
+|`DEFAULT, EVENT_LISTENER`
+
+|`PostHogEventListener`
+|`biz.thonbecker.personal.analytics.platform.service`
+|Shared Infrastructure
+|`Frame`
+|`biz.thonbecker.personal.shared.api`
+|`DEFAULT`
+
+|`PostHogEventListener`
+|`biz.thonbecker.personal.analytics.platform.service`
+|Shared Infrastructure
+|`ServerExceptionReportedEvent`
+|`biz.thonbecker.personal.shared.api`
 |`DEFAULT, EVENT_LISTENER`
 
 |`PostHogEventListener`
@@ -253,6 +278,13 @@ No direct cross-module class dependencies.
 |Booking
 |`BookingCreatedEvent`
 |`biz.thonbecker.personal.booking.api`
+|`DEFAULT`
+
+|`CalendarEventListener`
+|`biz.thonbecker.personal.calendar.platform`
+|Shared Infrastructure
+|`ServerExceptionReportedEvent`
+|`biz.thonbecker.personal.shared.api`
 |`DEFAULT`
 
 |===
