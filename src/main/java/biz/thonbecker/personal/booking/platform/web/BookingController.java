@@ -222,6 +222,9 @@ public class BookingController {
     /**
      * Creates a new booking.
      *
+     * <p>Requests rejected by {@code @Valid} or JSON binding never reach this method.
+     * {@link BookingRequestExceptionHandler} explains those failures.
+     *
      * @param request Booking details
      * @return Created booking
      */

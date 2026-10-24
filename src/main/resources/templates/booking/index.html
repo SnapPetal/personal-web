@@ -389,7 +389,8 @@
                 }
 
                 // The button click is not a form submit, so the browser never checks type="email".
-                if (!this.$refs.attendeeEmail.checkValidity()) {
+                const emailInput = this.$refs.attendeeEmail || document.getElementById('attendeeEmail');
+                if (emailInput && !emailInput.checkValidity()) {
                     this.captureBookingFailure('email_invalid');
                     alert('Please enter a valid email address');
                     return;
@@ -427,7 +428,7 @@
                         return response.text().then(text => {
                             const message = bookingErrorMessage(text);
                             console.error('Booking error:', response.status, text);
-                            this.captureBookingFailure('server', response.status, message);
+                            this.captureBookingFailure('server', response.status, message, text);
                             const error = new Error(message);
                             error.bookingMessage = message;
                             throw error;
@@ -449,7 +450,7 @@
                 });
             },
 
-            captureBookingFailure(stage, statusCode = null, message = null) {
+            captureBookingFailure(stage, statusCode = null, message = null, responseBody = null) {
                 if (!window.personalPostHog?.capture) return;
 
                 const properties = {
@@ -458,6 +459,7 @@
                 };
                 if (statusCode) properties.status_code = statusCode;
                 if (message) properties.error_message = message;
+                if (responseBody) properties.response_body = String(responseBody).slice(0, 1000);
                 window.personalPostHog.capture('booking_failed', properties);
             },
 

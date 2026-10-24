@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 class BookingRequestRejectionTest {
 
@@ -35,8 +36,11 @@ class BookingRequestRejectionTest {
                 new VisitorDistinctIdResolver(),
                 new AutomatedProbeDetector(),
                 new BookingStartDeduper());
+        final var validator = new LocalValidatorFactoryBean();
+        validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new BookingRequestExceptionHandler(eventPublisher))
+                .setValidator(validator)
                 .build();
     }
 
@@ -45,7 +49,8 @@ class BookingRequestRejectionTest {
         mockMvc.perform(book("{\"bookingTypeId\":1,\"attendeeName\":\"Ada\",\"attendeeEmail\":\"ada at work\","
                         + "\"attendeePhone\":null,\"startTime\":\"2026-10-21T11:00\",\"message\":null}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Please enter a valid email address."));
+                .andExpect(jsonPath("$.message")
+                        .value("Invalid booking request: attendeeEmail: Please enter a valid email address."));
 
         final var reported = reportedException();
         assertThat(reported.source()).isEqualTo("booking.create");
@@ -59,7 +64,8 @@ class BookingRequestRejectionTest {
         mockMvc.perform(book("{\"bookingTypeId\":1,\"attendeeName\":\" \",\"attendeeEmail\":\"ada@example.com\","
                         + "\"startTime\":\"2026-10-21T11:00\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Please enter your name."));
+                .andExpect(
+                        jsonPath("$.message").value("Invalid booking request: attendeeName: Please enter your name."));
 
         assertThat(reportedException().message()).contains("attendeeName (NotBlank)");
     }
@@ -69,7 +75,7 @@ class BookingRequestRejectionTest {
         mockMvc.perform(book("{\"bookingTypeId\":1,\"attendeeName\":\"Ada\",\"attendeeEmail\":\"ada@example.com\","
                         + "\"startTime\":\"10/21/2026\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("We could not read the booking details. Please try again."));
+                .andExpect(jsonPath("$.message").value("Invalid booking request: startTime"));
 
         final var reported = reportedException();
         assertThat(reported.message()).isEqualTo("Booking request could not be read: startTime");

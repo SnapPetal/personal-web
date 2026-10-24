@@ -22,6 +22,9 @@ class BookingPageTemplateTest {
         assertTrue(template.contains("parsed.message"));
         assertTrue(template.contains("error.bookingMessage"));
         assertTrue(template.contains("alert(error.bookingMessage)"));
+        assertTrue(template.contains("emailInput.checkValidity()"));
+        assertTrue(template.contains("properties.response_body"));
+        assertTrue(template.contains("captureBookingFailure('server', response.status, message, text)"));
     }
 
     @Test
@@ -29,7 +32,10 @@ class BookingPageTemplateTest {
         final var template = Files.readString(BOOKING_TEMPLATE);
 
         assertTrue(template.contains("x-ref=\"attendeeEmail\""));
-        assertTrue(template.contains("this.$refs.attendeeEmail.checkValidity()"));
+        assertTrue(template.contains("this.$refs.attendeeEmail"));
+        assertTrue(template.contains("document.getElementById('attendeeEmail')"));
+        assertTrue(template.contains("emailInput.checkValidity()"));
+        assertTrue(template.contains("captureBookingFailure('email_invalid')"));
         assertTrue(template.indexOf("checkValidity()") < template.indexOf("fetch('/booking/book'"));
     }
 
