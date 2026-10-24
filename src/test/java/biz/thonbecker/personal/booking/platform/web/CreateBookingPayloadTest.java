@@ -57,6 +57,7 @@ class CreateBookingPayloadTest {
         final var validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new BookingRequestExceptionHandler(eventPublisher))
                 .setValidator(validator)
                 .build();
     }

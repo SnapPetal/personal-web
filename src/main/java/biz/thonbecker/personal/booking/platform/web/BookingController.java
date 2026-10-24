@@ -25,7 +25,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,14 +34,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.exc.PropertyBindingException;
 
 /**
  * Public web controller for booking functionality.
@@ -228,6 +222,9 @@ public class BookingController {
     /**
      * Creates a new booking.
      *
+     * <p>Requests rejected by {@code @Valid} or JSON binding never reach this method.
+     * {@link BookingRequestExceptionHandler} explains those failures.
+     *
      * @param request Booking details
      * @return Created booking
      */
@@ -262,68 +259,6 @@ public class BookingController {
             return bookingFailure(
                     exception, HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create booking. Please try again.");
         }
-    }
-
-    /**
-     * {@code @Valid} rejects the body before {@link #createBooking} runs. Spring's default error
-     * document has no {@code message}, so the page cannot say which field failed.
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<BookingErrorResponse> handleInvalidBookingRequest(
-            final MethodArgumentNotValidException exception) {
-        final var fields = exception.getBindingResult().getFieldErrors().stream()
-                .map(BookingController::fieldError)
-                .distinct()
-                .collect(Collectors.joining("; "));
-        final var message = fields.isEmpty() ? "The booking request is invalid." : "Invalid booking request: " + fields;
-        return bookingFailure(exception, HttpStatus.BAD_REQUEST, message);
-    }
-
-    /**
-     * Jackson rejects the body before {@link #createBooking} runs, for example a {@code startTime}
-     * that is not a local date-time.
-     */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<BookingErrorResponse> handleUnreadableBookingRequest(
-            final HttpMessageNotReadableException exception) {
-        final var field = unreadableField(exception);
-        final var message =
-                Objects.isNull(field) ? "The booking request could not be read." : "Invalid booking request: " + field;
-        return bookingFailure(exception, HttpStatus.BAD_REQUEST, message);
-    }
-
-    private static String fieldError(final FieldError error) {
-        final var detail = error.getDefaultMessage();
-        if (Objects.isNull(detail) || detail.isBlank()) {
-            return error.getField();
-        }
-        return error.getField() + ": " + detail;
-    }
-
-    private static String unreadableField(final Throwable error) {
-        String field = null;
-        Throwable current = error;
-        while (Objects.nonNull(current)) {
-            if (current instanceof final PropertyBindingException binding) {
-                final var property = binding.getPropertyName();
-                if (Objects.nonNull(property) && !property.isBlank()) {
-                    field = property;
-                }
-            } else if (current instanceof final JacksonException jackson) {
-                final var path = jackson.getPath();
-                if (Objects.nonNull(path)) {
-                    for (var index = path.size() - 1; index >= 0; index--) {
-                        final var name = path.get(index).getPropertyName();
-                        if (Objects.nonNull(name) && !name.isBlank()) {
-                            field = name;
-                            break;
-                        }
-                    }
-                }
-            }
-            current = current.getCause();
-        }
-        return field;
     }
 
     private ResponseEntity<BookingErrorResponse> bookingFailure(

@@ -151,7 +151,7 @@
                                     <div class="col-md-6">
                                         <label for="attendeeEmail" class="form-label">Email *</label>
                                         <input type="email" class="form-control" id="attendeeEmail"
-                                               x-model="attendeeEmail" required>
+                                               x-model="attendeeEmail" x-ref="attendeeEmail" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="attendeePhone" class="form-label">Phone (Optional)</label>
@@ -388,9 +388,10 @@
                     return;
                 }
 
-                const emailInput = document.getElementById('attendeeEmail');
+                // The button click is not a form submit, so the browser never checks type="email".
+                const emailInput = this.$refs.attendeeEmail || document.getElementById('attendeeEmail');
                 if (emailInput && !emailInput.checkValidity()) {
-                    this.captureBookingFailure('validation');
+                    this.captureBookingFailure('email_invalid');
                     alert('Please enter a valid email address');
                     return;
                 }
