@@ -88,6 +88,30 @@
     color: var(--app-link-color) !important;
 }
 
+.booking-page .public-chat-input-group {
+    flex-wrap: nowrap;
+}
+
+.booking-page .public-chat-input-group .form-control {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    background-color: var(--app-body-bg);
+    border-color: var(--app-muted-color);
+    color: var(--app-body-color);
+}
+
+.booking-page .public-chat-input-group .form-control::placeholder {
+    color: var(--app-muted-color);
+    opacity: 1;
+}
+
+.booking-page .public-chat-input-group .form-control:focus {
+    background-color: var(--app-body-bg);
+    border-color: var(--app-link-color);
+    color: var(--app-body-color);
+}
+
 .booking-not-found-icon {
     font-size: 5rem;
 }

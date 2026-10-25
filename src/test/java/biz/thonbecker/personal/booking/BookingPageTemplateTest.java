@@ -49,6 +49,22 @@ class BookingPageTemplateTest {
     }
 
     @Test
+    void publicChatInputFillsTheRowInEitherColorScheme() throws IOException {
+        final var styles = Files.readString(BOOKING_STYLES);
+        final var fieldRule = styles.indexOf(".booking-page .public-chat-input-group .form-control {");
+
+        assertTrue(fieldRule >= 0);
+        final var fieldBlock = styles.substring(fieldRule, styles.indexOf('}', fieldRule));
+        assertTrue(fieldBlock.contains("flex: 1 1 auto;"));
+        assertTrue(fieldBlock.contains("min-width: 0;"));
+        assertTrue(fieldBlock.contains("width: 100%;"));
+        assertTrue(fieldBlock.contains("background-color: var(--app-body-bg);"));
+        assertTrue(fieldBlock.contains("border-color: var(--app-muted-color);"));
+        assertTrue(fieldBlock.contains("color: var(--app-body-color);"));
+        assertTrue(styles.contains("flex-wrap: nowrap;"));
+    }
+
+    @Test
     void keepsTheAssistantSeparateFromTheMeetingTypeSection() throws IOException {
         final var template = Files.readString(BOOKING_TEMPLATE);
         final var styles = Files.readString(BOOKING_STYLES);
