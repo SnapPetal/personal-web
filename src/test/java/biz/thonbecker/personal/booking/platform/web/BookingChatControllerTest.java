@@ -122,7 +122,7 @@ class BookingChatControllerTest {
         assertThat(promptText).doesNotContain("2026-10-06");
         assertThat(captor.getValue().getOptions()).isInstanceOf(BedrockChatOptions.class);
         assertThat(((BedrockChatOptions) captor.getValue().getOptions()).getModel())
-                .isEqualTo("us.anthropic.claude-3-5-haiku-20241022-v1:0");
+                .isEqualTo("us.anthropic.claude-haiku-4-5-20251001-v1:0");
         verify(bookingService).getActiveBookingTypes();
     }
 
