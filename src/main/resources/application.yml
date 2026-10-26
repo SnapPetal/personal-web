@@ -160,6 +160,22 @@ landscape:
   image-generation:
     model: ${PERSONAL_BEDROCK_IMAGE_MODEL:amazon.nova-canvas-v1:0}
 
+# Public booking assistant. Uses the same AWS credentials as the other Bedrock features.
+# PERSONAL_BEDROCK_BOOKING_CHAT_MODEL overrides the cost-conscious default.
+booking:
+  chat:
+    model: ${PERSONAL_BEDROCK_BOOKING_CHAT_MODEL:us.anthropic.claude-3-5-haiku-20241022-v1:0}
+    temperature: 0.2
+    max-tokens: 1024
+    max-message-length: 1000
+    max-timezone-length: 100
+    max-requests-per-window: 10
+    window: 60s
+    allowed-origins:
+      - https://thonbecker.biz
+      - https://www.thonbecker.biz
+      - https://booking.thonbecker.biz
+
 # Trivia Configuration
 trivia:
   ai:

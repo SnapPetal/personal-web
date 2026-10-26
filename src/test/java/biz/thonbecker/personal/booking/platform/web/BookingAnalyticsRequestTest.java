@@ -54,6 +54,7 @@ class BookingAnalyticsRequestTest {
         bookingStartDeduper = new BookingStartDeduper();
         controller = new BookingController(
                 bookingService,
+                new PublicAvailabilityService(bookingService),
                 eventPublisher,
                 new VisitorDistinctIdResolver(),
                 new AutomatedProbeDetector(),

@@ -71,6 +71,9 @@ class BookingPageTemplateTest {
 
         assertTrue(template.contains("class=\"public-chat-form\""));
         assertTrue(template.contains("class=\"input-group public-chat-input-group\""));
+        assertTrue(template.contains("th:attr=\"hx-post=@{/booking/chat}\""));
+        assertTrue(template.contains("th:name=\"${_csrf.parameterName}\""));
+        assertFalse(template.contains("chat.thonbecker.biz"));
         assertTrue(styles.contains("margin-bottom: clamp(3rem, 6vw, 5rem);"));
         assertTrue(styles.contains("@media (max-width: 400px)"));
         assertTrue(styles.contains("grid-template-columns: 1fr;"));
