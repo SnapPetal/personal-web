@@ -50,6 +50,7 @@ class CreateBookingPayloadTest {
         eventPublisher = Mockito.mock(ApplicationEventPublisher.class);
         final var controller = new BookingController(
                 bookingService,
+                new PublicAvailabilityService(bookingService),
                 eventPublisher,
                 new VisitorDistinctIdResolver(),
                 new AutomatedProbeDetector(),

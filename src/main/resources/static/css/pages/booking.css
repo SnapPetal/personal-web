@@ -227,3 +227,12 @@
         min-height: 2.875rem;
     }
 }
+
+.booking-page .public-chat-status {
+    display: none;
+}
+
+.booking-page .public-chat-status.htmx-request {
+    display: inline;
+    opacity: 1;
+}

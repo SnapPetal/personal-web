@@ -38,5 +38,22 @@
         <div th:replace="~{fragments/htmx :: error(${error}, ${retryUrl}, '#timeSlots')}"></div>
     </th:block>
 </div>
+
+<div th:fragment="chat-reply" class="alert alert-secondary mt-3 mb-0" role="status">
+    <p th:if="${chatError != null}" class="text-danger mb-0" th:text="${chatError}">The chat is temporarily unavailable.</p>
+    <div th:if="${chatReply != null}">
+        <p class="mb-2" th:text="${chatReply.message()}">I have an opening Monday at 3:00 PM.</p>
+        <div class="d-flex flex-wrap gap-2 mt-2" th:if="${chatSlots != null and !chatSlots.isEmpty()}">
+            <button th:each="slot : ${chatSlots}"
+                    type="button"
+                    class="btn btn-sm btn-outline-primary bg-body"
+                    onclick="selectChatSlot(this)"
+                    th:attr="data-start=${slot.start()}">
+                <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
+                <span th:text="${slot.label()}">Mon, Oct 5, 3:00 PM</span>
+            </button>
+        </div>
+    </div>
+</div>
 </body>
 </html>

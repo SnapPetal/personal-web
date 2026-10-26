@@ -50,17 +50,15 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 ### Booking availability assistant
 
-The booking page includes a public, read-only availability assistant. The browser sends its IANA timezone
-to `chat.thonbecker.biz`; the assistant defaults to `America/Chicago` when no timezone is supplied. The
-Cloudflare Worker calls this endpoint on PersonalWeb:
+The booking page includes a public, read-only availability assistant. The form posts to `/booking/chat` with HTMX and sends the visitor's IANA timezone. When no timezone is supplied, the assistant uses `America/Chicago`. Replies come from open slots read in-process through `BookingService`, the same slots exposed by:
 
 ```text
 GET /booking/api/availability?from=YYYY-MM-DD&to=YYYY-MM-DD&timezone=America%2FChicago
 ```
 
-The endpoint returns active meeting types and available start/end times only. It does not return attendee
-records and cannot create, cancel, or modify bookings. Keep this endpoint and the widget read-only. Deploy
-PersonalWeb before deploying changes to the public chat Worker so its availability data source is live.
+The assistant calls AWS Bedrock through Spring AI. It defaults to Claude 3.5 Haiku (`PERSONAL_BEDROCK_BOOKING_CHAT_MODEL`) and uses the existing `PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, and `PERSONAL_AWS_REGION` values. There is no chat-specific secret and nothing secret is sent to the browser. The reply lists open start and end times only. It cannot read attendee records or create, cancel, or modify bookings.
+
+The endpoint allows 10 requests per minute per address, rejects messages longer than 1000 characters, and rejects origins other than the public sites (or the host that served the page). HTMX sends the CSRF cookie token via `csrf-utils.js`, and the form also includes the token.
 
 The local `design-system` Maven module packages the shared CSS and JavaScript as a WebJar. Its Maven build installs a pinned Node/npm runtime, runs `npm ci`, applies the Airbnb ESLint configuration, and runs Prettier/Stylelint for CSS before packaging. The Spring application consumes the resulting WebJar through `/webjars/personal-design-system/1.0.0/`.
 

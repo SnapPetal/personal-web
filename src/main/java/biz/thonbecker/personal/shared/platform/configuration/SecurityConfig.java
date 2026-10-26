@@ -51,6 +51,7 @@ public class SecurityConfig {
                                 "/booking/started",
                                 "/booking/types/**",
                                 "/booking/api/availability",
+                                "/booking/chat",
                                 "/booking/book",
                                 "/booking/confirmation/**",
                                 "/css/**",
