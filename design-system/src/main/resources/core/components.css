@@ -27,7 +27,7 @@
     height: 4.5rem;
     border-radius: 50%;
     background-color: var(--app-chip-bg);
-    color: var(--app-brand-blue);
+    color: var(--color-brand);
     font-size: 2.25rem;
 }
 

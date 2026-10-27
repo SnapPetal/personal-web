@@ -19,14 +19,14 @@
                             <span class="badge"
                                   th:classappend="${tournament.status().name() == 'DRAFT' ? ' bg-secondary' :
                                       tournament.status().name() == 'REGISTRATION_OPEN' ? ' bg-success' :
-                                      tournament.status().name() == 'REGISTRATION_CLOSED' ? ' bg-warning text-dark' :
+                                      tournament.status().name() == 'REGISTRATION_CLOSED' ? ' bg-warning text-on-bright' :
                                       tournament.status().name() == 'IN_PROGRESS' ? ' bg-primary' :
                                       tournament.status().name() == 'COMPLETED' ? ' bg-dark' : ' bg-danger'}"
                                   th:text="${tournament.status().name()}">DRAFT</span>
                             <span class="badge bg-secondary" th:text="${tournament.tournamentType().name()}">
                                 SINGLE_ELIMINATION
                             </span>
-                            <span class="badge bg-info text-dark">
+                            <span class="badge bg-info text-on-bright">
                                 <i class="bi bi-people"></i>
                                 <span th:text="${tournament.activeRegistrationsCount()}">0</span> participants
                             </span>

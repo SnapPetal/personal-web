@@ -4,6 +4,38 @@
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A personal America 250 reflection honoring Jesus Christ, religious freedom, conscience, and the First Amendment.">
     <link rel="preload" href="/fonts/noto-sans-latin.woff2?v=dfaa2245c912" as="font" type="font/woff2" crossorigin>
+    <meta name="color-scheme" content="light dark">
+    <style>
+        html {
+            color-scheme: light dark;
+            background-color: #ffffff;
+            color: #212529;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            html {
+                background-color: #212529;
+                color: #f8f9fa;
+            }
+        }
+    </style>
+    <script>
+        (function () {
+            var media = window.matchMedia("(prefers-color-scheme: dark)");
+
+            function applyTheme() {
+                document.documentElement.setAttribute("data-bs-theme", media.matches ? "dark" : "light");
+            }
+
+            applyTheme();
+            if (typeof media.addEventListener === "function") {
+                media.addEventListener("change", applyTheme);
+            }
+            ["htmx:beforeSwap", "htmx:afterSwap", "htmx:afterSettle", "htmx:historyRestore", "htmx:load"].forEach(function (eventName) {
+                document.addEventListener(eventName, applyTheme);
+            });
+        })();
+    </script>
     <link rel="stylesheet" href="/site.css?v=bdcec50a4d2b">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">

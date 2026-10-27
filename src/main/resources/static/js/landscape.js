@@ -693,6 +693,11 @@
     if (tooltip) tooltip.style.display = "none";
   }
 
+  function badgeTextColor(background) {
+    const darkText = new Set(["#fd7e14", "#20c997", "#0dcaf0", "#ffc107"]);
+    return darkText.has(background) ? "#212529" : "#ffffff";
+  }
+
   function getPlantColor(usdaSymbol) {
     const colors = [
       "#198754",
@@ -815,7 +820,9 @@
     entries.forEach(function (entry) {
       const color = getPlantColor(entry.usdaSymbol);
       const icon = typeIcons[entry.type] || typeIcons["default"];
-      html += `<span class="badge" style="background-color: ${color};">
+      html += `<span class="badge" style="background-color: ${color}; color: ${badgeTextColor(
+        color
+      )};">
                 <i class="bi ${icon}"></i> ${escapeHtml(entry.name)} (${
         entry.count
       })
@@ -959,7 +966,7 @@
                 <div class="col">
                     <div class="card h-100 border-${season.color}">
                         <div class="card-header bg-${season.color} ${
-        season.color === "warning" ? "text-dark" : "text-white"
+        season.color === "warning" ? "text-on-bright" : "text-white"
       }">
                             <h6 class="mb-0"><i class="bi ${
                               season.icon

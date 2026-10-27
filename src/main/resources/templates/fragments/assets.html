@@ -1,6 +1,42 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <th:block th:fragment="themeInit">
+        <meta name="color-scheme" content="light dark">
+        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+        <meta name="theme-color" content="#212529" media="(prefers-color-scheme: dark)">
+        <style>
+            html {
+                color-scheme: light dark;
+                background-color: #ffffff;
+                color: #212529;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                html {
+                    background-color: #212529;
+                    color: #f8f9fa;
+                }
+            }
+        </style>
+        <script>
+            (function () {
+                var media = window.matchMedia("(prefers-color-scheme: dark)");
+
+                function applyTheme() {
+                    document.documentElement.setAttribute("data-bs-theme", media.matches ? "dark" : "light");
+                }
+
+                applyTheme();
+                if (typeof media.addEventListener === "function") {
+                    media.addEventListener("change", applyTheme);
+                }
+                ["htmx:beforeSwap", "htmx:afterSwap", "htmx:afterSettle", "htmx:historyRestore", "htmx:load"].forEach(function (eventName) {
+                    document.addEventListener(eventName, applyTheme);
+                });
+            })();
+        </script>
+    </th:block>
     <th:block th:fragment="posthogScripts">
         <script th:if="${@postHogProperties.browserConfigured}" th:inline="javascript">
             window.personalPostHogConfig = {
@@ -45,7 +81,6 @@
         <link rel="icon" type="image/png" sizes="16x16" th:href="@{/favicon-16x16.png}">
         <link rel="apple-touch-icon" sizes="180x180" th:href="@{/apple-touch-icon.png}">
         <link rel="manifest" th:href="@{/site.webmanifest}">
-        <meta name="theme-color" content="#1f3f77">
         <link rel="preload" as="font" crossorigin="anonymous" th:href="@{/css/fonts/noto-sans-latin.woff2}" type="font/woff2">
     </th:block>
 </head>

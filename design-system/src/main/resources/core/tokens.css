@@ -3,7 +3,8 @@
     color-scheme: light;
     --color-brand: #1f3f77;
     --color-accent: #b21f2d;
-    --color-primary: #0d6efd;
+    /* Dark enough for 4.5:1 on both white and the #f8f9fa page surface. */
+    --color-primary: #0d69fa;
     --color-secondary: #6c757d;
     --color-success: #198754;
     --color-danger: #dc3545;
@@ -12,9 +13,22 @@
     --surface-page: #ffffff;
     --surface-card: #ffffff;
     --surface-muted: #f8f9fa;
+    --surface-hover: #e9ecef;
+    --surface-selected: #d1e7dd;
+    --surface-highlight: #f0f9ff;
     --text-primary: #212529;
-    --text-muted: #6c757d;
+    --text-heading: #212529;
+    --text-strong: #000000;
+    --text-secondary: #495057;
+    /* One step darker than Bootstrap's #6c757d so muted text stays above 4.5:1 on #f8f9fa. */
+    --text-muted: #656e76;
+    --text-on-bright: #212529;
+    --text-on-selected: #212529;
     --border-default: #dee2e6;
+    --icon-faint: #dee2e6;
+    --outline-muted: #656e76;
+    --outline-muted-hover: #656e76;
+    --losers-heading: #946800;
 
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -57,6 +71,16 @@
     --icon-font-size: 1.5rem;
     --button-icon-size: 1.2rem;
     --disabled-opacity: 0.6;
+
+    --bs-body-color: var(--text-primary);
+    --bs-body-bg: var(--surface-page);
+    --bs-emphasis-color: var(--text-primary);
+    --bs-heading-color: var(--text-heading);
+    --bs-secondary-color: var(--text-muted);
+    --bs-tertiary-color: var(--text-secondary);
+    --bs-link-color: var(--app-link-color);
+    --bs-link-hover-color: var(--app-link-hover-color);
+    --bs-border-color: var(--border-default);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -65,29 +89,49 @@
         --surface-page: #212529;
         --surface-card: #2b3035;
         --surface-muted: #2b3035;
-        --text-primary: #e9ecef;
-        --text-muted: #adb5bd;
-        --border-default: #373b3e;
+        --surface-hover: #3a4248;
+        --surface-selected: #1e3d2e;
+        --surface-highlight: #1a3148;
+        --text-primary: #f8f9fa;
+        --text-heading: #ffffff;
+        --text-strong: #f8f9fa;
+        --text-secondary: #e9ecef;
+        --text-muted: #ced4da;
+        --text-on-selected: #d1fae5;
+        --border-default: #495057;
+        --icon-faint: #adb5bd;
+        --outline-muted: #ced4da;
+        --outline-muted-hover: #495057;
+        --losers-heading: #f0c674;
         --color-brand: #8bb9fe;
         --color-accent: #ff8a95;
         --color-primary: #8bb9fe;
         --color-success: #75d69c;
         --color-danger: #ff8a95;
         --shadow-color: rgb(0 0 0 / 24%);
-        --app-link-hover-color: #0d6efd;
+        --app-link-hover-color: #e7f1ff;
+        --app-brand-blue: #1f3f77;
         --app-chip-bg: rgb(139 185 254 / 10%);
         --app-chip-border: rgb(139 185 254 / 22%);
         --app-success-soft: rgb(117 214 156 / 15%);
         --app-danger-soft: rgb(255 138 149 / 16%);
-        --bs-body-color: #e9ecef;
+        --bs-body-color: #f8f9fa;
+        --bs-body-color-rgb: 248, 249, 250;
         --bs-body-bg: #212529;
+        --bs-body-bg-rgb: 33, 37, 41;
         --bs-emphasis-color: #ffffff;
         --bs-heading-color: #ffffff;
-        --bs-secondary-color: #adb5bd;
-        --bs-secondary-bg: #2b3035;
+        --bs-secondary-color: #ced4da;
+        --bs-secondary-color-rgb: 206, 212, 218;
+        --bs-tertiary-color: #adb5bd;
+        --bs-secondary-bg: #343a40;
         --bs-tertiary-bg: #2b3035;
-        --bs-border-color: #373b3e;
+        --bs-border-color: #495057;
         --bs-link-color: #8bb9fe;
-        --bs-link-hover-color: #0d6efd;
+        --bs-link-hover-color: #e7f1ff;
+        --bs-card-bg: #2b3035;
+        --bs-card-color: #f8f9fa;
+        --bs-card-border-color: #495057;
+        --bs-card-cap-color: #ffffff;
     }
 }
