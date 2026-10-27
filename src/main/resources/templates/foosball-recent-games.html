@@ -4,6 +4,7 @@
     <th:block th:replace="~{fragments/assets :: posthogScripts}"></th:block>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <th:block th:replace="~{fragments/assets :: themeInit}"></th:block>
     <title>Recent Foosball Games - Thon Becker</title>
 
     <th:block th:replace="~{fragments/assets :: favicons}"></th:block>
@@ -43,12 +44,12 @@
                   <tr th:each="game : ${games}">
                     <td>
                       <div>
-                        <span class="badge bg-light text-dark border">White</span>
+                        <span class="badge badge-team-white">White</span>
                         <span th:text="${game.whiteTeam.player1}"></span>
                         <span th:if="${game.whiteTeam.player2 != null}" th:text="' & ' + ${game.whiteTeam.player2}"></span>
                       </div>
                       <div>
-                        <span class="badge bg-dark">Black</span>
+                        <span class="badge badge-team-black">Black</span>
                         <span th:text="${game.blackTeam.player1}"></span>
                         <span th:if="${game.blackTeam.player2 != null}" th:text="' & ' + ${game.blackTeam.player2}"></span>
                       </div>
@@ -56,8 +57,8 @@
                     <td th:text="${game.playedAt != null ? #temporals.format(game.playedAt.atZone(T(java.time.ZoneId).of('America/Chicago')), 'yyyy-MM-dd HH:mm z') : 'N/A'}"></td>
                       <td>
                           <div th:switch="${game.result}">
-                              <span th:case="${ResultStatus.WHITE_TEAM_WIN}" class="badge bg-light text-dark border">White</span>
-                              <span th:case="${ResultStatus.BLACK_TEAM_WIN}" class="badge bg-dark">Black</span>
+                              <span th:case="${ResultStatus.WHITE_TEAM_WIN}" class="badge badge-team-white">White</span>
+                              <span th:case="${ResultStatus.BLACK_TEAM_WIN}" class="badge badge-team-black">Black</span>
                           </div>
                       </td>
                   </tr>

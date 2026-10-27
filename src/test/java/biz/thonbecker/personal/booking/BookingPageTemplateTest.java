@@ -86,6 +86,11 @@ class BookingPageTemplateTest {
         final var styles = Files.readString(BOOKING_STYLES);
         final var theme = Files.readString(Path.of("src/main/resources/static/css/theme.css"));
 
+        final var assets = Files.readString(Path.of("src/main/resources/templates/fragments/assets.html"));
+        final var themeInitStart = assets.indexOf("th:fragment=\"themeInit\"");
+        final var themeInit = assets.substring(themeInitStart, assets.indexOf("th:fragment=\"posthogScripts\""));
+        final var homepage = Files.readString(Path.of("static-site/index.html"));
+
         assertFalse(template.contains("theme-toggle.js"));
         assertFalse(navigation.contains("themeToggle"));
         assertFalse(navigation.contains("booking-theme-toggle"));
@@ -93,6 +98,15 @@ class BookingPageTemplateTest {
         assertTrue(styles.contains("@media (prefers-color-scheme: dark)"));
         assertTrue(styles.contains("color: #ffffff;"));
         assertTrue(theme.contains("@media (prefers-color-scheme: dark)"));
+        assertTrue(template.indexOf("fragments/assets :: themeInit")
+                < template.indexOf("fragments/assets :: bootstrapCss"));
+        assertTrue(themeInit.contains("name=\"color-scheme\" content=\"light dark\""));
+        assertTrue(themeInit.contains("data-bs-theme"));
+        assertTrue(themeInit.contains("htmx:afterSwap"));
+        assertTrue(themeInit.contains("htmx:historyRestore"));
+        assertFalse(themeInit.contains("DOMContentLoaded"));
+        assertFalse(themeInit.contains("localStorage"));
+        assertTrue(homepage.indexOf("name=\"color-scheme\"") < homepage.indexOf("rel=\"stylesheet\""));
     }
 
     @Test

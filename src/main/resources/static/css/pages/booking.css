@@ -151,9 +151,17 @@
 }
 
 @media (prefers-color-scheme: dark) {
-    .booking-page .alert-info {
-        background-color: var(--app-chip-bg);
+    .booking-page .alert-info,
+    .booking-page .chat-reply {
+        background-color: var(--app-surface-bg);
         color: var(--app-body-color);
+        border-color: var(--app-border-color);
+    }
+
+    .booking-page .chat-reply .btn {
+        color: var(--app-link-color);
+        border-color: var(--app-link-color);
+        background-color: transparent;
     }
 
     .booking-page .page-title,
