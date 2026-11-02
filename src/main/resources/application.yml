@@ -164,7 +164,7 @@ landscape:
 # PERSONAL_BEDROCK_BOOKING_CHAT_MODEL overrides the cost-conscious default.
 booking:
   chat:
-    model: ${PERSONAL_BEDROCK_BOOKING_CHAT_MODEL:us.anthropic.claude-3-5-haiku-20241022-v1:0}
+    model: ${PERSONAL_BEDROCK_BOOKING_CHAT_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
     temperature: 0.2
     max-tokens: 1024
     max-message-length: 1000
@@ -179,7 +179,7 @@ booking:
 # Trivia Configuration
 trivia:
   ai:
-    model: ${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-3-5-haiku-20241022-v1:0}
+    model: ${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
 
 # Notification Configuration (email only)
 notification:

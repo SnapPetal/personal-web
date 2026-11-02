@@ -3,7 +3,7 @@
     color-scheme: light;
     --color-brand: #1f3f77;
     --color-accent: #b21f2d;
-    --color-primary: #0d6efd;
+    --color-primary: #0d69fa;
     --color-accent-soft: rgb(178 31 45 / 30%);
     --text-on-brand: #ffffff;
     --contact-text: #d6e4ff;
@@ -11,7 +11,8 @@
     --surface-card: #ffffff;
     --surface-muted: #f8f9fa;
     --text-primary: #212529;
-    --text-muted: #6c757d;
+    --text-heading: #212529;
+    --text-muted: #656e76;
     --border-default: #dee2e6;
     --shadow-color: rgb(33 37 41 / 12%);
     --app-body-bg: var(--surface-page);
@@ -42,8 +43,9 @@
         --surface-page: #212529;
         --surface-card: #2b3035;
         --surface-muted: #2b3035;
-        --text-primary: #e9ecef;
-        --text-muted: #adb5bd;
+        --text-primary: #f8f9fa;
+        --text-heading: #ffffff;
+        --text-muted: #ced4da;
         --border-default: #373b3e;
         --color-brand: #8bb9fe;
         --color-primary: #8bb9fe;

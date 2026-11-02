@@ -14,7 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class BookingChatProperties {
 
     /** Bedrock inference profile or model id. Override with PERSONAL_BEDROCK_BOOKING_CHAT_MODEL. */
-    private String model = "us.anthropic.claude-3-5-haiku-20241022-v1:0";
+    private String model = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
 
     private double temperature = 0.2;
 

@@ -49,7 +49,7 @@
                 <tr th:each="stat : ${playerStats}" th:attr="data-player-name=${stat.playerName}">
                     <td><strong class="foosball-player-name" th:text="${stat.playerName}"></strong></td>
                     <td>
-                        <span class="badge bg-warning text-dark" th:text="${stat.rating != null ? stat.rating : 1000}"></span>
+                        <span class="badge bg-warning text-on-bright" th:text="${stat.rating != null ? stat.rating : 1000}"></span>
                     </td>
                     <td>
                         <span class="badge bg-secondary" th:text="${stat.peakRating != null ? stat.peakRating : '-'}"></span>
@@ -64,7 +64,7 @@
                         <span th:if="${stat.currentStreak == null or stat.currentStreak == 0}"
                               class="text-secondary">-</span>
                     </td>
-                    <td><span class="badge bg-info text-dark" th:text="${stat.totalGames}"></span></td>
+                    <td><span class="badge bg-info text-on-bright" th:text="${stat.totalGames}"></span></td>
                     <td><span class="badge bg-success" th:text="${stat.wins}"></span></td>
                     <td>
                         <span th:if="${stat.totalGames > 0}"

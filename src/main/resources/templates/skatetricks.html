@@ -4,6 +4,7 @@
     <th:block th:replace="~{fragments/assets :: posthogScripts}"></th:block>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <th:block th:replace="~{fragments/assets :: themeInit}"></th:block>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Skateboard Trick Analyzer</title>
@@ -227,7 +228,7 @@
                                 </template>
                                 <template x-if="result.verifyStatus === 'corrected'">
                                     <div class="mt-3 pt-3 border-top">
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-pencil me-1"></i>Corrected to <span x-text="result.correctedLabel"></span></span>
+                                        <span class="badge bg-warning text-on-bright"><i class="bi bi-pencil me-1"></i>Corrected to <span x-text="result.correctedLabel"></span></span>
                                     </div>
                                 </template>
                                 <template x-if="result.verifyStatus === 'error'">

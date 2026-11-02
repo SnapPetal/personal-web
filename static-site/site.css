@@ -127,7 +127,9 @@ footer .brand {
 }
 @media (prefers-color-scheme: dark) {
     footer .brand,
-    h1 {
+    h1,
+    h2,
+    h3 {
         color: #ffffff;
     }
 }

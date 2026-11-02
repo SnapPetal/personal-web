@@ -2,6 +2,7 @@
 
 .skatetricks-page {
     background-color: #f8f9fa;
+    color: var(--app-body-color);
     min-height: 100vh;
 }
 
@@ -12,7 +13,7 @@
 
 .skatetricks-page .card-header {
     background-color: transparent;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--app-border-color);
 }
 
 .skatetricks-page .progress {
@@ -28,7 +29,7 @@
 
 .skatetricks-page video {
     object-fit: cover;
-    border: 2px solid #dee2e6;
+    border: 2px solid var(--app-border-color);
 }
 
 .skatetricks-page .skatetricks-live-video {
@@ -59,5 +60,12 @@
 }
 
 #trickHistory .list-group-item:first-child {
-    background-color: #f0f9ff;
+    background-color: var(--surface-highlight);
+    color: var(--app-body-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    .skatetricks-page {
+        background-color: var(--app-body-bg);
+    }
 }

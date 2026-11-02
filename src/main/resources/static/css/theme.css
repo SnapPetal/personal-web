@@ -106,51 +106,12 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-    .navbar {
-        background-color: var(--app-section-bg) !important;
-        border-color: var(--app-border-color);
-    }
-
     .navbar-light .navbar-brand,
     .navbar-brand,
     .site-header .brand,
     h1,
     .page-title {
         color: #ffffff;
-    }
-
-    .navbar-toggler-icon {
-        filter: brightness(0) invert(1);
-    }
-
-    .navbar-toggler {
-        border-color: var(--app-border-color);
-    }
-
-    .navbar-collapse {
-        background-color: var(--app-section-bg);
-    }
-
-    .card,
-    .section-bg {
-        background-color: var(--app-surface-bg);
-        border-color: var(--app-border-color);
-    }
-
-    .bg-light {
-        background-color: var(--app-section-bg) !important;
-    }
-
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-        color: var(--app-body-color);
-    }
-
-    .text-muted {
-        color: var(--app-muted-color) !important;
     }
 
     a:not(.btn):not(.brand):not(.navbar-brand):not(.site-nav-link),
@@ -163,79 +124,9 @@ body {
         color: var(--app-link-hover-color);
     }
 
-    .social-icon {
-        color: var(--app-body-color);
-    }
-
-    .social-icon:hover {
-        color: var(--color-primary);
-    }
-
-    .btn-outline-dark {
-        color: var(--app-body-color);
-        border-color: var(--app-body-color);
-    }
-
-    .btn-outline-dark:hover {
-        background-color: var(--app-body-color);
-        color: var(--app-body-bg);
-    }
-
-    .form-control {
-        background-color: var(--app-surface-bg);
-        border-color: var(--app-border-color);
-        color: var(--app-body-color);
-    }
-
-    .form-control:focus {
-        background-color: var(--app-surface-bg);
-        color: var(--app-body-color);
-    }
-
+    .verse-text,
+    .verse-translation,
     #bible-verse {
         color: var(--app-body-color);
-    }
-
-    .bible-verse-section .card {
-        background-color: var(--app-section-bg);
-    }
-
-    .verse-text,
-    .verse-translation {
-        color: var(--app-body-color);
-    }
-
-    footer {
-        background-color: var(--app-section-bg);
-        color: var(--app-body-color);
-        border-top: 1px solid var(--app-border-color);
-    }
-
-    table {
-        color: var(--app-body-color);
-    }
-
-    .table {
-        --bs-table-color: var(--app-body-color);
-        --bs-table-bg: transparent;
-        --bs-table-border-color: var(--app-border-color);
-    }
-
-    .list-group-item {
-        background-color: var(--app-section-bg);
-        color: var(--app-body-color);
-        border-color: var(--app-border-color);
-    }
-
-    label {
-        color: var(--app-body-color);
-    }
-
-    #about,
-    #about p,
-    #about div,
-    .about-content p,
-    .about-content div {
-        color: var(--app-body-color) !important;
     }
 }

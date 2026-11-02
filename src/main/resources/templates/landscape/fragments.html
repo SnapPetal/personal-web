@@ -20,7 +20,7 @@
                         <h6 class="mb-1" th:text="${plant.commonName()} ?: ${plant.scientificName()}"></h6>
                         <p class="mb-1 small text-muted" th:text="${plant.scientificName()}"></p>
                         <div class="d-flex gap-2">
-                            <span class="badge bg-light text-dark" th:if="${plant.category()}" th:text="${plant.category()}"></span>
+                            <span class="badge bg-light" th:if="${plant.category()}" th:text="${plant.category()}"></span>
                             <span class="badge bg-success" th:if="${plant.nativeStatus()}" th:text="${plant.nativeStatus()}"></span>
                         </div>
                     </div>
@@ -65,7 +65,7 @@
                         <p class="card-text small text-muted mb-2" th:text="${rec.scientificName()}"></p>
                         <p class="card-text small" th:if="${rec.recommendationReason()}" th:text="${rec.recommendationReason()}"></p>
                         <div class="d-flex gap-2 mb-2">
-                            <span class="badge bg-warning text-dark"
+                            <span class="badge bg-warning text-on-bright"
                                   th:if="${rec.lightRequirement()}"
                                   th:text="${rec.lightRequirement().toString().replace('_', ' ')}"></span>
                             <span class="badge bg-info"

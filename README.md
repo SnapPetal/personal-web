@@ -56,7 +56,7 @@ The booking page includes a public, read-only availability assistant. The form p
 GET /booking/api/availability?from=YYYY-MM-DD&to=YYYY-MM-DD&timezone=America%2FChicago
 ```
 
-The assistant calls AWS Bedrock through Spring AI. It defaults to Claude 3.5 Haiku (`PERSONAL_BEDROCK_BOOKING_CHAT_MODEL`) and uses the existing `PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, and `PERSONAL_AWS_REGION` values. There is no chat-specific secret and nothing secret is sent to the browser. The reply lists open start and end times only. It cannot read attendee records or create, cancel, or modify bookings.
+The assistant calls AWS Bedrock through Spring AI. It defaults to Claude Haiku 4.5 (`PERSONAL_BEDROCK_BOOKING_CHAT_MODEL`) and uses the existing `PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, and `PERSONAL_AWS_REGION` values. There is no chat-specific secret and nothing secret is sent to the browser. The reply lists open start and end times only. It cannot read attendee records or create, cancel, or modify bookings.
 
 The endpoint allows 10 requests per minute per address, rejects messages longer than 1000 characters, and rejects origins other than the public sites (or the host that served the page). HTMX sends the CSRF cookie token via `csrf-utils.js`, and the form also includes the token.
 

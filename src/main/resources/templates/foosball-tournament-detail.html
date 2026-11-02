@@ -4,6 +4,7 @@
     <th:block th:replace="~{fragments/assets :: posthogScripts}"></th:block>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <th:block th:replace="~{fragments/assets :: themeInit}"></th:block>
     <title th:text="${tournament.name} + ' - Tournaments - Foosball'">Tournament Detail</title>
 
     <th:block th:replace="~{fragments/assets :: favicons}"></th:block>
@@ -102,7 +103,7 @@
                         <div class="card-body p-0">
                             <div class="bracket-container" id="bracket-container">
                                 <div th:if="${tournament.status.name() == 'DRAFT' || tournament.status.name() == 'REGISTRATION_OPEN' || tournament.status.name() == 'REGISTRATION_CLOSED'}"
-                                     class="text-center py-5 text-white">
+                                     class="text-center py-5">
                                     <i class="bi bi-hourglass-split foosball-loading-icon"></i>
                                     <p class="mt-3">Bracket will be generated when the tournament starts</p>
                                 </div>
@@ -127,7 +128,7 @@
                             </button>
                         </div>
                         <div class="card-body p-0">
-                            <div th:if="${registrations.isEmpty()}" class="p-3 text-center text-white">
+                            <div th:if="${registrations.isEmpty()}" class="p-3 text-center text-muted">
                                 No participants yet
                             </div>
                             <div th:each="reg : ${registrations}" class="registration-item p-3 border-bottom">
