@@ -4,7 +4,7 @@ Pushes to `main` run `.github/workflows/deploy.yml`. The workflow uses GitHub OI
 
 Role: `arn:aws:iam::664759038511:role/GitHubActionsPersonalWebProdDeploy` in `us-east-1`.
 
-Both AWS jobs select the `production` GitHub environment, so the OIDC subject is `repo:SnapPetal/personal-web:environment:production`. The role trust in `personal-site-stack` must allow that subject. If it instead trusts `repo:SnapPetal/personal-web:ref:refs/heads/main`, remove `environment: production` from the jobs.
+Both AWS jobs select the `production` GitHub environment, so the OIDC subject is `repo:SnapPetal/personal-web:environment:production`. As of 2026-11-14, `GitHubActionsPersonalWebProdDeploy` lives in the `personal-web-entry-stack` CloudFormation stack, managed by the github-deploy-access CDK app in SnapPetal/home-web (`.infrastructure/lib/github-deploy-access/`). Changes to the role's trust or permissions go there. That trust must allow this subject.
 
 ## Static site
 
