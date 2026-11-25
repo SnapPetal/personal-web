@@ -33,6 +33,14 @@ Maven already sets `java.version` and `maven.compiler.release` to 25. The job co
 
 The jar still contains the Godot web export at `/tankgame/` so `https://app.thonbecker.biz/tankgame` keeps working.
 
+### Check the running application version
+
+The running Spring Boot application exposes `https://app.thonbecker.biz/actuator/info`.
+Its `git.commit.id.full` and `git.commit.id.abbrev` values identify the commit packaged in
+the jar currently running on Lightsail. The `build.version` value remains the Maven artifact
+version and is not the deployment identifier. This endpoint reports the running jar, unlike
+the latest S3 release object, which may be waiting for the instance's next pull.
+
 ## Domain split
 
 - `thonbecker.biz` and `www.thonbecker.biz` serve the CloudFront site from `personal-site-thonbecker`.

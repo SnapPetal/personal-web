@@ -2,7 +2,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,modulith
+        include: health,info,modulith
+  info:
+    git:
+      mode: full
 
 server:
   forward-headers-strategy: framework
