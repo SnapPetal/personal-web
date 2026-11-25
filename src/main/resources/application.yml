@@ -58,6 +58,11 @@ spring:
 
   # Spring AI Bedrock Configuration
   ai:
+    session:
+      time-to-live: 14d
+      repository:
+        jdbc:
+          initialize-schema: never
     bedrock:
       converse:
         chat:

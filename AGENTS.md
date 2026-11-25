@@ -222,11 +222,41 @@ Always run `mvn spotless:apply` before committing Java, JS, or Markdown changes.
 
 The application uses AWS Bedrock for generative AI, embeddings, and image generation.
 
+**Short-term session memory** uses Spring AI's JDBC session repository. Liquibase owns the
+`AI_SESSION`, `AI_SESSION_INDEX`, and `AI_SESSION_EVENT` tables; automatic Spring AI schema
+initialization is disabled. Sessions expire after 14 days and a ShedLock-protected daily job
+deletes expired sessions and their events. Text-based conversational calls must provide an
+explicit, user-scoped session ID via `SessionAdvisors.session(sessionId)`; do not share one
+session across users. Existing one-shot and multimodal image-analysis calls do not use memory,
+so uploaded image data is not persisted as conversation history.
+
+To enable memory on a text-based conversation, add `SessionAdvisors` to the client and pass
+an explicit session ID with each call:
+
+```java
+ChatClient chatClient = ChatClient.builder(chatModel)
+    .defaultAdvisors(SessionAdvisors.builder(sessionService)
+        .memory(memory -> memory.eventFilter(EventFilter.lastN(20)))
+        .build())
+    .build();
+
+String answer = chatClient.prompt()
+    .user(userMessage)
+    .advisors(SessionAdvisors.session("user:" + userId + ":conversation:" + conversationId))
+    .call()
+    .content();
+```
+
 **Current Spring AI configuration** (`application.yml`):
 
 ```yaml
 spring:
   ai:
+    session:
+      time-to-live: 14d
+      repository:
+        jdbc:
+          initialize-schema: never
     bedrock:
       converse:
         chat:
