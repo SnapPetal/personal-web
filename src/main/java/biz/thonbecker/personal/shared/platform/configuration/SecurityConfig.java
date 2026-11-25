@@ -39,7 +39,8 @@ public class SecurityConfig {
             HttpSecurity http, final List<OncePerRequestFilter> authenticationFilters) throws Exception {
         authenticationFilters.forEach(
                 filter -> http.addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class));
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/landscape", "/landscape/**", "/trivia", "/trivia/**")
+        http.authorizeHttpRequests(auth -> auth.requestMatchers(
+                                "/landscape", "/landscape/**", "/trivia", "/trivia/**", "/budget", "/budget/**")
                         .authenticated()
                         // Public pages
                         .requestMatchers(
@@ -70,13 +71,17 @@ public class SecurityConfig {
                         oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .exceptionHandling(exceptionHandling -> exceptionHandling.defaultAuthenticationEntryPointFor(
                         (request, response, exception) -> {
-                            final var redirect = request.getRequestURI().equals("/trivia") ? "/trivia" : "/landscape";
+                            final var redirect = request.getRequestURI().startsWith("/trivia")
+                                    ? "/trivia"
+                                    : request.getRequestURI().startsWith("/budget") ? "/budget" : "/landscape";
                             response.sendRedirect(
                                     "/auth/login?redirect=" + URLEncoder.encode(redirect, StandardCharsets.UTF_8));
                         },
                         new OrRequestMatcher(
                                 request -> request.getRequestURI().equals("/trivia"),
                                 request -> request.getRequestURI().startsWith("/trivia/"),
+                                request -> request.getRequestURI().equals("/budget"),
+                                request -> request.getRequestURI().startsWith("/budget/"),
                                 request -> request.getRequestURI().equals("/landscape"),
                                 request -> request.getRequestURI().startsWith("/landscape/"))))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

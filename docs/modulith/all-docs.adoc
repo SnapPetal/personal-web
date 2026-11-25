@@ -1,6 +1,10 @@
 == PersonalApplication
 plantuml::components.puml[,,format=svg]
 
+== Budget Helper
+plantuml::module-budget.puml[,,format=svg]
+include::module-budget.adoc[]
+
 == Content Services
 plantuml::module-content.puml[,,format=svg]
 include::module-content.adoc[]

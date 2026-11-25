@@ -2,6 +2,10 @@
 
 This report is generated from Spring Modulith and ArchUnit metadata. It lists concrete classes that connect one application module to another.
 
+== Budget Helper
+
+No direct cross-module class dependencies.
+
 == Content Services
 
 No direct cross-module class dependencies.

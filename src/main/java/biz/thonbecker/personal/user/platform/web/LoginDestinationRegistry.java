@@ -6,8 +6,10 @@ import java.util.Optional;
 
 final class LoginDestinationRegistry {
 
-    private static final List<LoginDestination> DESTINATIONS =
-            List.of(new LoginDestination("/trivia", "Trivia"), new LoginDestination("/landscape", "Landscape"));
+    private static final List<LoginDestination> DESTINATIONS = List.of(
+            new LoginDestination("/trivia", "Trivia"),
+            new LoginDestination("/landscape", "Landscape"),
+            new LoginDestination("/budget", "Budget Helper"));
 
     private LoginDestinationRegistry() {}
 

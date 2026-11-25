@@ -87,6 +87,7 @@ Each module follows this internal package convention:
 | `booking`      | `BookingService`     | Appointment scheduling with auto-availability, event publishing        |
 | `tankgame`     | _(self-contained)_   | Godot tank game prototype with player progression                      |
 | `user`         | `UserService`        | User management                                                        |
+| `budget`       | _(self-contained)_   | Private zero-based budgeting assistant chat                            |
 | `calendar`     | _(event-driven)_     | CalDAV integration, calendar sync for bookings                         |
 | `notification` | _(event-driven)_     | Email notifications via AWS SES (zero coupling to other modules)       |
 | `content`      | _(self-contained)_   | Bible verse, Dad jokes (AWS Polly TTS + S3), experience counter        |
@@ -246,6 +247,16 @@ String answer = chatClient.prompt()
     .call()
     .content();
 ```
+
+Budget Helper accepts PDF, CSV, and UTF-8 TXT attachments (up to 3 files, 5 MB each). Extracted
+document text is included with the authenticated user's chat request and sent to AWS Bedrock; it is
+not written to application persistence or Spring AI session memory. Keep uploaded documents bounded,
+treat their contents as untrusted prompt data, and do not add them to persistent chat history without
+explicitly revisiting the privacy implications.
+Budget Helper stores plain-text chat messages in Spring AI session memory for 14 days, scoped with
+`user:{authenticatedUserId}:budget:{conversationUuid}`. File contents are sent in a per-request system
+prompt and excluded from session events. The browser conversation UUID is not an authorization token;
+always derive the owning user from Spring Security.
 
 **Current Spring AI configuration** (`application.yml`):
 
