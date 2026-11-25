@@ -50,7 +50,7 @@ document.addEventListener("alpine:init", () => {
           this.error = result.error || "Could not load this conversation.";
           return;
         }
-        this.messages = result.messages;
+        this.messages = this.normalizeMessages(result.messages);
         this.scrollToLatest();
       } catch {
         this.error =
@@ -102,26 +102,87 @@ document.addEventListener("alpine:init", () => {
 
         const result = await response.json();
         if (!response.ok || result.error) {
+          this.messages = this.normalizeMessages([
+            ...this.messages,
+            { role: "user", content: question },
+          ]);
           this.error =
             result.error ||
             "Budget Helper is temporarily unavailable. Please try again.";
+          this.scrollToLatest();
           return;
         }
 
-        this.messages.push(
+        this.messages = this.normalizeMessages([
+          ...this.messages,
           { role: "user", content: question },
-          { role: "assistant", content: result.answer }
-        );
+          { role: "assistant", content: result.answer },
+        ]);
         this.message = "";
         this.files = [];
         document.getElementById("budget-files").value = "";
         this.scrollToLatest();
       } catch {
+        this.messages = this.normalizeMessages([
+          ...this.messages,
+          { role: "user", content: question },
+        ]);
         this.error =
           "Could not reach Budget Helper. Check your connection and try again.";
+        this.scrollToLatest();
       } finally {
         this.loading = false;
       }
+    },
+
+    normalizeMessages(messages) {
+      const normalized = [];
+      let unansweredQuestion = false;
+
+      messages.forEach((entry) => {
+        const previousMessage = normalized.at(-1);
+        const messageBeforeNotice = normalized.at(-2);
+        if (
+          entry.role === "user" &&
+          previousMessage?.deliveryStatus === "unanswered" &&
+          messageBeforeNotice?.role === "user" &&
+          messageBeforeNotice.content === entry.content
+        ) {
+          normalized.pop();
+          unansweredQuestion = true;
+          return;
+        }
+        if (
+          entry.role === "user" &&
+          unansweredQuestion &&
+          previousMessage?.role === "user" &&
+          previousMessage.content === entry.content
+        ) {
+          return;
+        }
+        if (entry.role === "user" && unansweredQuestion) {
+          normalized.push(this.unansweredNotice());
+        }
+        normalized.push(entry);
+        unansweredQuestion = entry.role === "user";
+        if (entry.role === "assistant") {
+          unansweredQuestion = false;
+        }
+      });
+
+      if (unansweredQuestion) {
+        normalized.push(this.unansweredNotice());
+      }
+      return normalized;
+    },
+
+    unansweredNotice() {
+      return {
+        role: "assistant",
+        deliveryStatus: "unanswered",
+        content:
+          "I didn't get a reply to this question. You can ask it again below.",
+      };
     },
 
     async newConversation() {

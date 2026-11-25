@@ -59,10 +59,15 @@
                     </div>
                     <template x-for="(message, index) in messages" :key="index">
                         <article class="budget-chat-message"
-                                 :class="message.role === 'user' ? 'budget-chat-message-user' : 'budget-chat-message-assistant'">
+                                 :class="[
+                                     message.role === 'user' ? 'budget-chat-message-user' : 'budget-chat-message-assistant',
+                                     message.deliveryStatus ? 'budget-chat-message-unanswered' : ''
+                                 ]">
                             <p class="budget-chat-message-label"
-                               x-text="message.role === 'user' ? 'You' : 'Budget Helper'"></p>
-                            <div class="chat-markdown" x-html="renderMarkdown(message.content)"></div>
+                               x-text="message.deliveryStatus ? 'No reply received' : (message.role === 'user' ? 'You' : 'Budget Helper')"></p>
+                            <p class="mb-0" x-show="message.deliveryStatus" x-text="message.content"></p>
+                            <div class="chat-markdown" x-show="!message.deliveryStatus"
+                                 x-html="renderMarkdown(message.content)"></div>
                         </article>
                     </template>
                     <div class="budget-chat-message budget-chat-message-assistant" role="status" x-show="loading">

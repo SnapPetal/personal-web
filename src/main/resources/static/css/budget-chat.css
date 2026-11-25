@@ -46,6 +46,10 @@
   background: var(--bs-tertiary-bg);
 }
 
+.budget-chat-message-unanswered {
+  border-style: dashed;
+}
+
 .budget-chat-message-label {
   margin-bottom: 0.35rem;
   color: var(--bs-secondary-color);

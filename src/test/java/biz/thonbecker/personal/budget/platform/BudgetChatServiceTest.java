@@ -97,6 +97,8 @@ class BudgetChatServiceTest {
         verify(prompt).system(systemPromptCaptor.capture());
         verify(prompt).user(userPromptCaptor.capture());
         assertThat(systemPromptCaptor.getValue()).contains("Income,4000", "Rent,1200");
+        assertThat(systemPromptCaptor.getValue())
+                .contains("transaction history rather than a planned budget", "monthly take-home income");
         assertThat(userPromptCaptor.getValue()).isEqualTo("How should I plan this month?");
         verify(advisorSpec).param(SessionMemoryAdvisor.SESSION_ID_CONTEXT_KEY, "user:user-42:budget:" + conversationId);
     }
