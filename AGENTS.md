@@ -273,7 +273,7 @@ spring:
         chat:
           enabled: true
           options:
-            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-3-5-sonnet-20241022-v2:0}
+            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
             max-tokens: 4096
             temperature: 0.3
       titan:
