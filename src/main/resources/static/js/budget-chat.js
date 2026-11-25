@@ -7,6 +7,12 @@ document.addEventListener("alpine:init", () => {
     loading: false,
     error: "",
 
+    renderMarkdown(content) {
+      return DOMPurify.sanitize(
+        marked.parse(content, { breaks: true, gfm: true })
+      );
+    },
+
     async init() {
       const root = document.getElementById("budget-chat");
       const initialId = root?.dataset.initialConversationId;

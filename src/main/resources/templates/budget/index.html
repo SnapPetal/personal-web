@@ -10,6 +10,9 @@
     <title>Budget Helper</title>
     <th:block th:replace="~{fragments/assets :: favicons}"></th:block>
     <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/css/budget-chat.css}">
+    <script defer th:src="@{/webjars/marked/marked.min.js}"></script>
+    <script defer th:src="@{/webjars/dompurify/dist/purify.min.js}"></script>
     <script defer th:src="@{/js/budget-chat.js}"></script>
     <th:block th:replace="~{fragments/assets :: alpineScripts}"></th:block>
 </head>
@@ -35,19 +38,37 @@
         </p>
         <div class="card shadow-sm mt-4 mb-4">
             <div class="card-body p-4">
-                <h2 class="h4">Budget Helper chat</h2>
-                <div class="border rounded p-3 mb-3 bg-body" id="budget-chat-messages"
-                     style="min-height: 12rem; max-height: 30rem; overflow-y: auto;" aria-live="polite">
-                    <p class="text-body-secondary mb-0" x-show="messages.length === 0">
+                <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                    <div>
+                        <h2 class="h4 mb-1">Budget Helper chat</h2>
+                        <p class="small text-body-secondary mb-0">Your private budgeting conversation</p>
+                    </div>
+                    <span class="badge rounded-pill text-bg-success-subtle border border-success-subtle">
+                        <span class="budget-status-dot" aria-hidden="true"></span> Private
+                    </span>
+                </div>
+                <div class="budget-chat-transcript border rounded-3 p-3 p-md-4 mb-4 bg-body"
+                     id="budget-chat-messages" aria-label="Conversation" aria-live="polite">
+                    <div class="budget-chat-empty text-center text-body-secondary my-auto px-3"
+                         x-show="messages.length === 0">
+                        <span class="budget-chat-empty-icon" aria-hidden="true">✦</span>
+                        <p class="fw-semibold text-body mb-1">A clearer plan starts with a question.</p>
+                        <p class="small mb-0">
                         Try asking how to make a zero-based plan or attach a budget export and ask for help understanding it.
-                    </p>
+                        </p>
+                    </div>
                     <template x-for="(message, index) in messages" :key="index">
-                        <article class="mb-4">
-                            <p class="fw-semibold mb-1" x-text="message.role === 'user' ? 'You' : 'Budget Helper'"></p>
-                            <p class="mb-0" style="white-space: pre-wrap;" x-text="message.content"></p>
+                        <article class="budget-chat-message"
+                                 :class="message.role === 'user' ? 'budget-chat-message-user' : 'budget-chat-message-assistant'">
+                            <p class="budget-chat-message-label"
+                               x-text="message.role === 'user' ? 'You' : 'Budget Helper'"></p>
+                            <div class="chat-markdown" x-html="renderMarkdown(message.content)"></div>
                         </article>
                     </template>
-                    <p class="text-body-secondary mb-0" role="status" x-show="loading">Reviewing your question…</p>
+                    <div class="budget-chat-message budget-chat-message-assistant" role="status" x-show="loading">
+                        <p class="budget-chat-message-label">Budget Helper</p>
+                        <p class="mb-0"><span class="budget-chat-thinking"></span> Reviewing your question…</p>
+                    </div>
                 </div>
                 <p class="alert alert-danger py-2" role="alert" x-cloak x-show="error" x-text="error"></p>
                 <form @submit.prevent="send">
