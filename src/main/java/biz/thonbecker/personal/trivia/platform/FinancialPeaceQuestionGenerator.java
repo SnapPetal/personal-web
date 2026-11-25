@@ -28,8 +28,7 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
     @Autowired(required = false)
     public FinancialPeaceQuestionGenerator(
             @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
-            @Value("${trivia.ai.model:${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}}")
-                    String model) {
+            @Value("${trivia.ai.model:${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-haiku-5-5}}") String model) {
         this.chatClient = chatClientBuilder != null ? chatClientBuilder.build() : null;
         this.model = model;
     }
@@ -45,10 +44,7 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
 
             final var responses = chatClient
                     .prompt()
-                    .options(BedrockChatOptions.builder()
-                            .model(model)
-                            .maxTokens(2048)
-                            .temperature(0.3))
+                    .options(BedrockChatOptions.builder().model(model).maxTokens(2048))
                     .user(u -> u.text("""
                             You are a financial literacy expert specializing in Dave Ramsey's Financial Peace principles.
                             Generate {count} multiple-choice trivia questions about Dave Ramsey's Financial Peace teachings.

@@ -71,9 +71,8 @@ spring:
         chat:
           enabled: true
           options:
-            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
+            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-haiku-5-5}
             max-tokens: 4096
-            temperature: 0.3
       titan:
         embedding:
           model: amazon.titan-embed-text-v2:0
@@ -166,14 +165,13 @@ landscape:
     cdn-domain: https://cdn.thonbecker.com
     folder-prefix: landscape-plans/
   image-generation:
-    model: ${PERSONAL_BEDROCK_IMAGE_MODEL:amazon.nova-canvas-v1:0}
+    model: ${PERSONAL_BEDROCK_IMAGE_MODEL:us.stability.stable-image-control-structure-v1:0}
 
 # Public booking assistant. Uses the same AWS credentials as the other Bedrock features.
-# PERSONAL_BEDROCK_BOOKING_CHAT_MODEL overrides the cost-conscious default.
+# PERSONAL_BEDROCK_BOOKING_CHAT_MODEL overrides the low-latency default.
 booking:
   chat:
-    model: ${PERSONAL_BEDROCK_BOOKING_CHAT_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
-    temperature: 0.2
+    model: ${PERSONAL_BEDROCK_BOOKING_CHAT_MODEL:us.anthropic.claude-haiku-5-5}
     max-tokens: 1024
     max-message-length: 1000
     max-timezone-length: 100
@@ -187,7 +185,7 @@ booking:
 # Trivia Configuration
 trivia:
   ai:
-    model: ${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
+    model: ${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-haiku-5-5}
 
 # Notification Configuration (email only)
 notification:

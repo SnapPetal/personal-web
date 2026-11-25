@@ -96,7 +96,6 @@ public class BookingChatService {
                 BedrockChatOptions.builder()
                         .model(properties.getModel())
                         .maxTokens(properties.getMaxTokens())
-                        .temperature(properties.getTemperature())
                         .build());
         final var response = chatModel.call(prompt);
         final var result = Objects.isNull(response) ? null : response.getResult();

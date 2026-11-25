@@ -142,8 +142,8 @@ Other event listeners (logging in notification module) use `@EventListener` sinc
 - **Caching**: Caffeine (`CacheConfig`). Used for Bible verse, Dad joke responses, plant data, plant images (24-hour TTL).
 - **Retry**: Spring Retry (`RetryConfig`) for fault-tolerant external API calls.
 - **Scheduled jobs**: ShedLock (`ShedlockConfig`) prevents duplicate execution in distributed environments.
-- **AI**: Spring AI with AWS Bedrock (Claude Converse for chat and vision, Titan Text Embeddings v2 for S3 Vectors storage). Amazon Nova Canvas for landscape image generation via AWS SDK `BedrockRuntimeClient`. DJL (Deep Java Library) with PyTorch remains local for YOLO pose estimation in skatetricks.
-- **Image Generation**: `LandscapeImageGenerationService` uses AWS Bedrock Nova Canvas (`amazon.nova-canvas-v1:0`) with CANNY_EDGE conditioning for seasonal landscape images. It returns base64 image data for the existing seasonal preview response contract.
+- **AI**: Spring AI with AWS Bedrock Claude Haiku 5.5 for chat and vision, Titan Text Embeddings v2 for S3 Vectors storage, and Stability AI Stable Image Control Structure for seasonal landscape image generation. DJL (Deep Java Library) with PyTorch remains local for YOLO pose estimation in skatetricks.
+- **Image Generation**: `LandscapeImageGenerationService` uses AWS Bedrock Stable Image Control Structure (`us.stability.stable-image-control-structure-v1:0`) with structural image conditioning for seasonal landscape images. It returns base64 image data for the existing seasonal preview response contract.
 - **WebSockets**: STOMP over SockJS for trivia and skatetricks browser features; the tank game uses a Godot HTML5 client with a raw WebSocket endpoint. Skatetricks video conversion uses WebSocket for progress updates, but analysis uses HTTP polling to avoid timeout issues with long-running AI inference.
 - **Async processing**: Skatetricks uses async endpoints with status polling for video conversion and analysis. Long-running operations (30+ seconds) are processed in background threads via `ExecutorService`. Client polls status endpoints (GET `/skatetricks/convert/{id}/status`, `/skatetricks/analyze/{id}/status`) every 2 seconds. YOLO models pre-load at startup (`@PostConstruct`) to prevent first-request timeouts.
 - **MediaConvert configuration**: Skatetricks transcoding requires `skatetricks.transcoding.mediaconvert-role-arn` (`SKATETRICKS_MEDIACONVERT_ROLE_ARN`). Do not set `SKATETRICKS_MEDIACONVERT_ENDPOINT`; `AwsMediaConvertVideoTranscoder` resolves the account-specific endpoint at runtime via `DescribeEndpoints`.
@@ -273,9 +273,8 @@ spring:
         chat:
           enabled: true
           options:
-            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-haiku-4-5-20251001-v1:0}
+            model: ${PERSONAL_BEDROCK_CHAT_MODEL:us.anthropic.claude-haiku-5-5}
             max-tokens: 4096
-            temperature: 0.3
       titan:
         embedding:
           model: amazon.titan-embed-text-v2:0
@@ -288,6 +287,8 @@ spring:
       chat: bedrock-converse
       embedding: bedrock-titan
 ```
+
+Claude Haiku 5.5 rejects the `temperature` inference parameter; do not configure it in Spring AI or per-request `BedrockChatOptions`.
 
 #### Spring AI Multimodal Messages (Images + Text)
 
@@ -400,7 +401,7 @@ The `landscape` module provides AI-powered landscape design with plant selection
 
 **Architecture:**
 - **AWS Bedrock Claude chat/vision model** — analyzes landscape images to recommend suitable plants and describe seasonal views
-- **Amazon Nova Canvas image model** — generates seasonal landscape variation images via AWS SDK `BedrockRuntimeClient`
+- **Stability AI Stable Image Control Structure** — generates seasonal landscape variation images via AWS SDK `BedrockRuntimeClient`
 - **USDA Plants Database API** — authoritative plant data with hardiness zone, light/water requirements
 - **USDA Plants Gallery** — plant images fetched by USDA symbol (`PlantImageService`)
 - **AWS S3 + CloudFront** — stores uploaded landscape images with CDN delivery
@@ -411,14 +412,14 @@ The `landscape` module provides AI-powered landscape design with plant selection
 2. **AI Analysis**: Claude analyzes the image considering sunlight exposure, existing vegetation, space constraints
 3. **Plant Search**: Search USDA Plants Database with filters for hardiness zone, sun/water requirements
 4. **Interactive Plant Placement**: Fabric.js canvas — select a plant, click on the image to place it. Plant-type icons (tree, shrub, flower) with real plant photos from USDA gallery
-5. **Seasonal AI Preview**: Claude generates text descriptions and Nova Canvas generates images showing the landscape in spring, summer, fall, winter
+5. **Seasonal AI Preview**: Claude generates text descriptions and Stable Image Control Structure generates images showing the landscape in spring, summer, fall, winter
 6. **Plan Management**: Save, load, and delete landscape plans with placements persisted to database
 7. **Caching**: Plant data, search results, and plant images cached for 24 hours with Caffeine
 
 **Key classes:**
 - `LandscapeService` — coordinates image storage, AI analysis, plant search, placement, and seasonal preview
 - `LandscapeAiService` — uses Bedrock Claude for plant recommendations and seasonal text descriptions
-- `LandscapeImageGenerationService` — uses Amazon Nova Canvas for seasonal image generation
+- `LandscapeImageGenerationService` — uses Stable Image Control Structure for seasonal image generation
 - `PlantImageService` — fetches plant photos from USDA gallery by symbol, cached 24 hours
 - `PlantApiService` — integrates with USDA Plants Database (with caching and retry logic)
 - `LandscapeImageStorageService` — uploads images to S3 with timestamped keys

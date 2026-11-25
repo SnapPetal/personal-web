@@ -121,8 +121,9 @@ class BookingChatControllerTest {
         assertThat(promptText).contains(MONDAY_START).contains("What is available Monday?");
         assertThat(promptText).doesNotContain("2026-10-06");
         assertThat(captor.getValue().getOptions()).isInstanceOf(BedrockChatOptions.class);
-        assertThat(((BedrockChatOptions) captor.getValue().getOptions()).getModel())
-                .isEqualTo("us.anthropic.claude-haiku-4-5-20251001-v1:0");
+        final var chatOptions = (BedrockChatOptions) captor.getValue().getOptions();
+        assertThat(chatOptions.getModel()).isEqualTo("us.anthropic.claude-haiku-5-5");
+        assertThat(chatOptions.getTemperature()).isNull();
         verify(bookingService).getActiveBookingTypes();
     }
 

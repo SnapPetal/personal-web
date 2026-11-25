@@ -7,16 +7,14 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/** Settings for the public booking assistant. Defaults stay on a small Bedrock model. */
+/** Settings for the public booking assistant. */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "booking.chat")
 public class BookingChatProperties {
 
     /** Bedrock inference profile or model id. Override with PERSONAL_BEDROCK_BOOKING_CHAT_MODEL. */
-    private String model = "us.anthropic.claude-haiku-4-5-20251001-v1:0";
-
-    private double temperature = 0.2;
+    private String model = "us.anthropic.claude-haiku-5-5";
 
     private int maxTokens = 1024;
 

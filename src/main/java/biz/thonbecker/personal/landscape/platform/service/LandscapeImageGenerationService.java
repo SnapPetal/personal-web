@@ -19,16 +19,15 @@ import software.amazon.awssdk.services.bedrockruntime.model.InvokeModelRequest;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Service for generating landscape images using Amazon Nova Canvas via AWS Bedrock.
+ * Service for generating landscape images using Stable Image Control Structure via AWS Bedrock.
  */
 @Service
 @Slf4j
 public class LandscapeImageGenerationService {
 
-    private static final String DEFAULT_MODEL_ID = "amazon.nova-canvas-v1:0";
-    private static final int IMAGE_WIDTH = 1024;
-    private static final int IMAGE_HEIGHT = 1024;
+    private static final String DEFAULT_MODEL_ID = "us.stability.stable-image-control-structure-v1:0";
     private static final int MAX_PIXELS = 4_194_304;
+    private static final double CONTROL_STRENGTH = 0.55;
 
     private final BedrockRuntimeClient bedrockRuntimeClient;
     private final ObjectMapper objectMapper;
@@ -45,7 +44,7 @@ public class LandscapeImageGenerationService {
     }
 
     /**
-     * Generates a seasonal variation by editing the original landscape image using Nova Canvas.
+     * Generates a seasonal variation by editing the original landscape image while preserving its structure.
      *
      * @param landscapeImageData Original landscape image bytes
      * @param season Season name (Spring, Summer, Fall, Winter)
@@ -63,27 +62,21 @@ public class LandscapeImageGenerationService {
                 return null;
             }
 
-            log.info("Generating {} landscape image with Nova Canvas", season);
+            log.info("Generating {} landscape image with Stable Image Control Structure", season);
 
             final var resizedData = resizeIfNeeded(landscapeImageData);
             final var base64Image = Base64.getEncoder().encodeToString(resizedData);
             final var prompt = buildSeasonalEditPrompt(season, placements);
 
             final var requestBody = Map.of(
-                    "taskType",
-                    "TEXT_IMAGE",
-                    "textToImageParams",
-                    Map.of(
-                            "text",
-                            prompt,
-                            "conditionImage",
-                            base64Image,
-                            "controlMode",
-                            "CANNY_EDGE",
-                            "controlStrength",
-                            0.8),
-                    "imageGenerationConfig",
-                    Map.of("width", IMAGE_WIDTH, "height", IMAGE_HEIGHT, "quality", "standard", "numberOfImages", 1));
+                    "prompt",
+                    prompt,
+                    "image",
+                    base64Image,
+                    "control_strength",
+                    CONTROL_STRENGTH,
+                    "output_format",
+                    "png");
 
             final var jsonBody = objectMapper.writeValueAsString(requestBody);
 
@@ -101,9 +94,20 @@ public class LandscapeImageGenerationService {
 
             if (rootNode.has("error")) {
                 log.warn(
-                        "Nova Canvas returned error for {} image: {}",
+                        "Stable Image Control Structure returned error for {} image: {}",
                         season,
                         rootNode.get("error").asText());
+                return null;
+            }
+
+            final var finishReasons = rootNode.path("finish_reasons");
+            if (finishReasons.isArray()
+                    && !finishReasons.isEmpty()
+                    && !finishReasons.get(0).isNull()) {
+                log.warn(
+                        "Stable Image Control Structure did not finish {} image: {}",
+                        season,
+                        finishReasons.get(0).asText());
                 return null;
             }
 
@@ -116,7 +120,7 @@ public class LandscapeImageGenerationService {
                 }
             }
 
-            log.warn("Nova Canvas returned no base64 image for {}", season);
+            log.warn("Stable Image Control Structure returned no base64 image for {}", season);
             return null;
 
         } catch (final Exception e) {
@@ -126,7 +130,7 @@ public class LandscapeImageGenerationService {
     }
 
     /**
-     * Resizes the image if it exceeds Nova Canvas's 4,194,304 pixel limit.
+     * Resizes input images to stay within the generation model's supported image size.
      */
     private byte[] resizeIfNeeded(final byte[] imageData) {
         try {
@@ -145,7 +149,7 @@ public class LandscapeImageGenerationService {
             final var newHeight = (int) (original.getHeight() * scaleFactor);
 
             log.info(
-                    "Resizing image from {}x{} ({} pixels) to {}x{} for Nova Canvas",
+                    "Resizing image from {}x{} ({} pixels) to {}x{} for Stable Image Control Structure",
                     original.getWidth(),
                     original.getHeight(),
                     pixels,
