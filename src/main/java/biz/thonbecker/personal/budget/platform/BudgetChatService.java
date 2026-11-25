@@ -2,7 +2,9 @@ package biz.thonbecker.personal.budget.platform;
 
 import biz.thonbecker.personal.budget.platform.document.BudgetDocumentExtractor.BudgetDocument;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.session.EventFilter;
@@ -12,10 +14,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class BudgetChatService {
 
     private static final String SESSION_PREFIX = "user:%s:budget:%s";
     private static final int MEMORY_EVENTS = 20;
+    private static final int EMPTY_RESPONSE_ATTEMPTS = 2;
     private static final String SYSTEM_PROMPT = """
             You are Budget Helper, an educational personal budgeting assistant.
             Help the user apply zero-based budgeting and explain Dave Ramsey-inspired budgeting principles
@@ -65,17 +69,23 @@ public class BudgetChatService {
             }
         }
 
-        final var answer = chatClient
-                .prompt()
-                .system(systemPrompt.toString())
-                .user(message)
-                .advisors(SessionAdvisors.session(sessionId(userId, conversationId)))
-                .call()
-                .content();
-        if (answer == null || answer.isBlank()) {
-            throw new IllegalStateException("Budget chat returned an empty response.");
+        final var sessionId = sessionId(userId, conversationId);
+        for (var attempt = 1; attempt <= EMPTY_RESPONSE_ATTEMPTS; attempt++) {
+            final var answer = chatClient
+                    .prompt()
+                    .system(systemPrompt.toString())
+                    .user(message)
+                    .advisors(SessionAdvisors.session(sessionId))
+                    .call()
+                    .content();
+            if (Objects.nonNull(answer) && !answer.isBlank()) {
+                return answer;
+            }
+            if (attempt < EMPTY_RESPONSE_ATTEMPTS) {
+                log.warn("Budget chat model returned an empty response; retrying once.");
+            }
         }
-        return answer;
+        throw new IllegalStateException("Budget chat returned an empty response after retrying.");
     }
 
     public List<ConversationMessage> conversation(final String userId, final UUID conversationId) {

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +26,38 @@ import org.springframework.ai.session.SessionService;
 import org.springframework.ai.session.advisor.SessionMemoryAdvisor;
 
 class BudgetChatServiceTest {
+
+    @Test
+    void retriesOnceWhenTheModelReturnsAnEmptyResponse() {
+        final var builder = mock(ChatClient.Builder.class);
+        final var chatClient = mock(ChatClient.class);
+        final var prompt = mock(ChatClient.ChatClientRequestSpec.class);
+        final var call = mock(ChatClient.CallResponseSpec.class);
+        final var sessionService = mock(SessionService.class);
+        when(builder.defaultAdvisors(org.mockito.ArgumentMatchers.<List<Advisor>>any()))
+                .thenReturn(builder);
+        when(builder.build()).thenReturn(chatClient);
+        when(chatClient.prompt()).thenReturn(prompt);
+        when(prompt.system(anyString())).thenReturn(prompt);
+        when(prompt.user(anyString())).thenReturn(prompt);
+        final var advisorSpec = mock(ChatClient.AdvisorSpec.class);
+        when(advisorSpec.param(anyString(), anyString())).thenReturn(advisorSpec);
+        when(prompt.advisors(org.mockito.ArgumentMatchers.<Consumer<ChatClient.AdvisorSpec>>any()))
+                .thenAnswer(invocation -> {
+                    final Consumer<ChatClient.AdvisorSpec> consumer = invocation.getArgument(0);
+                    consumer.accept(advisorSpec);
+                    return prompt;
+                });
+        when(prompt.call()).thenReturn(call);
+        when(call.content()).thenReturn(" ", "The retry worked.");
+
+        final var service = new BudgetChatService(builder, sessionService);
+        final var answer = service.answer("user-42", UUID.randomUUID(), "How do I start?", List.of());
+
+        assertThat(answer).isEqualTo("The retry worked.");
+        verify(chatClient, times(2)).prompt();
+        verify(call, times(2)).content();
+    }
 
     @Test
     void includesUploadedTextOnlyInTheSystemContextAndScopesMemoryToTheUser() {
