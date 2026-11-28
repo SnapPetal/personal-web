@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Polls Google Calendar for booking events that were deleted.
@@ -44,7 +43,6 @@ class CalendarSyncScheduler {
 
     @Scheduled(cron = "${calendar.google.sync-cron:0 */5 * * * *}")
     @SchedulerLock(name = "syncGoogleBookingCalendar", lockAtLeastFor = "PT1M", lockAtMostFor = "PT5M")
-    @Transactional
     public void syncCalendarDeletions() {
         log.debug("Checking Google Calendar for deleted booking events...");
 

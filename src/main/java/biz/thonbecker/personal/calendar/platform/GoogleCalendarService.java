@@ -5,6 +5,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -15,7 +16,6 @@ import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -38,8 +38,8 @@ import tools.jackson.databind.ObjectMapper;
 class GoogleCalendarService {
 
     static final String TOKEN_URI = "https://oauth2.googleapis.com/token";
-    static final String API_BASE_URI = "https://www.googleapis.com/calendar/v3";
-    static final String BOOKING_TIME_ZONE = "America/Chicago";
+    private static final String API_BASE_URI = "https://www.googleapis.com/calendar/v3";
+    private static final String BOOKING_TIME_ZONE = "America/Chicago";
 
     private static final Duration TOKEN_EXPIRY_MARGIN = Duration.ofMinutes(1);
     private static final DateTimeFormatter LOCAL_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -49,7 +49,7 @@ class GoogleCalendarService {
     private final WebClient webClient;
     private final Clock clock;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private volatile GoogleCalendarCredentials credentials;
+    private GoogleCalendarCredentials credentials;
     private volatile GoogleAccessToken accessToken;
     private volatile String calendarId;
 
@@ -75,20 +75,20 @@ class GoogleCalendarService {
     /**
      * Confirms the authorization works and that exactly one writable calendar has the configured name.
      */
-    @Retryable(maxAttempts = 3)
+    @Retryable(maxAttempts = 3, noRetryFor = IllegalStateException.class)
     public void verifyCalendar() {
         log.info("Google calendar {} is available", authorized(this::calendarId));
     }
 
-    @Retryable(maxAttempts = 3)
+    @Retryable(maxAttempts = 3, noRetryFor = IllegalStateException.class)
     public String createEvent(final BookingCreatedEvent event) {
         final var eventId = eventId(event.confirmationCode());
         final var body = new LinkedHashMap<String, Object>();
         body.put("id", eventId);
         body.put("summary", event.bookingTypeName());
         body.put("description", description(event));
-        body.put("start", eventTime(event.startTime().format(LOCAL_DATE_TIME)));
-        body.put("end", eventTime(event.endTime().format(LOCAL_DATE_TIME)));
+        body.put("start", eventTime(event.startTime()));
+        body.put("end", eventTime(event.endTime()));
         final var json = objectMapper.writeValueAsString(body);
 
         try {
@@ -99,7 +99,7 @@ class GoogleCalendarService {
                             .build()
                             .encode()
                             .toUri())
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .headers(headers -> headers.setBearerAuth(token))
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(json)
                     .retrieve()
@@ -117,13 +117,13 @@ class GoogleCalendarService {
         return eventId;
     }
 
-    @Retryable(maxAttempts = 3)
+    @Retryable(maxAttempts = 3, noRetryFor = IllegalStateException.class)
     public void deleteEvent(final String eventId) {
         try {
             authorized(token -> webClient
                     .delete()
-                    .uri(eventUri(token, eventId))
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .uri(eventUri(token, eventId).build().encode().toUri())
+                    .headers(headers -> headers.setBearerAuth(token))
                     .retrieve()
                     .toBodilessEntity()
                     .block());
@@ -138,17 +138,17 @@ class GoogleCalendarService {
         }
     }
 
-    @Retryable(maxAttempts = 3)
+    @Retryable(maxAttempts = 3, noRetryFor = IllegalStateException.class)
     public CalendarEventState eventState(final String eventId) {
         try {
-            final var json = authorized(token -> webClient
-                    .get()
-                    .uri(eventUri(token, eventId))
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block());
-            return "cancelled".equals(readJson(json).path("status").asText())
+            final var event = authorized(token -> getJson(
+                    eventUri(token, eventId)
+                            .queryParam("fields", "status")
+                            .build()
+                            .encode()
+                            .toUri(),
+                    token));
+            return "cancelled".equals(event.path("status").asText())
                     ? CalendarEventState.DELETED
                     : CalendarEventState.ACTIVE;
         } catch (final WebClientResponseException exception) {
@@ -178,11 +178,11 @@ class GoogleCalendarService {
 
     private String accessToken() {
         final var current = accessToken;
-        if (Objects.nonNull(current) && clock.instant().isBefore(current.refreshAfter())) {
+        if (isFresh(current)) {
             return current.value();
         }
         synchronized (this) {
-            if (Objects.nonNull(accessToken) && clock.instant().isBefore(accessToken.refreshAfter())) {
+            if (isFresh(accessToken)) {
                 return accessToken.value();
             }
             final var oauth = oauthCredentials();
@@ -207,6 +207,10 @@ class GoogleCalendarService {
                     new GoogleAccessToken(token, clock.instant().plus(expiresIn).minus(TOKEN_EXPIRY_MARGIN));
             return token;
         }
+    }
+
+    private boolean isFresh(final GoogleAccessToken token) {
+        return Objects.nonNull(token) && clock.instant().isBefore(token.refreshAfter());
     }
 
     private GoogleCalendarCredentials oauthCredentials() {
@@ -236,14 +240,7 @@ class GoogleCalendarService {
             if (Objects.nonNull(pageToken)) {
                 uri.queryParam("pageToken", pageToken);
             }
-            final var json = webClient
-                    .get()
-                    .uri(uri.build().encode().toUri())
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-            final var page = readJson(json);
+            final var page = getJson(uri.build().encode().toUri(), token);
             for (final var item : page.path("items")) {
                 if (name.equals(item.path("summary").asText())) {
                     matches.add(item.path("id").asText());
@@ -267,8 +264,18 @@ class GoogleCalendarService {
         return UriComponentsBuilder.fromUriString(API_BASE_URI).pathSegment("calendars", calendarId(token), "events");
     }
 
-    private URI eventUri(final String token, final String eventId) {
-        return eventsUri(token).pathSegment(eventId).build().encode().toUri();
+    private UriComponentsBuilder eventUri(final String token, final String eventId) {
+        return eventsUri(token).pathSegment(eventId);
+    }
+
+    private JsonNode getJson(final URI uri, final String token) {
+        return readJson(webClient
+                .get()
+                .uri(uri)
+                .headers(headers -> headers.setBearerAuth(token))
+                .retrieve()
+                .bodyToMono(String.class)
+                .block());
     }
 
     private JsonNode readJson(final String json) {
@@ -278,8 +285,8 @@ class GoogleCalendarService {
         return objectMapper.readTree(json);
     }
 
-    private static Map<String, String> eventTime(final String localDateTime) {
-        return Map.of("dateTime", localDateTime, "timeZone", BOOKING_TIME_ZONE);
+    private static Map<String, String> eventTime(final LocalDateTime localDateTime) {
+        return Map.of("dateTime", localDateTime.format(LOCAL_DATE_TIME), "timeZone", BOOKING_TIME_ZONE);
     }
 
     private static String description(final BookingCreatedEvent event) {

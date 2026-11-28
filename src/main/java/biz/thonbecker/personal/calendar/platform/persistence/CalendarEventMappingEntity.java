@@ -23,9 +23,6 @@ public class CalendarEventMappingEntity {
     @Column(name = "calendar_uid", nullable = false)
     private String calendarUid;
 
-    @Column(name = "calendar_href")
-    private String calendarHref;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "calendar_provider", nullable = false, length = 20)
     private CalendarProvider calendarProvider;

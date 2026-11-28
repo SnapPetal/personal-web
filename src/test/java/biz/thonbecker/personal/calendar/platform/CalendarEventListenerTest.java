@@ -80,7 +80,6 @@ class CalendarEventListenerTest {
 
         final var event = bookingCreatedEvent();
         final var mapping = mapping(event.bookingId(), "booking-ABC123", CalendarProvider.OPENCLOUD);
-        mapping.setCalendarHref("booking-ABC123.ics");
         when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.of(mapping));
         when(calendarService.createEvent(event)).thenReturn("booking414243313233");
 
@@ -89,7 +88,6 @@ class CalendarEventListenerTest {
         verify(mappingRepository).save(mapping);
         assertThat(mapping.getCalendarUid()).isEqualTo("booking414243313233");
         assertThat(mapping.getCalendarProvider()).isEqualTo(CalendarProvider.GOOGLE);
-        assertThat(mapping.getCalendarHref()).isNull();
     }
 
     @Test

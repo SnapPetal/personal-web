@@ -58,7 +58,6 @@ class CalendarEventListener {
                 mappingRepository.findByBookingId(event.bookingId()).orElseGet(CalendarEventMappingEntity::new);
         mapping.setBookingId(event.bookingId());
         mapping.setCalendarUid(eventId);
-        mapping.setCalendarHref(null);
         mapping.setCalendarProvider(CalendarProvider.GOOGLE);
         mappingRepository.save(mapping);
 
@@ -72,9 +71,7 @@ class CalendarEventListener {
         }
 
         final var mapping = mappingRepository.findByBookingId(event.bookingId());
-        final var eventId = mapping.filter(existing -> existing.getCalendarProvider() == CalendarProvider.GOOGLE)
-                .map(CalendarEventMappingEntity::getCalendarUid)
-                .orElseGet(() -> GoogleCalendarService.eventId(event.confirmationCode()));
+        final var eventId = GoogleCalendarService.eventId(event.confirmationCode());
 
         try {
             calendarService.deleteEvent(eventId);
