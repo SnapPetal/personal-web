@@ -18,41 +18,45 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Loads the CalDAV HTTP Basic password from AWS Secrets Manager.
+ * Loads the Google OAuth client and refresh token from AWS Secrets Manager.
  *
- * <p>The secret is a JSON object. The booking calendar uses the {@code booking_app_token} field of
- * {@code opencloud/calendar-app-tokens} in us-east-1.
+ * <p>The secret is a JSON object with the fields {@code client_id}, {@code client_secret}, and
+ * {@code refresh_token}.
  */
 @Service
-@ConditionalOnProperty(name = "calendar.caldav.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "calendar.google.enabled", havingValue = "true")
 @Slf4j
-class CalDavAppTokenProvider {
+class GoogleCalendarCredentialsProvider {
 
     private final CalendarProperties properties;
     private final SecretsManagerClient secretsManagerClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    CalDavAppTokenProvider(
+    GoogleCalendarCredentialsProvider(
             final CalendarProperties properties,
             @Value("${PERSONAL_AWS_ACCESS_KEY_ID:test}") final String accessKey,
             @Value("${PERSONAL_AWS_SECRET_ACCESS_KEY:test}") final String secretKey) {
         this(properties, createClient(properties.region(), accessKey, secretKey));
     }
 
-    CalDavAppTokenProvider(final CalendarProperties properties, final SecretsManagerClient secretsManagerClient) {
+    GoogleCalendarCredentialsProvider(
+            final CalendarProperties properties, final SecretsManagerClient secretsManagerClient) {
         this.properties = properties;
         this.secretsManagerClient = secretsManagerClient;
     }
 
     @Retryable(retryFor = SdkException.class, maxAttempts = 3)
-    public String bookingAppToken() {
+    public GoogleCalendarCredentials credentials() {
         final var secretId = properties.secretId();
+        if (Objects.isNull(secretId) || secretId.isBlank()) {
+            throw new IllegalStateException("calendar.google.secret-id is required");
+        }
         final var response = secretsManagerClient.getSecretValue(
                 GetSecretValueRequest.builder().secretId(secretId).build());
-        final var token = readToken(objectMapper, response.secretString(), properties.secretJsonField());
-        log.info("Loaded CalDAV app token from secret {}", secretId);
-        return token;
+        final var credentials = readCredentials(objectMapper, response.secretString());
+        log.info("Loaded Google Calendar credentials from secret {}", secretId);
+        return credentials;
     }
 
     @PreDestroy
@@ -72,24 +76,28 @@ class CalDavAppTokenProvider {
         return Objects.isNull(region) || region.isBlank() ? "us-east-1" : region;
     }
 
-    static String readToken(final ObjectMapper objectMapper, final String secretJson, final String fieldName) {
+    static GoogleCalendarCredentials readCredentials(final ObjectMapper objectMapper, final String secretJson) {
         if (Objects.isNull(secretJson) || secretJson.isBlank()) {
-            throw new IllegalStateException("CalDAV secret has no string value");
-        }
-        if (Objects.isNull(fieldName) || fieldName.isBlank()) {
-            throw new IllegalStateException("calendar.caldav.secret-json-field is required");
+            throw new IllegalStateException("Google Calendar secret has no string value");
         }
 
         final JsonNode root;
         try {
             root = objectMapper.readTree(secretJson);
         } catch (final RuntimeException exception) {
-            throw new IllegalStateException("CalDAV secret is not valid JSON", exception);
+            throw new IllegalStateException("Google Calendar secret is not valid JSON", exception);
         }
 
+        return new GoogleCalendarCredentials(
+                requiredField(root, "client_id"),
+                requiredField(root, "client_secret"),
+                requiredField(root, "refresh_token"));
+    }
+
+    private static String requiredField(final JsonNode root, final String fieldName) {
         final var field = root.get(fieldName);
         if (Objects.isNull(field) || field.isNull() || field.asText().isBlank()) {
-            throw new IllegalStateException("CalDAV secret is missing JSON field " + fieldName);
+            throw new IllegalStateException("Google Calendar secret is missing JSON field " + fieldName);
         }
         return field.asText();
     }

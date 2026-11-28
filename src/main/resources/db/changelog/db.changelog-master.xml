@@ -43,4 +43,5 @@
     <include file="classpath:db/changelog/changes/037-foosball-playground-test-data.xml"/>
     <include file="classpath:db/changelog/changes/038-foosball-same-tenant-game-players.xml"/>
     <include file="classpath:db/changelog/changes/039-add-spring-ai-session-memory.xml"/>
+    <include file="classpath:db/changelog/changes/040-google-booking-calendar.xml"/>
 </databaseChangeLog>

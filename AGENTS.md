@@ -32,7 +32,7 @@ mvn clean package
 
 ## Local Development Setup
 
-1. Copy `.env.example` to `.env` and fill in AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, `PERSONAL_AWS_REGION`). CalDAV is disabled in the dev profile. When it is enabled, the password is loaded from AWS Secrets Manager (`opencloud/calendar-app-tokens`, JSON field `booking_app_token`, us-east-1) using those AWS credentials.
+1. Copy `.env.example` to `.env` and fill in AWS credentials (`PERSONAL_AWS_ACCESS_KEY_ID`, `PERSONAL_AWS_SECRET_ACCESS_KEY`, `PERSONAL_AWS_REGION`). Google Calendar sync is disabled in the dev profile. When it is enabled, the OAuth client and refresh token are loaded from AWS Secrets Manager (`google/booking-calendar-oauth`, us-east-1) using those AWS credentials.
 2. Spring Boot Docker Compose integration auto-starts PostgreSQL from `docker-compose.yml` when running locally—no manual `docker-compose up` needed.
 3. The `dev` profile (`application-dev.yml`) overrides the datasource to `localhost:5432/dbmaster` with user `dbmasteruser` and no password.
 4. **Hot Reload**: Spring Boot DevTools is enabled in the `dev` profile for automatic restart when files change:
@@ -88,7 +88,7 @@ Each module follows this internal package convention:
 | `tankgame`     | _(self-contained)_   | Godot tank game prototype with player progression                      |
 | `user`         | `UserService`        | User management                                                        |
 | `budget`       | _(self-contained)_   | Private zero-based budgeting assistant chat                            |
-| `calendar`     | _(event-driven)_     | CalDAV integration, calendar sync for bookings                         |
+| `calendar`     | _(event-driven)_     | Google Calendar integration, calendar sync for bookings                |
 | `notification` | _(event-driven)_     | Email notifications via AWS SES (zero coupling to other modules)       |
 | `content`      | _(self-contained)_   | Bible verse, Dad jokes (AWS Polly TTS + S3), experience counter        |
 | `shared`       | _(config only)_      | Infrastructure configuration classes (Security, Cache, AWS, WebSocket) |
@@ -112,8 +112,8 @@ Each module owns the events it publishes in its `api/` package. Events are immut
 
 |                Event                | Published By |      Consumed By       |             Purpose              |
 |-------------------------------------|--------------|------------------------|----------------------------------|
-| `BookingCreatedEvent`               | booking      | notification, calendar | Send email + create CalDAV event |
-| `BookingCancelledEvent`             | booking      | notification, calendar | Send email + delete CalDAV event |
+| `BookingCreatedEvent`               | booking      | notification, calendar | Send email + create Google event |
+| `BookingCancelledEvent`             | booking      | notification, calendar | Send email + delete Google event |
 | `BookingCancellationRequestedEvent` | calendar     | booking                | Cancel booking (calendar sync)   |
 | `GameRecordedEvent`                 | foosball     | notification (logging) | Log game activity                |
 | `PlayerCreatedEvent`                | foosball     | notification (logging) | Log player creation              |
@@ -449,8 +449,8 @@ landscape:
 The `booking` module provides appointment scheduling with event-driven notifications and calendar integration.
 
 **Architecture:**
-- **Event-Driven** — publishes `BookingCreatedEvent` and `BookingCancelledEvent` from `booking.api`; notification module sends emails, calendar module creates CalDAV events
-- **Cancellation via Events** — listens for `BookingCancellationRequestedEvent` (published by the calendar module when a CalDAV event is deleted) to cancel bookings. The `BookingCancellationListener` handles this in `booking.platform`.
+- **Event-Driven** — publishes `BookingCreatedEvent` and `BookingCancelledEvent` from `booking.api`; notification module sends emails, calendar module creates Google Calendar events
+- **Cancellation via Events** — listens for `BookingCancellationRequestedEvent` (published by the calendar module when a Google Calendar event is deleted) to cancel bookings. The `BookingCancellationListener` handles this in `booking.platform`.
 - **Event Publication Registry** — `spring-modulith-starter-jpa` persists events to `event_publication` table for guaranteed delivery and replay
 - **Automatic Availability Generation** — `AvailabilityScheduler` creates recurring weekly slots (Monday-Friday, 11 AM-12 PM and 6-9 PM) for 4 weeks ahead
 - **iCal4j Library** — generates RFC-compliant `.ics` calendar files with Central Time (America/Chicago) timezone
@@ -469,49 +469,43 @@ The `booking` module provides appointment scheduling with event-driven notificat
 
 #### Calendar Module
 
-The `calendar` module provides **CalDAV integration** for automatic calendar management. It is fully event-driven. The bookings collection is addressed directly; there is no provider-specific principal discovery.
+The `calendar` module keeps booking events in the owner's **Google Calendar named Booking**. It is fully event-driven. The OpenCloud CalDAV collection is retired. Setup and rollout steps are in [`docs/google-booking-calendar.md`](docs/google-booking-calendar.md).
 
 **Architecture:**
-- **Event-Driven** — listens for `BookingCreatedEvent` and `BookingCancelledEvent` to create/delete CalDAV events
-- **Calendar Sync** — `CalendarSyncScheduler` polls the collection every 5 minutes (ShedLock-protected) for deleted events; publishes `BookingCancellationRequestedEvent` when a deletion is detected
-- **CalDAV via WebClient** — uses `WebClient` for CalDAV HTTP methods (PROPFIND, PUT, DELETE) against the configured collection URL. No dedicated CalDAV library.
-- **Conditional** — CalDAV beans are `@ConditionalOnProperty(name = "calendar.caldav.enabled")`, disabled in dev/test
-- **Credentials** — HTTP Basic username comes from `calendar.caldav.username`. The password is the `booking_app_token` field of AWS Secrets Manager secret `opencloud/calendar-app-tokens` in `us-east-1`, read with the application's AWS credentials.
+- **Event-Driven** — listens for `BookingCreatedEvent` and `BookingCancelledEvent` to create/delete Google Calendar events
+- **Calendar Sync** — `CalendarSyncScheduler` checks every mapped Google event every 5 minutes (ShedLock-protected). It publishes `BookingCancellationRequestedEvent` only when Google reports the event as deleted (`status: cancelled` or HTTP 410). A missing event (HTTP 404) never cancels a booking. The run reads all states before it publishes, so one failed read skips the run.
+- **Google Calendar API via WebClient** — OAuth refresh-token flow and Calendar API v3 calls through `WebClient`. No Google client library.
+- **Conditional** — Google beans are `@ConditionalOnProperty(name = "calendar.google.enabled")`, disabled in dev/test. Do not disable it in production to "fix" failures: the listener then completes publications without syncing.
+- **Credentials** — AWS Secrets Manager secret `google/booking-calendar-oauth` in `us-east-1` holds a JSON object with `client_id`, `client_secret`, and `refresh_token`. The calendar ID is found by name (`calendar.google.calendar-name`) in the owner's writable calendar list. Exactly one writable calendar must have that name.
+- **Error tracking** — failures reach PostHog as `$exception` with source `calendar.booking-created`, `calendar.booking-cancelled`, `calendar.sync`, or `calendar.verify`.
 
 **Key classes:**
-- `CalendarEventListener` — handles `BookingCreatedEvent` (creates CalDAV event + stores mapping) and `BookingCancelledEvent` (deletes CalDAV event) with `@ApplicationModuleListener`
-- `CalDavService` — CalDAV HTTP client (PROPFIND, PUT, DELETE)
-- `CalDavAppTokenProvider` — loads the Basic password from Secrets Manager
-- `CalendarSyncScheduler` — polls for deleted events, publishes `BookingCancellationRequestedEvent`
-- `IcsGenerator` — generates `.ics` content with deterministic UIDs (`booking-{confirmationCode}`)
-- `CalendarEventMappingEntity` — persists booking-to-CalDAV-UID mapping in `booking.calendar_event_mappings` table
+- `CalendarEventListener` — handles `BookingCreatedEvent` (creates Google event + stores mapping) and `BookingCancelledEvent` (deletes Google event) with `@ApplicationModuleListener`. Do not rename the class or its methods: Spring Modulith stores the method signature as the publication listener ID.
+- `GoogleCalendarService` — Google Calendar API client (insert, delete, get, calendar lookup by name)
+- `GoogleCalendarCredentialsProvider` — loads the OAuth client and refresh token from Secrets Manager
+- `CalendarSyncScheduler` — detects deleted events, publishes `BookingCancellationRequestedEvent`
+- `CalendarEventMappingEntity` — maps a booking to its event in `booking.calendar_event_mappings`. `calendar_provider` is `GOOGLE` or `OPENCLOUD`. `OPENCLOUD` rows come from the retired collection and are never synced.
+
+**Event IDs:** `booking` + the hex of the confirmation code bytes (Google allows only `0-9a-v`). A replayed create gets HTTP 409 and reuses the same event.
 
 **Configuration** (`application.yml`):
 
 ```yaml
 calendar:
-  caldav:
+  google:
     enabled: true
-    base-url: https://files.thonbecker.biz/caldav/
-    calendar-url: https://files.thonbecker.biz/caldav/eced1100-d041-41c1-b707-1ec59bc1a016/bookings/
-    username: thonbecker
-    secret-id: opencloud/calendar-app-tokens
-    secret-json-field: booking_app_token
+    calendar-name: Booking
+    secret-id: google/booking-calendar-oauth
     region: us-east-1
-    organizer-email: thon.becker@gmail.com
     sync-cron: "0 */5 * * * *"
 ```
 
-**CalDAV collection:** `https://files.thonbecker.biz/caldav/eced1100-d041-41c1-b707-1ec59bc1a016/bookings/`
-
-Event resources are `{calendar-url}booking-{confirmationCode}.ics`.
-
-**Cancellation flow when a calendar event is deleted from the collection:**
-1. `CalendarSyncScheduler` detects the missing UID via PROPFIND
+**Cancellation flow when a calendar event is deleted in Google Calendar:**
+1. `CalendarSyncScheduler` reads the event state and sees `cancelled`
 2. Publishes `BookingCancellationRequestedEvent`
 3. `BookingCancellationListener` (booking module) cancels the booking
 4. `BookingCancelledEvent` fires → notification sends cancellation email
-5. Calendar module's `CalendarEventListener` deletes the CalDAV event if it is still present, then removes the mapping
+5. Calendar module's `CalendarEventListener` deletes the Google event if it is still present, then removes the mapping
 
 #### Notification Module
 

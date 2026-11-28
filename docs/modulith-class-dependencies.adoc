@@ -256,13 +256,6 @@ No direct cross-module class dependencies.
 |===
 |Source class |Source package |Target module |Target class |Target package |Dependency types
 
-|`CalDavService`
-|`biz.thonbecker.personal.calendar.platform`
-|Booking
-|`BookingCreatedEvent`
-|`biz.thonbecker.personal.booking.api`
-|`DEFAULT`
-
 |`CalendarEventListener`
 |`biz.thonbecker.personal.calendar.platform`
 |Booking
@@ -284,7 +277,7 @@ No direct cross-module class dependencies.
 |`biz.thonbecker.personal.booking.api`
 |`DEFAULT`
 
-|`IcsGenerator`
+|`GoogleCalendarService`
 |`biz.thonbecker.personal.calendar.platform`
 |Booking
 |`BookingCreatedEvent`
@@ -292,6 +285,13 @@ No direct cross-module class dependencies.
 |`DEFAULT`
 
 |`CalendarEventListener`
+|`biz.thonbecker.personal.calendar.platform`
+|Shared Infrastructure
+|`ServerExceptionReportedEvent`
+|`biz.thonbecker.personal.shared.api`
+|`DEFAULT`
+
+|`CalendarSyncScheduler`
 |`biz.thonbecker.personal.calendar.platform`
 |Shared Infrastructure
 |`ServerExceptionReportedEvent`

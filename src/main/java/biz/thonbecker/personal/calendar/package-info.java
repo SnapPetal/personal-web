@@ -1,7 +1,7 @@
 /**
  * Calendar Module
  *
- * <p>Manages external calendar integration via CalDAV.
+ * <p>Manages the Google Calendar named Booking.
  * Listens to booking events to create/delete calendar entries and polls
  * for externally deleted events to trigger booking cancellations.
  *

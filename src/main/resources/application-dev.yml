@@ -23,7 +23,7 @@ notification:
     enabled: false
 
 calendar:
-  caldav:
+  google:
     enabled: false
 
 skatetricks:

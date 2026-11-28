@@ -26,6 +26,10 @@ public class CalendarEventMappingEntity {
     @Column(name = "calendar_href")
     private String calendarHref;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "calendar_provider", nullable = false, length = 20)
+    private CalendarProvider calendarProvider;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }

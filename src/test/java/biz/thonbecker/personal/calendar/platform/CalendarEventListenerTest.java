@@ -1,5 +1,6 @@
 package biz.thonbecker.personal.calendar.platform;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -9,6 +10,7 @@ import biz.thonbecker.personal.booking.api.BookingCancelledEvent;
 import biz.thonbecker.personal.booking.api.BookingCreatedEvent;
 import biz.thonbecker.personal.calendar.platform.persistence.CalendarEventMappingEntity;
 import biz.thonbecker.personal.calendar.platform.persistence.CalendarEventMappingRepository;
+import biz.thonbecker.personal.calendar.platform.persistence.CalendarProvider;
 import biz.thonbecker.personal.shared.api.ServerExceptionReportedEvent;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -20,55 +22,89 @@ import org.springframework.context.ApplicationEventPublisher;
 class CalendarEventListenerTest {
 
     @Test
-    void persistsMappingWhenCalDavEventAlreadyExists() {
-        final var calDavService = Mockito.mock(CalDavService.class);
+    void persistsGoogleMappingForCreatedEvent() {
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener = listener(calDavService, mappingRepository, true);
+        final var listener = listener(calendarService, mappingRepository, true);
 
         final var event = bookingCreatedEvent();
 
-        when(calDavService.createEvent(event)).thenReturn("booking-ABC123");
+        when(calendarService.createEvent(event)).thenReturn("booking414243313233");
         when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.empty());
 
         listener.onBookingCreated(event);
 
-        verify(calDavService).createEvent(event);
+        verify(calendarService).createEvent(event);
         verify(mappingRepository)
                 .save(Mockito.argThat(mapping -> mapping.getBookingId().equals(event.bookingId())
-                        && mapping.getCalendarUid().equals("booking-ABC123")
-                        && mapping.getCalendarHref().equals("booking-ABC123.ics")));
+                        && mapping.getCalendarUid().equals("booking414243313233")
+                        && mapping.getCalendarProvider() == CalendarProvider.GOOGLE));
     }
 
     @Test
     void deletesDeterministicUidWhenMappingIsMissing() {
-        final var calDavService = Mockito.mock(CalDavService.class);
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener = listener(calDavService, mappingRepository, true);
+        final var listener = listener(calendarService, mappingRepository, true);
 
         final var event = bookingCancelledEvent();
         when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.empty());
 
         listener.onBookingCancelled(event);
 
-        verify(calDavService).deleteEvent("booking-" + event.confirmationCode());
+        verify(calendarService).deleteEvent("booking414243313233");
         verify(mappingRepository, never()).delete(Mockito.any());
     }
 
     @Test
-    void leavesMappingInPlaceWhenCalendarDeletionFails() {
-        final var calDavService = Mockito.mock(CalDavService.class);
+    void deletesGoogleEventAndKeepsNoLegacyMappingWhenBookingWasOnOpenCloud() {
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener = listener(calDavService, mappingRepository, true);
+        final var listener = listener(calendarService, mappingRepository, true);
 
         final var event = bookingCancelledEvent();
-        final var mapping = new CalendarEventMappingEntity();
-        mapping.setBookingId(event.bookingId());
-        mapping.setCalendarUid("booking-" + event.confirmationCode());
+        final var mapping = mapping(event.bookingId(), "booking-ABC123", CalendarProvider.OPENCLOUD);
+        when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.of(mapping));
+
+        listener.onBookingCancelled(event);
+
+        verify(calendarService).deleteEvent("booking414243313233");
+        verify(mappingRepository).delete(mapping);
+    }
+
+    @Test
+    void replayedCreateMovesLegacyMappingToGoogle() {
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
+        final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
+        final var listener = listener(calendarService, mappingRepository, true);
+
+        final var event = bookingCreatedEvent();
+        final var mapping = mapping(event.bookingId(), "booking-ABC123", CalendarProvider.OPENCLOUD);
+        mapping.setCalendarHref("booking-ABC123.ics");
+        when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.of(mapping));
+        when(calendarService.createEvent(event)).thenReturn("booking414243313233");
+
+        listener.onBookingCreated(event);
+
+        verify(mappingRepository).save(mapping);
+        assertThat(mapping.getCalendarUid()).isEqualTo("booking414243313233");
+        assertThat(mapping.getCalendarProvider()).isEqualTo(CalendarProvider.GOOGLE);
+        assertThat(mapping.getCalendarHref()).isNull();
+    }
+
+    @Test
+    void leavesMappingInPlaceWhenCalendarDeletionFails() {
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
+        final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
+        final var listener = listener(calendarService, mappingRepository, true);
+
+        final var event = bookingCancelledEvent();
+        final var mapping = mapping(event.bookingId(), "booking414243313233", CalendarProvider.GOOGLE);
 
         when(mappingRepository.findByBookingId(event.bookingId())).thenReturn(Optional.of(mapping));
         Mockito.doThrow(new IllegalStateException("delete failed"))
-                .when(calDavService)
-                .deleteEvent("booking-" + event.confirmationCode());
+                .when(calendarService)
+                .deleteEvent("booking414243313233");
 
         assertThrows(IllegalStateException.class, () -> listener.onBookingCancelled(event));
 
@@ -76,26 +112,26 @@ class CalendarEventListenerTest {
     }
 
     @Test
-    void skipsCreationWhenCalDavIsDisabled() {
-        final var calDavService = Mockito.mock(CalDavService.class);
+    void skipsCreationWhenGoogleCalendarIsDisabled() {
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
-        final var listener = listener(calDavService, mappingRepository, false);
+        final var listener = listener(calendarService, mappingRepository, false);
 
         listener.onBookingCreated(bookingCreatedEvent());
 
-        verify(calDavService, never()).createEvent(Mockito.any());
+        verify(calendarService, never()).createEvent(Mockito.any());
         verify(mappingRepository, never()).save(Mockito.any());
     }
 
     @Test
-    void reportsCalDavCreateFailuresAndRethrows() {
-        final var calDavService = Mockito.mock(CalDavService.class);
+    void reportsCalendarCreateFailuresAndRethrows() {
+        final var calendarService = Mockito.mock(GoogleCalendarService.class);
         final var mappingRepository = Mockito.mock(CalendarEventMappingRepository.class);
         final var eventPublisher = Mockito.mock(ApplicationEventPublisher.class);
-        final var listener = listener(calDavService, mappingRepository, true, eventPublisher);
+        final var listener = listener(calendarService, mappingRepository, true, eventPublisher);
         final var event = bookingCreatedEvent();
-        when(calDavService.createEvent(event))
-                .thenThrow(new IllegalStateException("Radicale rejected attendee@example.com"));
+        when(calendarService.createEvent(event))
+                .thenThrow(new IllegalStateException("Google rejected attendee@example.com"));
 
         assertThrows(IllegalStateException.class, () -> listener.onBookingCreated(event));
 
@@ -109,55 +145,56 @@ class CalendarEventListenerTest {
     }
 
     private static CalendarEventListener listener(
-            final CalDavService calDavService,
+            final GoogleCalendarService calendarService,
             final CalendarEventMappingRepository mappingRepository,
             final boolean enabled) {
-        return listener(calDavService, mappingRepository, enabled, Mockito.mock(ApplicationEventPublisher.class));
+        return listener(calendarService, mappingRepository, enabled, Mockito.mock(ApplicationEventPublisher.class));
     }
 
     private static CalendarEventListener listener(
-            final CalDavService calDavService,
+            final GoogleCalendarService calendarService,
             final CalendarEventMappingRepository mappingRepository,
             final boolean enabled,
             final ApplicationEventPublisher eventPublisher) {
         return new CalendarEventListener(
-                objectProvider(calDavService), mappingRepository, calendarProperties(enabled), eventPublisher);
+                objectProvider(calendarService), mappingRepository, calendarProperties(enabled), eventPublisher);
     }
 
-    private static ObjectProvider<CalDavService> objectProvider(final CalDavService service) {
+    private static ObjectProvider<GoogleCalendarService> objectProvider(final GoogleCalendarService service) {
         return new ObjectProvider<>() {
             @Override
-            public CalDavService getObject(final Object... args) {
+            public GoogleCalendarService getObject(final Object... args) {
                 return service;
             }
 
             @Override
-            public CalDavService getIfAvailable() {
+            public GoogleCalendarService getIfAvailable() {
                 return service;
             }
 
             @Override
-            public CalDavService getIfUnique() {
+            public GoogleCalendarService getIfUnique() {
                 return service;
             }
 
             @Override
-            public CalDavService getObject() {
+            public GoogleCalendarService getObject() {
                 return service;
             }
         };
     }
 
     private static CalendarProperties calendarProperties(final boolean enabled) {
-        return new CalendarProperties(
-                enabled,
-                "https://files.example.test/caldav/",
-                "https://files.example.test/caldav/collection/bookings/",
-                "thonbecker",
-                "opencloud/calendar-app-tokens",
-                "booking_app_token",
-                "us-east-1",
-                "org@example.com");
+        return new CalendarProperties(enabled, "Booking", "google/booking-calendar-oauth", "us-east-1");
+    }
+
+    private static CalendarEventMappingEntity mapping(
+            final long bookingId, final String calendarUid, final CalendarProvider provider) {
+        final var mapping = new CalendarEventMappingEntity();
+        mapping.setBookingId(bookingId);
+        mapping.setCalendarUid(calendarUid);
+        mapping.setCalendarProvider(provider);
+        return mapping;
     }
 
     private static BookingCreatedEvent bookingCreatedEvent() {

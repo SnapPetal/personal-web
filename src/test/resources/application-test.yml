@@ -35,15 +35,11 @@ notification:
     admin: test@test.com
 
 calendar:
-  caldav:
+  google:
     enabled: false
-    base-url: https://files.example.test/caldav/
-    calendar-url: https://files.example.test/caldav/collection/bookings/
-    username: thonbecker
-    secret-id: opencloud/calendar-app-tokens
-    secret-json-field: booking_app_token
+    calendar-name: Booking
+    secret-id: google/booking-calendar-oauth
     region: us-east-1
-    organizer-email: test@test.com
 
 personal:
   admin:

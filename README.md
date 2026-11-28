@@ -120,7 +120,7 @@ src/main/java/biz/thonbecker/personal/
 ├── booking/        # Appointment scheduling with auto-availability
 ├── tankgame/       # Tank game progression and raw WebSocket prototype
 ├── user/           # User management
-├── calendar/       # CalDAV integration with calendar sync
+├── calendar/       # Google Calendar integration with calendar sync
 ├── notification/   # Event-driven email notifications via AWS SES
 ├── content/        # Bible verse, Dad jokes (Polly TTS + S3)
 └── shared/         # Infrastructure configuration (Security, Cache, AWS, WebSocket)

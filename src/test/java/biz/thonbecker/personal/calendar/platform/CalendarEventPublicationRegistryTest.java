@@ -17,22 +17,22 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @IntegrationTest
-@TestPropertySource(properties = "calendar.caldav.enabled=true")
+@TestPropertySource(properties = "calendar.google.enabled=true")
 class CalendarEventPublicationRegistryTest {
 
     private final JdbcTemplate jdbcTemplate;
 
     @MockitoBean
-    private CalDavService calDavService;
+    private GoogleCalendarService calendarService;
 
     CalendarEventPublicationRegistryTest(final DataSource dataSource) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     @BeforeEach
-    void stubCalDavFailure() {
-        doThrow(new IllegalStateException("Simulated CalDAV failure"))
-                .when(calDavService)
+    void stubCalendarFailure() {
+        doThrow(new IllegalStateException("Simulated Google Calendar failure"))
+                .when(calendarService)
                 .createEvent(any());
     }
 

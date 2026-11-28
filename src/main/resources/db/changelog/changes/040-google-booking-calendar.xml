@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="040-calendar-event-mapping-provider" author="thonbecker">
+        <comment>
+            Record which calendar holds each mapped event. Existing rows point at the retired OpenCloud
+            collection, so deletion sync must never read them as missing Google events.
+        </comment>
+        <addColumn tableName="calendar_event_mappings" schemaName="booking">
+            <column name="calendar_provider" type="VARCHAR(20)" defaultValue="OPENCLOUD">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <dropDefaultValue tableName="calendar_event_mappings" schemaName="booking" columnName="calendar_provider"/>
+    </changeSet>
+
+    <changeSet id="040-reopen-opencloud-calendar-publications" author="thonbecker" dbms="postgresql">
+        <comment>
+            Reopen the calendar listener's BookingCreatedEvent publication for each upcoming booking that is
+            mapped only to OpenCloud. Spring Modulith republishes incomplete publications on restart, and the
+            publication belongs to the calendar listener only, so the replay creates the Google event without
+            a second confirmation email.
+        </comment>
+        <sql><![CDATA[
+            UPDATE event_publication p
+               SET completion_date = NULL,
+                   status = 'FAILED'
+              FROM booking.calendar_event_mappings m
+              JOIN booking.bookings b ON b.id = m.booking_id
+             WHERE p.event_type = 'biz.thonbecker.personal.booking.api.BookingCreatedEvent'
+               AND p.listener_id LIKE 'biz.thonbecker.personal.calendar.platform.CalendarEventListener.onBookingCreated%'
+               AND p.completion_date IS NOT NULL
+               AND m.calendar_provider = 'OPENCLOUD'
+               AND b.status IN ('PENDING', 'CONFIRMED')
+               AND b.end_time > (CURRENT_TIMESTAMP AT TIME ZONE 'America/Chicago')
+               AND substring(p.serialized_event FROM '"bookingId"\s*:\s*(\d+)')::bigint = m.booking_id
+        ]]></sql>
+    </changeSet>
+
+</databaseChangeLog>
