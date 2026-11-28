@@ -18,11 +18,13 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -75,7 +77,7 @@ class GoogleCalendarClient {
         final var tokenResponse = send(request);
         requireSuccess(tokenResponse, "refresh authorization");
         final var session = new Session(calendar, required(json.readTree(tokenResponse.body()), "access_token"));
-        final var calendarResponse = get(session, "/users/me/calendarList/" + encode(calendar));
+        final var calendarResponse = get(session, events(session) + "?maxResults=1&fields=accessRole");
         requireSuccess(calendarResponse, "verify calendar");
         final var calendarJson = json.readTree(calendarResponse.body());
         final var role = required(calendarJson, "accessRole");
@@ -233,10 +235,28 @@ class GoogleCalendarClient {
         }
     }
 
-    private static void requireSuccess(final HttpResponse<String> response, final String action) {
+    private void requireSuccess(final HttpResponse<String> response, final String action) {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            throw new IllegalStateException(
-                    "Google Calendar could not " + action + " (HTTP " + response.statusCode() + ")");
+            final var reason = errorReason(response.body());
+            throw new IllegalStateException("Google Calendar could not " + action + " (HTTP " + response.statusCode()
+                    + (reason.isEmpty() ? "" : ", reason " + reason) + ")");
         }
+    }
+
+    private String errorReason(final String body) {
+        if (Objects.isNull(body) || body.isBlank()) {
+            return "";
+        }
+        final JsonNode error;
+        try {
+            error = json.readTree(body).path("error");
+        } catch (final JacksonException exception) {
+            return "";
+        }
+        if (error.isString()) {
+            return error.asString();
+        }
+        final var reason = error.path("errors").path(0).path("reason").asString("");
+        return reason.isBlank() ? error.path("status").asString("") : reason;
     }
 }

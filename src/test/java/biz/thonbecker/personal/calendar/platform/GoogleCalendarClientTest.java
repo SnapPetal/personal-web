@@ -45,8 +45,44 @@ class GoogleCalendarClientTest {
         final var requests = ArgumentCaptor.forClass(HttpRequest.class);
         verify(http, times(2)).send(requests.capture(), any(HttpResponse.BodyHandler.class));
         assertThat(requests.getAllValues().get(0).uri().toString()).isEqualTo("https://oauth2.googleapis.com/token");
+        assertThat(requests.getAllValues().get(1).uri().toString())
+                .isEqualTo("https://www.googleapis.com/calendar/v3/calendars/booking%40group.calendar.google.com"
+                        + "/events?maxResults=1&fields=accessRole");
         assertThat(requests.getAllValues().get(1).headers().firstValue("Authorization"))
                 .contains("Bearer access");
+    }
+
+    @Test
+    void readOnlyCalendarFails() throws Exception {
+        final var tokenResponse = response(200, "{\"access_token\":\"access\"}");
+        final var calendarResponse = response(200, "{\"accessRole\":\"reader\"}");
+        when(http.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(tokenResponse)
+                .thenReturn(calendarResponse);
+        assertThatThrownBy(google::session).hasMessageContaining("not writable");
+    }
+
+    @Test
+    void forbiddenCalendarReportsGoogleReason() throws Exception {
+        final var tokenResponse = response(200, "{\"access_token\":\"access\"}");
+        final var calendarResponse = response(
+                403,
+                "{\"error\":{\"code\":403,\"errors\":[{\"reason\":\"insufficientPermissions\"}],"
+                        + "\"status\":\"PERMISSION_DENIED\"}}");
+        when(http.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(tokenResponse)
+                .thenReturn(calendarResponse);
+        assertThatThrownBy(google::session)
+                .hasMessage("Google Calendar could not verify calendar (HTTP 403, reason insufficientPermissions)");
+    }
+
+    @Test
+    void rejectedRefreshReportsOAuthError() throws Exception {
+        final var tokenResponse = response(400, "{\"error\":\"invalid_grant\"}");
+        when(http.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(tokenResponse);
+        assertThatThrownBy(google::session)
+                .hasMessage("Google Calendar could not refresh authorization (HTTP 400, reason invalid_grant)");
     }
 
     @Test

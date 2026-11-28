@@ -189,8 +189,11 @@ its calendar identity. Only mappings created for that same Google calendar
 can trigger booking cancellation if an event disappears. Cancelled future
 bookings are reconciled as well. Booking rows are locked during reconciliation
 so delayed creation and cancellation events cannot reverse booking state.
-Google errors fail the operation and report to the server error tracker.
-Changing calendar IDs requires an explicit migration, not deleting mappings.
+Google errors fail the operation and report to the server error tracker
+with the HTTP status and Google's error reason. The app calls only the
+Calendar events API, so the `calendar.events` scope is enough. The access
+check reads `accessRole` from the events list and requires `owner` or
+`writer`. Changing calendar IDs requires an explicit migration, not deleting mappings.
 
 Google OAuth apps in Testing generally issue refresh tokens that expire after
 seven days. Publishing the app and satisfying Google's consent requirements
