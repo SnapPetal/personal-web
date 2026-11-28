@@ -45,14 +45,14 @@ class TankGameRawWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(final WebSocketSession session, final TextMessage message) throws Exception {
         final JsonNode request = objectMapper.readTree(message.getPayload());
-        final String action = request.path("action").asText();
+        final String action = request.path("action").asString();
 
         switch (action) {
             case "queue" ->
                 joinQueue(
                         session,
-                        request.path("playerName").asText("Player"),
-                        request.path("loadoutId").asText("striker"));
+                        request.path("playerName").asString("Player"),
+                        request.path("loadoutId").asString("striker"));
             case "input" -> updateInput(session, request);
             case "leave" -> leave(session);
             default -> send(session, Map.of("type", "error", "message", "Unknown action: " + action));
@@ -85,7 +85,7 @@ class TankGameRawWebSocketHandler extends TextWebSocketHandler {
         if (tankId == null) {
             return;
         }
-        if (!gameId.equals(request.path("gameId").asText())) return;
+        if (!gameId.equals(request.path("gameId").asString())) return;
         final long sequence = request.path("sequence").asLong(-1);
         final long previousSequence = lastInputSequences.getOrDefault(session.getId(), -1L);
         if (sequence <= previousSequence) return;

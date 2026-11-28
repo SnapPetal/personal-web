@@ -88,10 +88,10 @@ class CalDavAppTokenProvider {
         }
 
         final var field = root.get(fieldName);
-        if (Objects.isNull(field) || field.isNull() || field.asText().isBlank()) {
+        if (Objects.isNull(field) || field.isNull() || field.asString().isBlank()) {
             throw new IllegalStateException("CalDAV secret is missing JSON field " + fieldName);
         }
-        return field.asText();
+        return field.asString();
     }
 
     private static String normalizeCredential(final String value) {

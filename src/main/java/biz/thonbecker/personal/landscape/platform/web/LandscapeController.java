@@ -163,7 +163,7 @@ public class LandscapeController {
         if (query == null || query.isBlank() || zone == null) {
             model.addAttribute("plants", List.of());
             model.addAttribute("error", "Enter a plant name and select a hardiness zone.");
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+            response.setStatus(HttpStatus.UNPROCESSABLE_CONTENT.value());
             return "landscape/fragments :: search-results";
         }
 

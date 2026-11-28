@@ -194,10 +194,10 @@ notification:
     sender: ${NOTIFICATION_EMAIL_SENDER:bookings@thonbecker.biz}
     admin: ${NOTIFICATION_EMAIL_ADMIN:thon@thonbecker.biz}
 
-# Calendar Integration (CalDAV)
+# Calendar integration
 calendar:
   caldav:
-    enabled: true
+    enabled: false
     base-url: https://files.thonbecker.biz/caldav/
     calendar-url: https://files.thonbecker.biz/caldav/eced1100-d041-41c1-b707-1ec59bc1a016/bookings/
     username: thonbecker
@@ -205,6 +205,9 @@ calendar:
     secret-json-field: booking_app_token
     region: us-east-1
     organizer-email: thon.becker@gmail.com
+    sync-cron: "0 */5 * * * *"
+  google:
+    enabled: true
     sync-cron: "0 */5 * * * *"
 
 # Spring Modulith Configuration

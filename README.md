@@ -174,6 +174,29 @@ Pushes to `main` run GitHub Actions on Temurin 25. The workflow publishes the st
 
 Deploy the Cloudflare OS control plane separately from the `cloudflare-os-personal` repository. Its booking integration must be deployed after the Spring origin and Access settings are available.
 
+## Booking calendar
+
+Production booking sync uses the Google Calendar named Booking. The app reads
+`personal-web/google-calendar-oauth-client` and `personal-web/google-calendar-authorization`
+from AWS Secrets Manager in us-east-1 using `PERSONAL_AWS_ACCESS_KEY_ID` and
+`PERSONAL_AWS_SECRET_ACCESS_KEY`. The authorization secret holds `calendar_id`
+and `refresh_token`; it is populated with the authorization helper in the
+home-web repository, not committed to git.
+
+The five-minute sync migrates future confirmed or pending bookings from old
+CalDAV mappings by first creating a deterministic Google event, then recording
+its calendar identity. Only mappings created for that same Google calendar
+can trigger booking cancellation if an event disappears. Cancelled future
+bookings are reconciled as well. Booking rows are locked during reconciliation
+so delayed creation and cancellation events cannot reverse booking state.
+Google errors fail the operation and report to the server error tracker.
+Changing calendar IDs requires an explicit migration, not deleting mappings.
+
+Google OAuth apps in Testing generally issue refresh tokens that expire after
+seven days. Publishing the app and satisfying Google's consent requirements
+is needed for durable access; rerun the home-web authorization helper to renew.
+Local dev and tests disable Google Calendar by default.
+
 ## License
 
 This project is proprietary and confidential. All rights reserved by Thon Becker. See the [LICENSE](LICENSE) file for details.

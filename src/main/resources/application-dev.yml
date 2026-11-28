@@ -25,6 +25,8 @@ notification:
 calendar:
   caldav:
     enabled: false
+  google:
+    enabled: false
 
 skatetricks:
   vectorstore:

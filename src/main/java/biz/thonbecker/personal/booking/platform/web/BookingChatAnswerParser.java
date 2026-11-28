@@ -32,8 +32,8 @@ class BookingChatAnswerParser {
 
         try {
             final var parsed = objectMapper.readTree(extractJson(raw));
-            if (parsed.isTextual()) {
-                return new BookingChatDraft(cleanMessage(parsed.asText()), "show_availability", List.of());
+            if (parsed.isString()) {
+                return new BookingChatDraft(cleanMessage(parsed.asString()), "show_availability", List.of());
             }
             if (parsed.isObject()) {
                 return fromObject(unwrap(parsed));
@@ -53,9 +53,9 @@ class BookingChatAnswerParser {
         if (response.isObject()) {
             return response;
         }
-        if (response.isTextual()) {
+        if (response.isString()) {
             try {
-                final var nested = objectMapper.readTree(extractJson(response.asText()));
+                final var nested = objectMapper.readTree(extractJson(response.asString()));
                 if (nested.isObject()) {
                     return unwrap(nested);
                 }
@@ -68,9 +68,9 @@ class BookingChatAnswerParser {
 
     private BookingChatDraft fromObject(final JsonNode node) {
         final var messageNode = node.path("message");
-        final var message = messageNode.isTextual() ? cleanMessage(messageNode.asText()) : DEFAULT_MESSAGE;
+        final var message = messageNode.isString() ? cleanMessage(messageNode.asString()) : DEFAULT_MESSAGE;
         final var actionNode = node.path("action");
-        final var actionText = actionNode.isTextual() ? actionNode.asText() : "";
+        final var actionText = actionNode.isString() ? actionNode.asString() : "";
         final var action = switch (actionText) {
             case "show_availability", "clarify", "unsupported" -> actionText;
             default -> "show_availability";
@@ -85,8 +85,8 @@ class BookingChatAnswerParser {
                 final var start = slot.path("start");
                 final var end = slot.path("end");
                 final var timezone = slot.path("timezone");
-                if (start.isTextual() && end.isTextual() && timezone.isTextual()) {
-                    slots.add(new BookingChatSlot(start.asText(), end.asText(), timezone.asText()));
+                if (start.isString() && end.isString() && timezone.isString()) {
+                    slots.add(new BookingChatSlot(start.asString(), end.asString(), timezone.asString()));
                 }
             }
         }

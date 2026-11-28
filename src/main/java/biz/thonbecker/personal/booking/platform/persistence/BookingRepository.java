@@ -1,15 +1,33 @@
 package biz.thonbecker.personal.booking.platform.persistence;
 
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BookingRepository extends JpaRepository<BookingEntity, Long> {
+
+    @Query("""
+        SELECT b.id FROM BookingEntity b
+        WHERE b.status IN ('CONFIRMED', 'PENDING') AND b.endTime > :now
+        """)
+    List<Long> findActiveFutureIds(@Param("now") LocalDateTime now);
+
+    @Query("""
+        SELECT b.id FROM BookingEntity b
+        WHERE b.status = 'CANCELLED' AND b.endTime > :now
+        """)
+    List<Long> findCancelledFutureIds(@Param("now") LocalDateTime now);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT b FROM BookingEntity b WHERE b.id = :id")
+    Optional<BookingEntity> lockById(@Param("id") Long id);
 
     /**
      * Finds a booking by confirmation code.

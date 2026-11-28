@@ -106,8 +106,8 @@ public class PostHogFeatureFlagService {
         if (value.isBoolean()) {
             return value.booleanValue();
         }
-        if (value.isTextual()) {
-            return value.textValue();
+        if (value.isString()) {
+            return value.stringValue();
         }
         return objectMapper.convertValue(value, Object.class);
     }

@@ -96,7 +96,7 @@ public class LandscapeImageGenerationService {
                 log.warn(
                         "Stable Image Control Structure returned error for {} image: {}",
                         season,
-                        rootNode.get("error").asText());
+                        rootNode.get("error").asString());
                 return null;
             }
 
@@ -107,13 +107,13 @@ public class LandscapeImageGenerationService {
                 log.warn(
                         "Stable Image Control Structure did not finish {} image: {}",
                         season,
-                        finishReasons.get(0).asText());
+                        finishReasons.get(0).asString());
                 return null;
             }
 
             final var images = rootNode.path("images");
             if (images.isArray() && !images.isEmpty()) {
-                final var generatedImage = images.get(0).asText();
+                final var generatedImage = images.get(0).asString();
                 if (Objects.nonNull(generatedImage) && !generatedImage.isBlank()) {
                     log.info("Successfully generated {} landscape image", season);
                     return generatedImage;

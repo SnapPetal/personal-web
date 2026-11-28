@@ -267,13 +267,13 @@ public class FoosballController {
                     foosballService.findPlayerById(blackTeamPlayer2).orElse(null);
             if (whitePlayer1 == null || whitePlayer2 == null || blackPlayer1 == null || blackPlayer2 == null) {
                 model.addAttribute("error", "Please select all players.");
-                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                response.setStatus(HttpStatus.UNPROCESSABLE_CONTENT.value());
                 return "foosball-fragments :: alert";
             }
 
             if (winner == null || winner.isEmpty()) {
                 model.addAttribute("error", "Please select a winner.");
-                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                response.setStatus(HttpStatus.UNPROCESSABLE_CONTENT.value());
                 return "foosball-fragments :: alert";
             }
 
@@ -292,7 +292,7 @@ public class FoosballController {
                     break;
                 default:
                     model.addAttribute("error", "Invalid winner value.");
-                    response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                    response.setStatus(HttpStatus.UNPROCESSABLE_CONTENT.value());
                     return "foosball-fragments :: alert";
             }
 
@@ -304,7 +304,7 @@ public class FoosballController {
                 response.setHeader("HX-Trigger", "playerStatsUpdated");
             } else {
                 model.addAttribute("error", "Failed to record game. Server returned an empty response.");
-                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                response.setStatus(HttpStatus.UNPROCESSABLE_CONTENT.value());
             }
         } catch (Exception e) {
             String errorMessage = "Failed to record game: " + e.getMessage();
@@ -317,7 +317,7 @@ public class FoosballController {
             }
 
             model.addAttribute("error", errorMessage);
-            response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+            response.setStatus(HttpStatus.UNPROCESSABLE_CONTENT.value());
         }
 
         return "foosball-fragments :: alert";

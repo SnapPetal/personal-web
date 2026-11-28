@@ -35,6 +35,8 @@ notification:
     admin: test@test.com
 
 calendar:
+  google:
+    enabled: false
   caldav:
     enabled: false
     base-url: https://files.example.test/caldav/

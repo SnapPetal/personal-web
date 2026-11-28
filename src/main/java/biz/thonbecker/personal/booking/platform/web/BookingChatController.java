@@ -50,15 +50,15 @@ class BookingChatController {
         }
 
         final var messageNode = body.get("message");
-        final String message = Objects.nonNull(messageNode) && messageNode.isTextual() ? messageNode.asText() : null;
+        final String message = Objects.nonNull(messageNode) && messageNode.isString() ? messageNode.asString() : null;
         final var timezoneNode = body.get("timezone");
         final String timezone;
         if (Objects.isNull(timezoneNode) || timezoneNode.isNull()) {
             timezone = null;
-        } else if (!timezoneNode.isTextual()) {
+        } else if (!timezoneNode.isString()) {
             timezone = "not-a-timezone";
         } else {
-            timezone = timezoneNode.asText();
+            timezone = timezoneNode.asString();
         }
         return toJson(admit(message, timezone, request));
     }

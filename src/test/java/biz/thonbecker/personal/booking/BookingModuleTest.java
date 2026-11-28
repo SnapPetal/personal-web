@@ -3,6 +3,7 @@ package biz.thonbecker.personal.booking;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import biz.thonbecker.personal.IntegrationTest;
+import biz.thonbecker.personal.booking.api.BookingCalendarAccess;
 import biz.thonbecker.personal.booking.api.BookingCancelledEvent;
 import biz.thonbecker.personal.booking.api.BookingCreatedEvent;
 import biz.thonbecker.personal.booking.platform.BookingService;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.modulith.test.Scenario;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Integration tests for the Booking module verifying event publication.
@@ -22,6 +24,33 @@ class BookingModuleTest {
 
     @Autowired
     private BookingService bookingService;
+
+    @Autowired
+    private BookingCalendarAccess calendarAccess;
+
+    @Autowired
+    private TransactionTemplate transactions;
+
+    @Test
+    void calendarReconciliationLocksAndObservesBookingStatus() {
+        final var type = bookingService.createBookingType("Calendar test", "Calendar test", 30, 0, "#007bff");
+        final var day = LocalDate.now().plusDays(7);
+        bookingService.createAvailabilitySlot(day.atTime(9, 0), day.atTime(17, 0));
+        final var booking = bookingService.createBooking(
+                type.id(), "Calendar Test", "calendar@example.com", null, day.atTime(10, 0), null, null);
+        assertThat(calendarAccess.activeFutureBookingIds()).contains(booking.id());
+        final var active = transactions.execute(status -> calendarAccess.lockActiveBooking(booking.id()));
+        assertThat(active)
+                .isPresent()
+                .get()
+                .extracting(BookingCreatedEvent::confirmationCode)
+                .isEqualTo(booking.confirmationCode());
+        bookingService.cancelBooking(booking.id());
+        assertThat(calendarAccess.activeFutureBookingIds()).doesNotContain(booking.id());
+        assertThat(calendarAccess.cancelledFutureBookingIds()).contains(booking.id());
+        final var cancelled = transactions.execute(status -> calendarAccess.lockActiveBooking(booking.id()));
+        assertThat(cancelled).isEmpty();
+    }
 
     @Test
     void publishesBookingCreatedEventWhenBookingIsCreated(Scenario scenario) {
