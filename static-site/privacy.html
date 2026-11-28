@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Privacy policy for Personal Web Booking and its Google Calendar integration.">
+    <meta name="color-scheme" content="light dark">
+    <style>
+        html { color-scheme: light dark; background-color: #ffffff; color: #212529; }
+        @media (prefers-color-scheme: dark) {
+            html { background-color: #212529; color: #f8f9fa; }
+        }
+    </style>
+    <script>
+        (function () {
+            var media = window.matchMedia("(prefers-color-scheme: dark)");
+            function applyTheme() {
+                document.documentElement.setAttribute("data-bs-theme", media.matches ? "dark" : "light");
+            }
+            applyTheme();
+            if (typeof media.addEventListener === "function") media.addEventListener("change", applyTheme);
+        })();
+    </script>
+    <link rel="stylesheet" href="/site.css?v=bdcec50a4d2b">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="canonical" href="https://thonbecker.biz/privacy">
+    <title>Booking Privacy Policy — Thon Becker</title>
+</head>
+<body>
+<a class="skip-link" href="#top">Skip to content</a>
+<header class="site-header">
+    <a class="brand" href="/">Thon Becker</a>
+    <nav aria-label="Primary navigation"><a class="site-nav-link" href="/">Home</a><a class="site-nav-link" href="https://booking.thonbecker.biz/booking">Book a meeting</a></nav>
+</header>
+<main class="essay" id="top">
+    <section class="essay-hero">
+        <p class="eyebrow">Personal Web Booking</p>
+        <h1 class="page-title">Privacy policy</h1>
+        <p>Last updated: November 28, 2026</p>
+        <p>This policy explains how Thon Becker uses information for the booking service at booking.thonbecker.biz and its Google Calendar connection.</p>
+    </section>
+    <section class="essay-section">
+        <h2>Information used for bookings</h2>
+        <p>When you book a meeting, the service collects your name, email address, meeting time and type, and any phone number or message you provide. It uses these details to schedule the meeting, maintain the calendar, and send booking and cancellation emails. Booking information is stored in a database hosted on Amazon Web Services (AWS).</p>
+        <p>The booking page may use cookies and analytics identifiers to understand how the service is used. Service providers, including AWS and Cloudflare, process network and operational information to deliver and protect the service. Booking chat messages are sent to AWS Bedrock to generate responses; please do not include sensitive information in chat.</p>
+    </section>
+    <section class="essay-section">
+        <h2>Google Calendar data</h2>
+        <p>With the calendar owner's authorization, Personal Web Booking accesses the selected Google Calendar to create, read, and delete booking events and detect deleted events. Calendar events contain booking details, including the attendee's name and email address and any phone number or message supplied. The application stores an authorization token and the selected calendar ID in AWS Secrets Manager, and booking-to-event mappings in its database.</p>
+        <p>Google Calendar information is used to provide booking and cancellation synchronization. It is not sold or used for advertising. It is shared with Google and AWS as necessary to operate the service, and with an event attendee through the calendar event and booking emails. The application does not use Google user data to train generalized AI or machine learning models.</p>
+        <p>Personal Web Booking's use and transfer of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including its Limited Use requirements.</p>
+    </section>
+    <section class="essay-section">
+        <h2>Retention and your choices</h2>
+        <p>Booking records and calendar mappings are retained to manage appointments and service operations; copies may also remain in backups. You can request access, correction, or deletion of your booking information by contacting Thon Becker. The calendar owner can revoke access at <a href="https://myaccount.google.com/permissions">Google Account connections</a>; revoking access stops synchronization but does not automatically delete existing booking records or events. Contact us to request their deletion.</p>
+        <p>For privacy questions or requests, email <a href="mailto:thon@thonbecker.biz">thon@thonbecker.biz</a>.</p>
+    </section>
+</main>
+<footer><a class="brand" href="/">Thon Becker</a><span>© 2025-2026 Thon Becker. All rights reserved.</span></footer>
+</body>
+</html>
