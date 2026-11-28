@@ -41,7 +41,7 @@ public class SkateTricksService {
             TrickAttemptRepository trickAttemptRepository,
             ApplicationEventPublisher eventPublisher,
             VideoTranscoder videoTranscoder,
-            @org.springframework.lang.Nullable VectorStore vectorStore,
+            @org.jspecify.annotations.Nullable VectorStore vectorStore,
             SkatetricksObservability observability) {
         this.trickAnalyzer = trickAnalyzer;
         this.trickAttemptRepository = trickAttemptRepository;

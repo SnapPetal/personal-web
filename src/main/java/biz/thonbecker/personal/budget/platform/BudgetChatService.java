@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.session.EventFilter;
 import org.springframework.ai.session.SessionService;
 import org.springframework.ai.session.advisor.SessionAdvisors;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -43,7 +43,7 @@ public class BudgetChatService {
     private final SessionService sessionService;
 
     public BudgetChatService(
-            @Nullable final ChatClient.Builder chatClientBuilder, final SessionService sessionService) {
+            final ChatClient.@Nullable Builder chatClientBuilder, final SessionService sessionService) {
         this.chatClient = chatClientBuilder == null
                 ? null
                 : chatClientBuilder

@@ -27,7 +27,7 @@ class FinancialPeaceQuestionGenerator implements QuestionGenerator {
 
     @Autowired(required = false)
     public FinancialPeaceQuestionGenerator(
-            @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
+            ChatClient.@org.jspecify.annotations.Nullable Builder chatClientBuilder,
             @Value("${trivia.ai.model:${PERSONAL_BEDROCK_TRIVIA_MODEL:us.anthropic.claude-haiku-5-5}}") String model) {
         this.chatClient = chatClientBuilder != null ? chatClientBuilder.build() : null;
         this.model = model;

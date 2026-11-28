@@ -8,6 +8,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.content.Media;
 import org.springframework.ai.vectorstore.SearchRequest;
@@ -29,10 +30,10 @@ class BedrockTrickAnalyzer implements TrickAnalyzer {
 
     @Autowired(required = false)
     BedrockTrickAnalyzer(
-            @org.springframework.lang.Nullable ChatClient.Builder chatClientBuilder,
+            ChatClient.@Nullable Builder chatClientBuilder,
             PoseEstimationService poseEstimationService,
             VideoFrameExtractor videoFrameExtractor,
-            @org.springframework.lang.Nullable VectorStore vectorStore,
+            @Nullable VectorStore vectorStore,
             SkatetricksObservability observability,
             TrickKnowledgeService trickKnowledgeService) {
         this.chatClient = chatClientBuilder != null ? chatClientBuilder.build() : null;
